@@ -195,7 +195,9 @@ export const adminController = {
           include: {
             uploadedBy: {
               select: { id: true, name: true, email: true }
-            }
+            },
+            team: { select: { id: true, name: true } },
+            season: { select: { id: true, name: true } }
           }
         }),
         prisma.video.count()
@@ -215,5 +217,177 @@ export const adminController = {
       logger.error('Uppladdningshistorik-fel:', error);
       res.status(500).json({ error: 'Kunde inte hämta uppladdningshistorik.' });
     }
+  },
+
+  // -------------------------------------------
+  // GET /api/admin/teams
+  // -------------------------------------------
+  async listTeams(req, res) {
+    try {
+      const teams = await prisma.team.findMany({
+        orderBy: { name: 'asc' },
+        include: {
+          _count: { select: { videos: true, seasons: true } },
+          seasons: { orderBy: { name: 'desc' } }
+        }
+      });
+      res.json({ teams });
+    } catch (error) {
+      logger.error('Listning av lag misslyckades:', error);
+      res.status(500).json({ error: 'Kunde inte hämta lag.' });
+    }
+  },
+
+  // -------------------------------------------
+  // POST /api/admin/teams
+  // -------------------------------------------
+  async createTeam(req, res) {
+    try {
+      const { name } = req.body;
+      if (!name || !name.trim()) {
+        return res.status(400).json({ error: 'Lagnamn krävs.' });
+      }
+      const existing = await prisma.team.findUnique({ where: { name: name.trim() } });
+      if (existing) {
+        return res.status(409).json({ error: 'Ett lag med det namnet finns redan.' });
+      }
+      const team = await prisma.team.create({ data: { name: name.trim() } });
+      logger.info('Nytt lag skapat', { teamId: team.id, name: team.name, createdBy: req.user.email });
+      res.status(201).json({ message: 'Laget har skapats.', team });
+    } catch (error) {
+      logger.error('Skapa lag misslyckades:', error);
+      res.status(500).json({ error: 'Kunde inte skapa laget.' });
+    }
+  },
+
+  // -------------------------------------------
+  // DELETE /api/admin/teams/:id
+  // -------------------------------------------
+  async deleteTeam(req, res) {
+    try {
+      const id = parseInt(req.params.id);
+      const team = await prisma.team.findUnique({ where: { id } });
+      if (!team) {
+        return res.status(404).json({ error: 'Laget kunde inte hittas.' });
+      }
+      await prisma.team.delete({ where: { id } });
+      logger.info('Lag borttaget', { teamId: id, name: team.name, deletedBy: req.user.email });
+      res.json({ message: 'Laget har tagits bort.' });
+    } catch (error) {
+      logger.error('Ta bort lag misslyckades:', error);
+      res.status(500).json({ error: 'Kunde inte ta bort laget.' });
+    }
+  },
+
+  // -------------------------------------------
+  // GET /api/admin/seasons
+  // -------------------------------------------
+  async listSeasons(req, res) {
+    try {
+      const teamId = req.params.teamId || req.query.teamId;
+      const where = teamId ? { teamId: parseInt(teamId) } : {};
+      const seasons = await prisma.season.findMany({
+        where,
+        orderBy: { name: 'desc' },
+        include: {
+          team: { select: { id: true, name: true } },
+          _count: { select: { videos: true } }
+        }
+      });
+      res.json({ seasons });
+    } catch (error) {
+      logger.error('Listning av säsonger misslyckades:', error);
+      res.status(500).json({ error: 'Kunde inte hämta säsonger.' });
+    }
+  },
+
+  // -------------------------------------------
+  // POST /api/admin/seasons
+  // -------------------------------------------
+  async createSeason(req, res) {
+    try {
+      const { name, teamId } = req.body;
+      if (!name || !name.trim()) {
+        return res.status(400).json({ error: 'Säsongsnamn krävs.' });
+      }
+      if (!teamId) {
+        return res.status(400).json({ error: 'Lag krävs.' });
+      }
+      const team = await prisma.team.findUnique({ where: { id: parseInt(teamId) } });
+      if (!team) {
+        return res.status(404).json({ error: 'Laget kunde inte hittas.' });
+      }
+      const existing = await prisma.season.findUnique({
+        where: { name_teamId: { name: name.trim(), teamId: parseInt(teamId) } }
+      });
+      if (existing) {
+        return res.status(409).json({ error: 'Den säsongen finns redan för detta lag.' });
+      }
+      const season = await prisma.season.create({
+        data: { name: name.trim(), teamId: parseInt(teamId) },
+        include: { team: { select: { id: true, name: true } } }
+      });
+      logger.info('Ny säsong skapad', { seasonId: season.id, name: season.name, teamId, createdBy: req.user.email });
+      res.status(201).json({ message: 'Säsongen har skapats.', season });
+    } catch (error) {
+      logger.error('Skapa säsong misslyckades:', error);
+      res.status(500).json({ error: 'Kunde inte skapa säsongen.' });
+    }
+  },
+
+  // -------------------------------------------
+  // DELETE /api/admin/seasons/:id
+  // -------------------------------------------
+  async deleteSeason(req, res) {
+    try {
+      const id = parseInt(req.params.id);
+      const season = await prisma.season.findUnique({ where: { id } });
+      if (!season) {
+        return res.status(404).json({ error: 'Säsongen kunde inte hittas.' });
+      }
+      await prisma.season.delete({ where: { id } });
+      logger.info('Säsong borttagen', { seasonId: id, name: season.name, deletedBy: req.user.email });
+      res.json({ message: 'Säsongen har tagits bort.' });
+    } catch (error) {
+      logger.error('Ta bort säsong misslyckades:', error);
+      res.status(500).json({ error: 'Kunde inte ta bort säsongen.' });
+    }
+  },
+
+  // -------------------------------------------
+  // PATCH /api/admin/videos/:id/assign
+  // Tilldela video till lag/säsong
+  // -------------------------------------------
+  async assignVideo(req, res) {
+    try {
+      const { id } = req.params;
+      const { teamId, seasonId } = req.body;
+
+      const video = await prisma.video.findUnique({ where: { id } });
+      if (!video) {
+        return res.status(404).json({ error: 'Videon kunde inte hittas.' });
+      }
+
+      const updateData = {
+        teamId: teamId ? parseInt(teamId) : null,
+        seasonId: seasonId ? parseInt(seasonId) : null
+      };
+
+      const updated = await prisma.video.update({
+        where: { id },
+        data: updateData,
+        include: {
+          team: { select: { id: true, name: true } },
+          season: { select: { id: true, name: true } }
+        }
+      });
+
+      logger.info('Video tilldelad lag/säsong', { videoId: id, teamId, seasonId, updatedBy: req.user.email });
+      res.json({ message: 'Videon har tilldelats.', video: { ...updated, fileSize: Number(updated.fileSize) } });
+    } catch (error) {
+      logger.error('Tilldela video misslyckades:', error);
+      res.status(500).json({ error: 'Kunde inte tilldela videon.' });
+    }
   }
+
 };

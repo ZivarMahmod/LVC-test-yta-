@@ -2,8 +2,8 @@
 // LVC Media Hub — Videobibliotek
 // ===========================================
 import { useState, useEffect, useCallback } from 'react';
-import { Link } from 'react-router-dom';
-import { videoApi } from '../utils/api.js';
+import { Link, useParams } from 'react-router-dom';
+import { videoApi, teamApi } from '../utils/api.js';
 import { useAuth } from '../context/AuthContext.jsx';
 import './VideosPage.css';
 
@@ -21,6 +21,7 @@ function formatDate(dateStr) {
 
 export default function VideosPage() {
   const { isAdmin } = useAuth();
+  const { teamId, seasonId } = useParams();
   const [videos, setVideos] = useState([]);
   const [pagination, setPagination] = useState({ page: 1, totalPages: 1 });
   const [search, setSearch] = useState('');
@@ -28,12 +29,31 @@ export default function VideosPage() {
   const [error, setError] = useState('');
   const [viewMode, setViewMode] = useState('grid');
   const [deleting, setDeleting] = useState(null);
+  const [teamName, setTeamName] = useState('');
+  const [seasonName, setSeasonName] = useState('');
+
+  useEffect(() => {
+    async function fetchMeta() {
+      if (!teamId) return;
+      try {
+        const teamsData = await teamApi.listTeams();
+        const team = teamsData.teams.find(t => t.id === parseInt(teamId));
+        if (team) setTeamName(team.name);
+        if (seasonId) {
+          const seasonsData = await teamApi.listSeasons(teamId);
+          const season = seasonsData.seasons.find(s => s.id === parseInt(seasonId));
+          if (season) setSeasonName(season.name);
+        }
+      } catch {}
+    }
+    fetchMeta();
+  }, [teamId, seasonId]);
 
   const fetchVideos = useCallback(async (page = 1) => {
     setLoading(true);
     setError('');
     try {
-      const data = await videoApi.list(page, 20, search);
+      const data = await videoApi.list(page, 20, search, teamId || null, seasonId || null);
       setVideos(data.videos);
       setPagination(data.pagination);
     } catch {
@@ -41,7 +61,7 @@ export default function VideosPage() {
     } finally {
       setLoading(false);
     }
-  }, [search]);
+  }, [search, teamId, seasonId]);
 
   useEffect(() => {
     const timer = setTimeout(() => fetchVideos(1), 300);
@@ -64,9 +84,24 @@ export default function VideosPage() {
   return (
     <div className="videos-page">
       <div className="page-header">
+        {teamId && (
+          <nav className="videos-breadcrumb">
+            <Link to="/">Lag</Link>
+            <span className="breadcrumb-sep">›</span>
+            {seasonId ? (
+              <>
+                <Link to={`/team/${teamId}`}>{teamName}</Link>
+                <span className="breadcrumb-sep">›</span>
+                <span>{seasonName}</span>
+              </>
+            ) : (
+              <span>{teamName}</span>
+            )}
+          </nav>
+        )}
         <div className="page-header-row">
           <div>
-            <h1>Matcher</h1>
+            <h1>{seasonId ? seasonName : teamId ? teamName : 'Alla matcher'}</h1>
             <p>Matchvideor för Linköpings Volleybollklubb</p>
           </div>
           <div className="view-toggle">

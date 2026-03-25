@@ -177,3 +177,26 @@
     grid-template-columns: 1fr;
   }
 }
+
+/* Breadcrumbs */
+.videos-breadcrumb {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+}
+
+.videos-breadcrumb a {
+  color: var(--accent-color);
+  text-decoration: none;
+}
+
+.videos-breadcrumb a:hover {
+  text-decoration: underline;
+}
+
+.breadcrumb-sep {
+  color: var(--text-secondary);
+}

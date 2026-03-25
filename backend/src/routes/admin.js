@@ -50,4 +50,18 @@ router.get('/uploads',
   adminController.uploadHistory
 );
 
+
+// Lag
+router.get('/teams', adminController.listTeams);
+router.post('/teams', csrfProtection, adminController.createTeam);
+router.delete('/teams/:id', csrfProtection, adminController.deleteTeam);
+
+// Säsonger
+router.get('/seasons', adminController.listSeasons);
+router.post('/seasons', csrfProtection, adminController.createSeason);
+router.delete('/seasons/:id', csrfProtection, adminController.deleteSeason);
+
+// Tilldela video till lag/säsong
+router.patch('/videos/:id/assign', csrfProtection, adminController.assignVideo);
+
 export default router;

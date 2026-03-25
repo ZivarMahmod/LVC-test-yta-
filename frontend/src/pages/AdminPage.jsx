@@ -4,6 +4,7 @@
 // ===========================================
 import { useState, useEffect, useCallback } from 'react';
 import { adminApi, changelogApi } from '../utils/api.js';
+import { teamApi } from '../utils/api.js';
 import { useAuth } from '../context/AuthContext.jsx';
 import './AdminPage.css';
 
@@ -40,6 +41,74 @@ function UserModal({ user, onClose, onSave }) {
       setError(err.message);
     } finally {
       setSaving(false);
+    }
+  };
+
+  const handleCreateTeam = async () => {
+    if (!newTeamName.trim()) return;
+    try {
+      await adminApi.createTeam(newTeamName.trim());
+      setNewTeamName('');
+      setTeamMsg('Laget skapades!');
+      await fetchTeamsAdmin();
+      setTimeout(() => setTeamMsg(''), 3000);
+    } catch (err) {
+      setTeamMsg(err.message);
+    }
+  };
+
+  const handleDeleteTeam = async (id, name) => {
+    if (!confirm(`Ta bort "${name}"? Alla säsonger för laget tas också bort.`)) return;
+    try {
+      await adminApi.deleteTeam(id);
+      await fetchTeamsAdmin();
+    } catch (err) {
+      alert(err.message);
+    }
+  };
+
+  const handleCreateSeason = async () => {
+    if (!newSeasonName.trim() || !newSeasonTeamId) return;
+    try {
+      await adminApi.createSeason(newSeasonName.trim(), parseInt(newSeasonTeamId));
+      setNewSeasonName('');
+      setTeamMsg('Säsongen skapades!');
+      await fetchTeamsAdmin();
+      setTimeout(() => setTeamMsg(''), 3000);
+    } catch (err) {
+      setTeamMsg(err.message);
+    }
+  };
+
+  const handleDeleteSeason = async (id, name) => {
+    if (!confirm(`Ta bort säsongen "${name}"?`)) return;
+    try {
+      await adminApi.deleteSeason(id);
+      await fetchTeamsAdmin();
+    } catch (err) {
+      alert(err.message);
+    }
+  };
+
+  const handleAssignVideo = async (videoId) => {
+    try {
+      const tId = assignTeamId[videoId] || null;
+      const sId = assignSeasonId[videoId] || null;
+      const result = await adminApi.assignVideo(videoId, tId ? parseInt(tId) : null, sId ? parseInt(sId) : null);
+      
+      // Uppdatera allVideos lokalt direkt
+      setAllVideos(prev => prev.map(v => {
+        if (v.id !== videoId) return v;
+        const team = tId ? teams.find(t => String(t.id) === String(tId)) : null;
+        const season = sId ? teams.flatMap(t => t.seasons || []).find(s => String(s.id) === String(sId)) : null;
+        return { ...v, team: team || null, season: season || null };
+      }));
+
+      setTeamMsg('Videon tilldelades!');
+      await fetchTeamsAdmin();
+      setTimeout(() => setTeamMsg(''), 3000);
+    } catch (err) {
+      alert(err.message);
     }
   };
 
@@ -130,6 +199,16 @@ export default function AdminPage() {
   const [error, setError] = useState('');
   const [modal, setModal] = useState(null); // null | 'create' | user object
   const [changelog, setChangelog] = useState('');
+  const [teams, setTeams] = useState([]);
+  const [seasons, setSeasons] = useState([]);
+  const [newTeamName, setNewTeamName] = useState('');
+  const [newSeasonName, setNewSeasonName] = useState('');
+  const [newSeasonTeamId, setNewSeasonTeamId] = useState('');
+  const [teamMsg, setTeamMsg] = useState('');
+  const [allVideos, setAllVideos] = useState([]);
+  const [assignTeamId, setAssignTeamId] = useState({});
+  const [assignSeasonId, setAssignSeasonId] = useState({});
+  const [showAssigned, setShowAssigned] = useState(false);
 
   const fetchUsers = useCallback(async () => {
     setLoading(true);
@@ -167,11 +246,36 @@ export default function AdminPage() {
     }
   }, []);
 
+  const fetchTeamsAdmin = useCallback(async () => {
+    setLoading(true);
+    setError('');
+    try {
+      const teamsData = await adminApi.listTeams();
+      setTeams(teamsData.teams);
+      setNewSeasonTeamId(prev => {
+        if (!prev && teamsData.teams.length > 0) return String(teamsData.teams[0].id);
+        return prev;
+      });
+    } catch {
+      setError('Kunde inte hämta lag.');
+      setLoading(false);
+      return;
+    }
+    try {
+      const videosData = await adminApi.uploadHistory(1, 50);
+      setAllVideos(videosData.videos);
+    } catch {
+      // Videos är inte kritiskt, fortsätt ändå
+    }
+    setLoading(false);
+  }, []);
+
   useEffect(() => {
     if (tab === 'users') fetchUsers();
     else if (tab === 'uploads') fetchUploads();
     else if (tab === 'changelog') fetchChangelog();
-  }, [tab, fetchUsers, fetchUploads, fetchChangelog]);
+    else if (tab === 'teams') fetchTeamsAdmin();
+  }, [tab, fetchUsers, fetchUploads, fetchChangelog, fetchTeamsAdmin]);
 
   const handleCreateUser = async (userData) => {
     await adminApi.createUser(userData);
@@ -188,6 +292,74 @@ export default function AdminPage() {
     try {
       await adminApi.deleteUser(id);
       setUsers(prev => prev.filter(u => u.id !== id));
+    } catch (err) {
+      alert(err.message);
+    }
+  };
+
+  const handleCreateTeam = async () => {
+    if (!newTeamName.trim()) return;
+    try {
+      await adminApi.createTeam(newTeamName.trim());
+      setNewTeamName('');
+      setTeamMsg('Laget skapades!');
+      await fetchTeamsAdmin();
+      setTimeout(() => setTeamMsg(''), 3000);
+    } catch (err) {
+      setTeamMsg(err.message);
+    }
+  };
+
+  const handleDeleteTeam = async (id, name) => {
+    if (!confirm(`Ta bort "${name}"? Alla säsonger för laget tas också bort.`)) return;
+    try {
+      await adminApi.deleteTeam(id);
+      await fetchTeamsAdmin();
+    } catch (err) {
+      alert(err.message);
+    }
+  };
+
+  const handleCreateSeason = async () => {
+    if (!newSeasonName.trim() || !newSeasonTeamId) return;
+    try {
+      await adminApi.createSeason(newSeasonName.trim(), parseInt(newSeasonTeamId));
+      setNewSeasonName('');
+      setTeamMsg('Säsongen skapades!');
+      await fetchTeamsAdmin();
+      setTimeout(() => setTeamMsg(''), 3000);
+    } catch (err) {
+      setTeamMsg(err.message);
+    }
+  };
+
+  const handleDeleteSeason = async (id, name) => {
+    if (!confirm(`Ta bort säsongen "${name}"?`)) return;
+    try {
+      await adminApi.deleteSeason(id);
+      await fetchTeamsAdmin();
+    } catch (err) {
+      alert(err.message);
+    }
+  };
+
+  const handleAssignVideo = async (videoId) => {
+    try {
+      const tId = assignTeamId[videoId] || null;
+      const sId = assignSeasonId[videoId] || null;
+      const result = await adminApi.assignVideo(videoId, tId ? parseInt(tId) : null, sId ? parseInt(sId) : null);
+      
+      // Uppdatera allVideos lokalt direkt
+      setAllVideos(prev => prev.map(v => {
+        if (v.id !== videoId) return v;
+        const team = tId ? teams.find(t => String(t.id) === String(tId)) : null;
+        const season = sId ? teams.flatMap(t => t.seasons || []).find(s => String(s.id) === String(sId)) : null;
+        return { ...v, team: team || null, season: season || null };
+      }));
+
+      setTeamMsg('Videon tilldelades!');
+      await fetchTeamsAdmin();
+      setTimeout(() => setTeamMsg(''), 3000);
     } catch (err) {
       alert(err.message);
     }
@@ -218,6 +390,12 @@ export default function AdminPage() {
           onClick={() => setTab('changelog')}
         >
           Ändringslogg
+        </button>
+        <button
+          className={`admin-tab ${tab === 'teams' ? 'active' : ''}`}
+          onClick={() => setTab('teams')}
+        >
+          Lag & Säsonger
         </button>
       </div>
 
@@ -348,6 +526,200 @@ export default function AdminPage() {
                 return <p key={i}>{line}</p>;
               })}
             </div>
+          )}
+        </div>
+      )}
+
+      {tab === 'teams' && (
+        <div className="admin-section">
+          <h2>Lag & Säsonger</h2>
+          {teamMsg && <div className="alert alert-success">{teamMsg}</div>}
+          {loading ? (
+            <div className="loading-container"><div className="spinner" /></div>
+          ) : (
+            <>
+              {/* Skapa lag och säsong */}
+              <div className="teams-admin-grid">
+                <div className="teams-admin-col">
+                  <h3>Skapa lag</h3>
+                  <div className="inline-form">
+                    <input
+                      type="text"
+                      placeholder="t.ex. LVC Dam"
+                      value={newTeamName}
+                      onChange={e => setNewTeamName(e.target.value)}
+                      onKeyDown={e => e.key === 'Enter' && handleCreateTeam()}
+                    />
+                    <button className="btn-gold" onClick={handleCreateTeam}>Skapa</button>
+                  </div>
+                  <div className="teams-list">
+                    {teams.map(team => (
+                      <div key={team.id} className="teams-admin-item">
+                        <div>
+                          <strong>{team.name}</strong>
+                          <span className="text-muted"> — {team._count?.seasons ?? 0} säsonger, {team._count?.videos ?? 0} matcher</span>
+                        </div>
+                        <button className="btn-danger btn-sm" onClick={() => handleDeleteTeam(team.id, team.name)}>Ta bort</button>
+                      </div>
+                    ))}
+                    {teams.length === 0 && <p className="text-muted">Inga lag ännu.</p>}
+                  </div>
+                </div>
+
+                <div className="teams-admin-col">
+                  <h3>Skapa säsong</h3>
+                  <div className="inline-form">
+                    <select value={newSeasonTeamId} onChange={e => setNewSeasonTeamId(e.target.value)}>
+                      {teams.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
+                    </select>
+                    <input
+                      type="text"
+                      placeholder="t.ex. 25/26"
+                      value={newSeasonName}
+                      onChange={e => setNewSeasonName(e.target.value)}
+                      onKeyDown={e => e.key === 'Enter' && handleCreateSeason()}
+                    />
+                    <button className="btn-gold" onClick={handleCreateSeason}>Skapa</button>
+                  </div>
+                  <div className="teams-list">
+                    {teams.flatMap(team =>
+                      (team.seasons || []).map(season => (
+                        <div key={`${team.id}-${season.id}`} className="teams-admin-item">
+                          <div>
+                            <strong>{season.name}</strong>
+                            <span className="text-muted"> — {team.name}</span>
+                          </div>
+                          <button className="btn-danger btn-sm" onClick={() => handleDeleteSeason(season.id, season.name)}>Ta bort</button>
+                        </div>
+                      ))
+                    )}
+                    {teams.every(t => (t.seasons || []).length === 0) && <p className="text-muted">Inga säsonger ännu.</p>}
+                  </div>
+                </div>
+              </div>
+
+              {/* Tilldelade videos — kollapsbar */}
+              <div className="assigned-section">
+                <button
+                  className="assigned-toggle"
+                  onClick={() => setShowAssigned(prev => !prev)}
+                >
+                  <span>Tilldelade videos ({allVideos.filter(v => v.team).length})</span>
+                  <span className="toggle-arrow">{showAssigned ? '▲' : '▼'}</span>
+                </button>
+                {showAssigned && (
+                  <div className="table-container" style={{marginTop: '0.5rem'}}>
+                    <table>
+                      <thead>
+                        <tr>
+                          <th>Video</th>
+                          <th>Lag</th>
+                          <th>Säsong</th>
+                          <th>Flytta till lag</th>
+                          <th>Flytta till säsong</th>
+                          <th></th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {allVideos.filter(v => v.team).map(v => (
+                          <tr key={v.id}>
+                            <td>{v.title}</td>
+                            <td className="text-muted">{v.team?.name}</td>
+                            <td className="text-muted">{v.season?.name || '—'}</td>
+                            <td>
+                              <select
+                                value={assignTeamId[v.id] ?? (v.team?.id || '')}
+                                onChange={e => {
+                                  setAssignTeamId(prev => ({...prev, [v.id]: e.target.value}));
+                                  setAssignSeasonId(prev => ({...prev, [v.id]: ''}));
+                                }}
+                              >
+                                <option value="">— Inget lag —</option>
+                                {teams.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
+                              </select>
+                            </td>
+                            <td>
+                              <select
+                                value={assignSeasonId[v.id] ?? (v.season?.id || '')}
+                                onChange={e => setAssignSeasonId(prev => ({...prev, [v.id]: e.target.value}))}
+                              >
+                                <option value="">— Ingen säsong —</option>
+                                {teams
+                                  .find(t => String(t.id) === String(assignTeamId[v.id] ?? v.team?.id))
+                                  ?.seasons?.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
+                              </select>
+                            </td>
+                            <td>
+                              <button className="btn-gold btn-sm" onClick={() => handleAssignVideo(v.id)}>Spara</button>
+                            </td>
+                          </tr>
+                        ))}
+                        {allVideos.filter(v => v.team).length === 0 && (
+                          <tr><td colSpan="6" className="text-muted">Inga tilldelade videos ännu.</td></tr>
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </div>
+
+              {/* Otilldelade videos */}
+              <h3 style={{marginTop: '1.5rem'}}>
+                Tilldela videos
+                <span className="text-muted" style={{fontWeight: 400, fontSize: '0.9rem', marginLeft: '0.5rem'}}>
+                  ({allVideos.filter(v => !v.team).length} otilldelade)
+                </span>
+              </h3>
+              {allVideos.filter(v => !v.team).length === 0 ? (
+                <p className="text-muted">Alla videos är tilldelade! 🎉</p>
+              ) : (
+                <div className="table-container">
+                  <table>
+                    <thead>
+                      <tr>
+                        <th>Video</th>
+                        <th>Tilldela lag</th>
+                        <th>Tilldela säsong</th>
+                        <th></th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {allVideos.filter(v => !v.team).map(v => (
+                        <tr key={v.id}>
+                          <td>{v.title}</td>
+                          <td>
+                            <select
+                              value={assignTeamId[v.id] || ''}
+                              onChange={e => {
+                                setAssignTeamId(prev => ({...prev, [v.id]: e.target.value}));
+                                setAssignSeasonId(prev => ({...prev, [v.id]: ''}));
+                              }}
+                            >
+                              <option value="">— Välj lag —</option>
+                              {teams.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
+                            </select>
+                          </td>
+                          <td>
+                            <select
+                              value={assignSeasonId[v.id] || ''}
+                              onChange={e => setAssignSeasonId(prev => ({...prev, [v.id]: e.target.value}))}
+                            >
+                              <option value="">— Välj säsong —</option>
+                              {teams
+                                .find(t => String(t.id) === String(assignTeamId[v.id]))
+                                ?.seasons?.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
+                            </select>
+                          </td>
+                          <td>
+                            <button className="btn-gold btn-sm" onClick={() => handleAssignVideo(v.id)}>Spara</button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </>
           )}
         </div>
       )}

@@ -1,5 +1,13 @@
 # LVC Media Hub — Ändringslogg
 
+## v1.3.0 — 2026-03-25
+- Lag/säsong-hierarki: startsida visar lag → säsonger → matcher
+- Admin kan skapa och ta bort lag och säsonger
+- Admin kan tilldela videos till lag/säsong
+- Otilldelade videos visas direkt, tilldelade i kollapsbar sektion
+- Breadcrumbs i navigering (Lag › LVC Dam › 25/26)
+- Fix: dvwPath-bugg i folderScanner åtgärdad
+
 ## v1.2.0 — 2026-03-25
 - Uppdaterad beskrivning på admin-sidan
 

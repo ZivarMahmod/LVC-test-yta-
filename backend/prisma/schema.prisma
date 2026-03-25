@@ -1,17 +1,14 @@
 // ===========================================
 // LVC Media Hub — Databasschema (Prisma + SQLite)
 // ===========================================
-
 generator client {
   provider = "prisma-client-js"
   binaryTargets = ["native", "linux-musl-openssl-3.0.x"]
 }
-
 datasource db {
   provider = "sqlite"
   url      = env("DATABASE_URL")
 }
-
 model User {
   id            String         @id @default(uuid())
   email         String         @unique
@@ -21,14 +18,11 @@ model User {
   isActive      Boolean        @default(true)
   createdAt     DateTime       @default(now())
   updatedAt     DateTime       @updatedAt
-
   refreshTokens RefreshToken[]
   videos        Video[]
   loginAttempts LoginAttempt[]
-
   @@index([email])
 }
-
 model RefreshToken {
   id          String   @id @default(uuid())
   tokenHash   String   @unique
@@ -37,11 +31,25 @@ model RefreshToken {
   expiresAt   DateTime
   createdAt   DateTime @default(now())
   isRevoked   Boolean  @default(false)
-
   @@index([userId])
   @@index([tokenHash])
 }
-
+model Team {
+  id        Int      @id @default(autoincrement())
+  name      String   @unique  // t.ex. "LVC Dam", "LVC Herr"
+  createdAt DateTime @default(now())
+  seasons   Season[]
+  videos    Video[]
+}
+model Season {
+  id        Int      @id @default(autoincrement())
+  name      String   // t.ex. "25/26", "24/25"
+  teamId    Int
+  team      Team     @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+  videos    Video[]
+  @@unique([name, teamId])
+}
 model Video {
   id            String   @id @default(uuid())
   title         String
@@ -49,21 +57,25 @@ model Video {
   matchDate     DateTime
   description   String?
   fileName      String
-  filePath      String   // Sökväg i OpenCloud, t.ex. /Matcher/2025/2025-03-15_LVC-vs-Norrköping.mp4
+  filePath      String
   fileSize      BigInt
   mimeType      String
-  thumbnailPath String?  // Sökväg till thumbnail-bild
-  dvwPath       String?  // Sökväg till Data Volley scout-fil
-  videoOffset   Int      @default(0)  // Sekunder offset mellan video och matchstart
+  thumbnailPath String?
+  dvwPath       String?
+  videoOffset   Int      @default(0)
   uploadedById  String
   uploadedBy    User     @relation(fields: [uploadedById], references: [id])
+  teamId        Int?
+  team          Team?    @relation(fields: [teamId], references: [id], onDelete: SetNull)
+  seasonId      Int?
+  season        Season?  @relation(fields: [seasonId], references: [id], onDelete: SetNull)
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
-
   @@index([matchDate])
   @@index([opponent])
+  @@index([teamId])
+  @@index([seasonId])
 }
-
 model LoginAttempt {
   id        String   @id @default(uuid())
   userId    String?
@@ -72,7 +84,6 @@ model LoginAttempt {
   ipAddress String
   success   Boolean
   createdAt DateTime @default(now())
-
   @@index([email, createdAt])
   @@index([ipAddress, createdAt])
 }

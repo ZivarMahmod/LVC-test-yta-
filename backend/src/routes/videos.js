@@ -3,12 +3,25 @@
 // ===========================================
 import { Router } from 'express';
 import { videoController, scoutController } from '../controllers/videoController.js';
+import { adminController } from '../controllers/adminController.js';
 import { authenticateToken, requireViewer, requireAdmin } from '../middleware/auth.js';
 import { csrfProtection } from '../middleware/csrf.js';
 import { videoIdValidation, searchValidation } from '../middleware/validators.js';
 import { handleValidationErrors } from '../middleware/validationHandler.js';
 
 const router = Router();
+
+// Lag och säsonger (tillgängligt för alla inloggade)
+router.get('/teams',
+  authenticateToken,
+  requireViewer,
+  adminController.listTeams
+);
+router.get('/teams/:teamId/seasons',
+  authenticateToken,
+  requireViewer,
+  adminController.listSeasons
+);
 
 // Lista videor
 router.get('/',

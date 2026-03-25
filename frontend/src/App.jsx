@@ -5,6 +5,8 @@ import { Routes, Route, Navigate } from 'react-router-dom';
 import { useAuth } from './context/AuthContext.jsx';
 import Layout from './components/layout/Layout.jsx';
 import LoginPage from './pages/LoginPage.jsx';
+import TeamsPage from './pages/TeamsPage.jsx';
+import SeasonsPage from './pages/SeasonsPage.jsx';
 import VideosPage from './pages/VideosPage.jsx';
 import VideoPlayerPage from './pages/VideoPlayerPage.jsx';
 import UploadPage from './pages/UploadPage.jsx';
@@ -55,7 +57,10 @@ export default function App() {
           </ProtectedRoute>
         }
       >
-        <Route index element={<VideosPage />} />
+        <Route index element={<TeamsPage />} />
+        <Route path="team/:teamId" element={<SeasonsPage />} />
+        <Route path="team/:teamId/season/:seasonId" element={<VideosPage />} />
+        <Route path="videos" element={<VideosPage />} />
         <Route path="video/:id" element={<VideoPlayerPage />} />
         <Route
           path="upload"

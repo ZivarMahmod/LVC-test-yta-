@@ -59,22 +59,6 @@ export const startFolderScanner = async () => {
           continue;
         }
 
-        const existing = await prisma.video.findFirst({
-          where: { filePath: file.relativePath }
-        });
-
-        // Uppdatera dvwPath och thumbnailPath för befintliga videos
-        if (existing) {
-          const updates = {};
-          if (!existing.dvwPath && dvwPath) updates.dvwPath = dvwPath;
-          if (!existing.thumbnailPath && thumbnailPath) updates.thumbnailPath = thumbnailPath;
-          if (Object.keys(updates).length > 0) {
-            await prisma.video.update({ where: { id: existing.id }, data: updates });
-            logger.info('Video uppdaterad med nya filer:', { title: existing.title, updates });
-          }
-          continue;
-        }
-
         const fileStat = await stat(file.fullPath);
         const { matchDate, opponent, ext } = parsed;
         const year = matchDate.getFullYear();
@@ -99,6 +83,23 @@ export const startFolderScanner = async () => {
           await stat(thumbAbsPath);
           thumbnailPath = thumbRelPath;
         } catch {}
+
+        const existing = await prisma.video.findFirst({
+          where: { filePath: file.relativePath }
+        });
+
+        // Uppdatera dvwPath och thumbnailPath för befintliga videos
+        if (existing) {
+          const updates = {};
+          if (!existing.dvwPath && dvwPath) updates.dvwPath = dvwPath;
+          if (!existing.thumbnailPath && thumbnailPath) updates.thumbnailPath = thumbnailPath;
+          if (Object.keys(updates).length > 0) {
+            await prisma.video.update({ where: { id: existing.id }, data: updates });
+            logger.info('Video uppdaterad med nya filer:', { title: existing.title, updates });
+          }
+          continue;
+        }
+
 
         const adminUser = await prisma.user.findFirst({ where: { role: 'admin' } });
 

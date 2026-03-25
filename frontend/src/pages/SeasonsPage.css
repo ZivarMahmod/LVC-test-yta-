@@ -1,0 +1,95 @@
+/* ===========================================
+   SeasonsPage — Säsongsval
+   =========================================== */
+
+.seasons-page {
+  padding: 2rem 1rem;
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+.seasons-breadcrumb {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 1.5rem;
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+}
+
+.seasons-breadcrumb a {
+  color: var(--accent-color);
+  text-decoration: none;
+}
+
+.seasons-breadcrumb a:hover {
+  text-decoration: underline;
+}
+
+.breadcrumb-sep {
+  color: var(--text-secondary);
+}
+
+.seasons-title {
+  font-size: 1.8rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-bottom: 2rem;
+}
+
+.seasons-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 1.25rem;
+}
+
+.season-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  padding: 1.75rem 1.5rem;
+  cursor: pointer;
+  transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  text-align: center;
+  color: var(--text-primary);
+  font-family: inherit;
+}
+
+.season-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+  border-color: var(--accent-color);
+}
+
+.season-card-name {
+  font-size: 1.4rem;
+  font-weight: 700;
+}
+
+.season-card-meta {
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+}
+
+.seasons-loading {
+  display: flex;
+  justify-content: center;
+  padding: 4rem;
+}
+
+.seasons-error {
+  text-align: center;
+  color: var(--error-color);
+  padding: 2rem;
+}
+
+.seasons-empty {
+  text-align: center;
+  color: var(--text-secondary);
+  padding: 3rem;
+  line-height: 1.8;
+}

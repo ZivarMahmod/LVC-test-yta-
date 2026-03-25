@@ -13,17 +13,32 @@ export const videoController = {
       const page = parseInt(req.query.page) || 1;
       const limit = parseInt(req.query.limit) || 20;
       const search = req.query.search || '';
+      const teamId = req.query.teamId ? parseInt(req.query.teamId) : null;
+      const seasonId = req.query.seasonId ? parseInt(req.query.seasonId) : null;
       const skip = (page - 1) * limit;
-      const where = search
-        ? { OR: [{ opponent: { contains: search } }, { title: { contains: search } }, { description: { contains: search } }] }
-        : {};
+
+      const where = {};
+      if (search) {
+        where.OR = [
+          { opponent: { contains: search } },
+          { title: { contains: search } },
+          { description: { contains: search } }
+        ];
+      }
+      if (teamId) where.teamId = teamId;
+      if (seasonId) where.seasonId = seasonId;
+
       const [videos, total] = await Promise.all([
         prisma.video.findMany({
           where,
           orderBy: { matchDate: 'desc' },
           skip,
           take: limit,
-          include: { uploadedBy: { select: { id: true, name: true } } }
+          include: {
+            uploadedBy: { select: { id: true, name: true } },
+            team: { select: { id: true, name: true } },
+            season: { select: { id: true, name: true } }
+          }
         }),
         prisma.video.count({ where })
       ]);
@@ -36,6 +51,8 @@ export const videoController = {
         fileSize: Number(video.fileSize),
         mimeType: video.mimeType,
         uploadedBy: video.uploadedBy,
+        team: video.team,
+        season: video.season,
         createdAt: video.createdAt,
         streamUrl: fileStorageService.generateSignedUrl(video.id).url,
         thumbnailUrl: video.thumbnailPath ? `/api/videos/thumbnail${video.thumbnailPath}` : null

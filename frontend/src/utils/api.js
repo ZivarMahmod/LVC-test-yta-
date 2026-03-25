@@ -100,8 +100,10 @@ export const authApi = {
 
 // -------- Video API --------
 export const videoApi = {
-  async list(page = 1, limit = 20, search = '') {
+  async list(page = 1, limit = 20, search = '', teamId = null, seasonId = null) {
     const params = new URLSearchParams({ page, limit, ...(search && { search }) });
+    if (teamId) params.append('teamId', teamId);
+    if (seasonId) params.append('seasonId', seasonId);
     const res = await apiFetch(`/api/videos?${params}`);
     if (!res.ok) throw new Error('Kunde inte hämta videor');
     return res.json();
@@ -216,6 +218,63 @@ export const adminApi = {
     const res = await apiFetch(`/api/admin/uploads?${params}`);
     if (!res.ok) throw new Error('Kunde inte hämta uppladdningshistorik');
     return res.json();
+  },
+
+  async listTeams() {
+    const res = await apiFetch('/api/admin/teams');
+    if (!res.ok) throw new Error('Kunde inte hämta lag');
+    return res.json();
+  },
+
+  async createTeam(name) {
+    const res = await apiFetch('/api/admin/teams', {
+      method: 'POST',
+      body: JSON.stringify({ name })
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Kunde inte skapa lag');
+    return data;
+  },
+
+  async deleteTeam(id) {
+    const res = await apiFetch(`/api/admin/teams/${id}`, { method: 'DELETE' });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Kunde inte ta bort lag');
+    return data;
+  },
+
+  async listSeasons(teamId = null) {
+    const params = teamId ? `?teamId=${teamId}` : '';
+    const res = await apiFetch(`/api/admin/seasons${params}`);
+    if (!res.ok) throw new Error('Kunde inte hämta säsonger');
+    return res.json();
+  },
+
+  async createSeason(name, teamId) {
+    const res = await apiFetch('/api/admin/seasons', {
+      method: 'POST',
+      body: JSON.stringify({ name, teamId })
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Kunde inte skapa säsong');
+    return data;
+  },
+
+  async deleteSeason(id) {
+    const res = await apiFetch(`/api/admin/seasons/${id}`, { method: 'DELETE' });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Kunde inte ta bort säsong');
+    return data;
+  },
+
+  async assignVideo(videoId, teamId, seasonId) {
+    const res = await apiFetch(`/api/admin/videos/${videoId}/assign`, {
+      method: 'PATCH',
+      body: JSON.stringify({ teamId, seasonId })
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Kunde inte tilldela video');
+    return data;
   }
 };
 
@@ -228,6 +287,21 @@ export const changelogApi = {
 };
 
 // Scout-tillägg (läggs till videoApi manuellt nedan)
+// -------- Team API (publik, kräver bara inloggning) --------
+export const teamApi = {
+  async listTeams() {
+    const res = await apiFetch('/api/videos/teams');
+    if (!res.ok) throw new Error('Kunde inte hämta lag');
+    return res.json();
+  },
+
+  async listSeasons(teamId) {
+    const res = await apiFetch(`/api/videos/teams/${teamId}/seasons`);
+    if (!res.ok) throw new Error('Kunde inte hämta säsonger');
+    return res.json();
+  }
+};
+
 export const scoutApi = {
   async getScout(id) {
     const res = await apiFetch(`/api/videos/${id}/scout`);
