@@ -1,0 +1,125 @@
+.upload-page {
+  max-width: 680px;
+  margin: 0 auto;
+}
+
+.upload-card {
+  padding: var(--space-xl);
+}
+
+/* Drop zone */
+.drop-zone {
+  border: 2px dashed var(--border-default);
+  border-radius: var(--radius-md);
+  padding: var(--space-2xl);
+  text-align: center;
+  cursor: pointer;
+  transition: border-color 0.2s, background 0.2s;
+  margin-bottom: var(--space-lg);
+}
+
+.drop-zone:hover:not(.uploading) {
+  border-color: var(--lvc-blue);
+  background: rgba(26, 95, 180, 0.04);
+}
+
+.drop-zone.has-file {
+  border-style: solid;
+  border-color: var(--lvc-blue);
+  background: rgba(26, 95, 180, 0.04);
+  padding: var(--space-lg);
+}
+
+.drop-zone.uploading {
+  cursor: default;
+  opacity: 0.8;
+}
+
+.drop-zone-empty p {
+  color: var(--text-secondary);
+  font-size: 0.95rem;
+  margin-top: var(--space-sm);
+}
+
+.drop-zone-empty span {
+  color: var(--text-muted);
+  font-size: 0.82rem;
+}
+
+.drop-zone-file {
+  display: flex;
+  align-items: center;
+  gap: var(--space-md);
+  text-align: left;
+}
+
+.drop-zone-file svg {
+  flex-shrink: 0;
+  color: var(--lvc-blue-light);
+}
+
+.drop-zone-file-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.file-name {
+  font-weight: 500;
+  font-size: 0.95rem;
+  word-break: break-all;
+}
+
+.file-size {
+  font-size: 0.82rem;
+  color: var(--text-muted);
+  font-family: var(--font-mono);
+}
+
+.drop-zone-remove {
+  background: none;
+  color: var(--text-muted);
+  font-size: 1.4rem;
+  padding: 0.25rem;
+  line-height: 1;
+  flex-shrink: 0;
+}
+
+.drop-zone-remove:hover {
+  color: var(--lvc-red);
+}
+
+/* Progress */
+.upload-progress {
+  display: flex;
+  align-items: center;
+  gap: var(--space-md);
+  margin-bottom: var(--space-lg);
+}
+
+.upload-progress .progress-bar-track {
+  flex: 1;
+  height: 8px;
+}
+
+.progress-text {
+  font-family: var(--font-mono);
+  font-size: 0.85rem;
+  color: var(--lvc-blue-light);
+  min-width: 3em;
+  text-align: right;
+}
+
+/* Form row */
+.form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-md);
+}
+
+@media (max-width: 600px) {
+  .form-row {
+    grid-template-columns: 1fr;
+  }
+}

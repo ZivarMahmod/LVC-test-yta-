@@ -1,0 +1,170 @@
+// ===========================================
+// LVC Media Hub — Data Volley Scout Parser
+// ===========================================
+import { readFile } from 'fs/promises';
+import path from 'path';
+
+const STORAGE_PATH = process.env.STORAGE_PATH || '/storage';
+
+const SKILL_MAP = {
+  S: 'Serve', R: 'Reception', E: 'Set', A: 'Attack',
+  B: 'Block', D: 'Dig', F: 'Freeball', O: 'Overpass'
+};
+
+const GRADE_MAP = {
+  '#': 'Perfekt', '+': 'Positiv', '!': 'OK',
+  '-': 'Negativ', '/': 'Error', '=': 'Error'
+};
+
+const timeToSeconds = (timeStr) => {
+  if (!timeStr) return null;
+  const parts = timeStr.split('.');
+  if (parts.length < 3) return null;
+  const h = parseInt(parts[0], 10);
+  const m = parseInt(parts[1], 10);
+  const s = parseInt(parts[2], 10);
+  if (isNaN(h) || isNaN(m) || isNaN(s)) return null;
+  return h * 3600 + m * 60 + s;
+};
+
+const parsePlayers = (lines) => {
+  // players[team][number] = { number, name }
+  // team: 'H' för [3PLAYERS-H], 'V' för [3PLAYERS-V]
+  const players = { H: {}, V: {} };
+  let currentTeam = null;
+
+  for (const line of lines) {
+    if (line.startsWith('[3PLAYERS-H]')) { currentTeam = 'H'; continue; }
+    if (line.startsWith('[3PLAYERS-V]')) { currentTeam = 'V'; continue; }
+    if (line.startsWith('[3') && !line.startsWith('[3PLAYERS')) { currentTeam = null; continue; }
+    if (!currentTeam || !line.trim()) continue;
+
+    const parts = line.split(';');
+    if (parts.length < 11) continue;
+
+    const number = parseInt(parts[1], 10);
+    const lastName = parts[9] || '';
+    const firstName = parts[10] || '';
+    const name = `${firstName} ${lastName}`.trim();
+
+    players[currentTeam][number] = { number, name, team: currentTeam };
+  }
+  return players;
+};
+
+const parseTeams = (lines) => {
+  const teams = { H: 'Hemmalag', V: 'Bortalag' };
+  let inSection = false;
+  let count = 0;
+
+  for (const line of lines) {
+    if (line.startsWith('[3TEAMS]')) { inSection = true; continue; }
+    if (line.startsWith('[3') && !line.startsWith('[3TEAMS')) { inSection = false; continue; }
+    if (!inSection || !line.trim()) continue;
+
+    const parts = line.split(';');
+    if (parts.length < 2) continue;
+    if (count === 0) teams.H = parts[1];
+    if (count === 1) teams.V = parts[1];
+    count++;
+  }
+  return teams;
+};
+
+const parseMatchStart = (lines) => {
+  let inSection = false;
+  for (const line of lines) {
+    if (line.startsWith('[3MATCH]')) { inSection = true; continue; }
+    if (line.startsWith('[3') && !line.startsWith('[3MATCH')) { inSection = false; continue; }
+    if (!inSection || !line.trim()) continue;
+
+    const parts = line.split(';');
+    if (parts.length >= 2) {
+      return timeToSeconds(parts[1]);
+    }
+  }
+  return null;
+};
+
+const parseScout = (lines, players, teams, matchStartSeconds, videoOffset) => {
+  const actions = [];
+  let inSection = false;
+  let currentSet = 1;
+
+  for (const line of lines) {
+    if (line.startsWith('[3SCOUT]')) { inSection = true; continue; }
+    if (line.startsWith('[3') && !line.startsWith('[3SCOUT')) { inSection = false; continue; }
+    if (!inSection || !line.trim()) continue;
+
+    // Setbyte
+    if (line.match(/^\*\*\d+set/)) {
+      const setMatch = line.match(/^\*\*(\d+)set/);
+      if (setMatch) currentSet = parseInt(setMatch[1], 10) + 1;
+      continue;
+    }
+
+    // Scout-rad börjar med a eller * följt av 2 siffror
+    if (!line.match(/^[a*]\d{2}/)) continue;
+
+    const parts = line.split(';');
+    if (parts.length < 8) continue;
+
+    const timeStr = parts[7];
+    if (!timeStr || !timeStr.match(/^\d+\.\d+\.\d+/)) continue;
+
+    const frameNum = parseInt(parts[12], 10);
+    const videoTime = (frameNum > 0) ? frameNum : null;
+
+    const code = parts[0];
+    // a = hemmalag (H), * = bortalag (V)
+    const team = code[0] === 'a' ? 'V' : 'H';
+    const playerNum = parseInt(code.substring(1, 3), 10);
+    const skill = code[3];
+    const grade = code[4] || '';
+
+    if (!skill || !SKILL_MAP[skill]) continue;
+
+    const player = players[team][playerNum];
+    const skillName = SKILL_MAP[skill] || skill;
+    const gradeName = GRADE_MAP[grade] || '';
+
+    actions.push({
+      id: actions.length,
+      set: currentSet,
+      time: timeStr,
+      videoTime: videoTime !== null ? Math.max(0, videoTime) : null,
+      team,
+      teamName: teams[team] || team,
+      playerNumber: playerNum,
+      playerName: player ? player.name : `#${playerNum}`,
+      skill,
+      skillName,
+      grade,
+      gradeName,
+      rawCode: code
+    });
+  }
+
+  return actions;
+};
+
+export const dvwParserService = {
+  async parseFile(dvwPath, videoOffset = 0) {
+    const absPath = path.join(STORAGE_PATH, dvwPath);
+    const content = await readFile(absPath, 'latin1');
+    const lines = content.split('\n').map(l => l.trim()).filter(Boolean);
+
+    const players = parsePlayers(lines);
+    const teams = parseTeams(lines);
+    const matchStartSeconds = parseMatchStart(lines);
+    const actions = parseScout(lines, players, teams, matchStartSeconds, videoOffset);
+
+    // Platta ut spelare för frontend
+    const allPlayers = [
+      ...Object.values(players.H),
+      ...Object.values(players.V)
+    ];
+
+    return { teams, players: allPlayers, matchStart: matchStartSeconds, actions };
+  }
+};

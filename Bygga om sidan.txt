@@ -1,0 +1,1 @@
+docker compose -f /mnt/FlippFlopp/Seagate/apps/lvcmediahub/docker-compose.yml up --build -d

@@ -1,0 +1,238 @@
+// ===========================================
+// LVC Media Hub — API-verktyg
+// Hanterar CSRF, automatisk token-refresh, fetch
+// ===========================================
+
+let csrfToken = null;
+
+// Hämta CSRF-token
+async function fetchCsrfToken() {
+  try {
+    const res = await fetch('/api/auth/csrf-token', { credentials: 'include' });
+    const data = await res.json();
+    csrfToken = data.csrfToken;
+  } catch {
+    console.error('Kunde inte hämta CSRF-token');
+  }
+}
+
+// Bas-fetch med credentials + CSRF
+async function apiFetch(url, options = {}) {
+  // Hämta CSRF-token om vi inte har en
+  if (!csrfToken && options.method && options.method !== 'GET') {
+    await fetchCsrfToken();
+  }
+
+  const config = {
+    credentials: 'include',
+    ...options,
+    headers: {
+      ...(options.headers || {}),
+    }
+  };
+
+  // Lägg till CSRF-token för state-changing requests
+  if (options.method && options.method !== 'GET') {
+    config.headers['X-CSRF-Token'] = csrfToken || '';
+  }
+
+  // Lägg till Content-Type om det inte är FormData
+  if (!(options.body instanceof FormData)) {
+    config.headers['Content-Type'] = 'application/json';
+  }
+
+  let res = await fetch(url, config);
+
+  // Om 401 — försök refresha token
+  if (res.status === 401 && !options._retried) {
+    const refreshed = await refreshToken();
+    if (refreshed) {
+      // Hämta ny CSRF-token efter refresh
+      await fetchCsrfToken();
+      config.headers['X-CSRF-Token'] = csrfToken || '';
+      res = await fetch(url, { ...config, _retried: true });
+    }
+  }
+
+  return res;
+}
+
+// Refresh token
+async function refreshToken() {
+  try {
+    const res = await fetch('/api/auth/refresh', {
+      method: 'POST',
+      credentials: 'include'
+    });
+    return res.ok;
+  } catch {
+    return false;
+  }
+}
+
+// -------- Auth API --------
+export const authApi = {
+  async login(email, password) {
+    await fetchCsrfToken();
+    const res = await apiFetch('/api/auth/login', {
+      method: 'POST',
+      body: JSON.stringify({ email, password })
+    });
+    return res.json();
+  },
+
+  async logout() {
+    const res = await apiFetch('/api/auth/logout', { method: 'POST' });
+    csrfToken = null;
+    return res.json();
+  },
+
+  async me() {
+    const res = await apiFetch('/api/auth/me');
+    if (!res.ok) throw new Error('Ej autentiserad');
+    return res.json();
+  },
+
+  async refresh() {
+    return refreshToken();
+  }
+};
+
+// -------- Video API --------
+export const videoApi = {
+  async list(page = 1, limit = 20, search = '') {
+    const params = new URLSearchParams({ page, limit, ...(search && { search }) });
+    const res = await apiFetch(`/api/videos?${params}`);
+    if (!res.ok) throw new Error('Kunde inte hämta videor');
+    return res.json();
+  },
+
+  async getOne(id) {
+    const res = await apiFetch(`/api/videos/${id}`);
+    if (!res.ok) throw new Error('Kunde inte hämta video');
+    return res.json();
+  },
+
+  async upload(formData, onProgress) {
+    await fetchCsrfToken();
+
+    const doUpload = () => new Promise((resolve, reject) => {
+      const xhr = new XMLHttpRequest();
+      xhr.open('POST', '/api/videos/upload');
+      xhr.withCredentials = true;
+      xhr.setRequestHeader('X-CSRF-Token', csrfToken || '');
+
+      xhr.upload.addEventListener('progress', (e) => {
+        if (e.lengthComputable && onProgress) {
+          onProgress(Math.round((e.loaded / e.total) * 100));
+        }
+      });
+
+      xhr.addEventListener('load', () => {
+        try {
+          const data = JSON.parse(xhr.responseText);
+          if (xhr.status >= 200 && xhr.status < 300) {
+            resolve({ data, status: xhr.status });
+          } else {
+            resolve({ data, status: xhr.status });
+          }
+        } catch {
+          reject(new Error('Ogiltigt svar från servern'));
+        }
+      });
+
+      xhr.addEventListener('error', () => reject(new Error('Nätverksfel vid uppladdning')));
+      xhr.addEventListener('abort', () => reject(new Error('Uppladdning avbruten')));
+
+      xhr.send(formData);
+    });
+
+    // BUG FIX #10: Om 401 — refresha token och försök en gång till
+    let result = await doUpload();
+
+    if (result.status === 401) {
+      const refreshed = await refreshToken();
+      if (refreshed) {
+        await fetchCsrfToken();
+        // Notera: FormData kan inte skickas igen efter konsumtion i vissa browsers
+        // men detta hanteras normalt korrekt i moderna browsers
+        result = await doUpload();
+      }
+    }
+
+    if (result.status >= 200 && result.status < 300) {
+      return result.data;
+    }
+    throw new Error(result.data?.error || 'Uppladdning misslyckades');
+  },
+
+  async remove(id) {
+    const res = await apiFetch(`/api/videos/${id}`, { method: 'DELETE' });
+    if (!res.ok) {
+      const data = await res.json();
+      throw new Error(data.error || 'Kunde inte ta bort videon');
+    }
+    return res.json();
+  }
+};
+
+// -------- Admin API --------
+export const adminApi = {
+  async listUsers() {
+    const res = await apiFetch('/api/admin/users');
+    if (!res.ok) throw new Error('Kunde inte hämta användare');
+    return res.json();
+  },
+
+  async createUser(userData) {
+    const res = await apiFetch('/api/admin/users', {
+      method: 'POST',
+      body: JSON.stringify(userData)
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Kunde inte skapa användare');
+    return data;
+  },
+
+  async updateUser(id, userData) {
+    const res = await apiFetch(`/api/admin/users/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(userData)
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Kunde inte uppdatera användare');
+    return data;
+  },
+
+  async deleteUser(id) {
+    const res = await apiFetch(`/api/admin/users/${id}`, { method: 'DELETE' });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Kunde inte ta bort användare');
+    return data;
+  },
+
+  async uploadHistory(page = 1, limit = 20) {
+    const params = new URLSearchParams({ page, limit });
+    const res = await apiFetch(`/api/admin/uploads?${params}`);
+    if (!res.ok) throw new Error('Kunde inte hämta uppladdningshistorik');
+    return res.json();
+  }
+};
+
+// Scout-tillägg (läggs till videoApi manuellt nedan)
+export const scoutApi = {
+  async getScout(id) {
+    const res = await apiFetch(`/api/videos/${id}/scout`);
+    if (!res.ok) throw new Error('Ingen scout-fil');
+    return res.json();
+  },
+
+  async updateOffset(id, offset) {
+    const res = await apiFetch(`/api/videos/${id}/offset`, {
+      method: 'PATCH',
+      body: JSON.stringify({ offset })
+    });
+    if (!res.ok) throw new Error('Kunde inte uppdatera offset');
+    return res.json();
+  }
+};

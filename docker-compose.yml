@@ -1,0 +1,39 @@
+# ===========================================
+# LVC Media Hub — Docker Compose
+# ===========================================
+services:
+  lvc-media-hub:
+    build: .
+    container_name: lvc-media-hub
+    restart: unless-stopped
+    ports:
+      - "3001:3001"
+    env_file:
+      - ./backend/.env
+    environment:
+      - DATABASE_URL=file:/app/data/lvc-media-hub.db
+    volumes:
+      - lvc-data:/app/data
+      - lvc-logs:/app/backend/logs
+      - /etc/letsencrypt:/etc/letsencrypt:ro
+      - /mnt/nas-matcher:/storage
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:3001/api/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+
+  acme:
+    image: neilpang/acme.sh
+    container_name: acme
+    restart: unless-stopped
+    volumes:
+      - /root/certs:/acme.sh
+    environment:
+      - CF_Token=cfut_Jm5XKDPFXYu2avtUnUsmKQ0LIKivitCQ7OJRwznM6c17e451
+    command: daemon
+
+volumes:
+  lvc-data:
+  lvc-logs:

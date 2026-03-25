@@ -1,0 +1,14 @@
+{
+  "name": "lvc-media-hub",
+  "version": "1.0.0",
+  "private": true,
+  "description": "LVC Media Hub — Privat videoplattform för Linköpings Volleybollklubb",
+  "scripts": {
+    "dev:backend": "cd backend && npm run dev",
+    "dev:frontend": "cd frontend && npm run dev",
+    "build:frontend": "cd frontend && npm run build",
+    "start": "cd backend && npm start",
+    "setup": "cd backend && npx prisma migrate deploy && npx prisma generate && node src/utils/seedAdmin.js",
+    "audit": "npm audit && cd backend && npm audit && cd ../frontend && npm audit"
+  }
+}
