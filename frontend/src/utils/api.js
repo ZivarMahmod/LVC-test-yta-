@@ -219,6 +219,14 @@ export const adminApi = {
   }
 };
 
+export const changelogApi = {
+  async getChangelog() {
+    const res = await apiFetch('/api/changelog');
+    if (!res.ok) throw new Error('Kunde inte hämta ändringslogg');
+    return res.json();
+  }
+};
+
 // Scout-tillägg (läggs till videoApi manuellt nedan)
 export const scoutApi = {
   async getScout(id) {

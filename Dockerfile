@@ -43,6 +43,7 @@ RUN mkdir -p /app/backend/logs /app/data
 ENV DATABASE_URL="file:/app/data/lvc-media-hub.db"
 
 # Kopiera entrypoint
+COPY CHANGELOG.md /app/CHANGELOG.md
 COPY entrypoint.sh /app/entrypoint.sh
 RUN chmod +x /app/entrypoint.sh
 

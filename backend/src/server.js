@@ -8,6 +8,7 @@ import helmet from 'helmet';
 import cors from 'cors';
 import cookieParser from 'cookie-parser';
 import path from 'path';
+import fs from 'fs';
 import { fileURLToPath } from 'url';
 
 import { generalLimiter } from './middleware/rateLimiter.js';
@@ -42,7 +43,6 @@ app.set('trust proxy', 1);
 app.use(helmet({
   contentSecurityPolicy: {
     directives: {
-      upgradeInsecureRequests: null,
       defaultSrc: ["'self'"],
       scriptSrc: ["'self'"],
       styleSrc: ["'self'", "'unsafe-inline'", 'https://fonts.googleapis.com'],
@@ -56,10 +56,36 @@ app.use(helmet({
       formAction: ["'self'"]
     }
   },
-  hsts: false,
+  hsts: {
+    maxAge: 31536000,
+    includeSubDomains: true,
+    preload: true
+  },
   referrerPolicy: { policy: 'strict-origin-when-cross-origin' },
   crossOriginEmbedderPolicy: false, // Behövs för videostreaming
   crossOriginResourcePolicy: { policy: 'same-site' } // Tillåt stream.lvcmediahub.com → lvcmediahub.com
+}));// Helmet — säkra HTTP-headers
+app.use(helmet({
+  contentSecurityPolicy: {
+    directives: {
+      defaultSrc: ["'self'"],
+      scriptSrc: ["'self'"],
+      styleSrc: ["'self'", "'unsafe-inline'", 'https://fonts.googleapis.com'],
+      imgSrc: ["'self'", 'data:', 'blob:'],
+      mediaSrc: ["'self'", 'blob:', isProduction ? 'https://stream.lvcmediahub.com' : "'self'"],
+      connectSrc: ["'self'", isProduction ? 'https://stream.lvcmediahub.com' : "'self'"],
+      fontSrc: ["'self'", 'https://fonts.gstatic.com'],
+      objectSrc: ["'none'"],
+      frameSrc: ["'none'"],
+      baseUri: ["'self'"],
+      formAction: ["'self'"],
+      ...(isProduction ? {} : { upgradeInsecureRequests: null })
+    }
+  },
+  hsts: isProduction ? { maxAge: 31536000, includeSubDomains: true, preload: true } : false,
+  referrerPolicy: { policy: 'strict-origin-when-cross-origin' },
+  crossOriginEmbedderPolicy: false,
+  crossOriginResourcePolicy: { policy: isProduction ? 'same-site' : 'cross-origin' }
 }));
 
 // CORS — låst till vår domän
@@ -95,6 +121,17 @@ app.use('/api/admin', adminRoutes);
 // Health check
 app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
+});
+
+// Changelog
+app.get('/api/changelog', (req, res) => {
+  try {
+    const changelogPath = path.join(__dirname, '..', '..', 'CHANGELOG.md');
+    const content = fs.readFileSync(changelogPath, 'utf-8');
+    res.json({ changelog: content });
+  } catch {
+    res.status(404).json({ error: 'Changelog hittades inte' });
+  }
 });
 
 // ===========================================

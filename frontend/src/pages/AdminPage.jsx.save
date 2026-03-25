@@ -3,9 +3,9 @@
 // Hantera användare, visa uppladdningshistorik
 // ===========================================
 import { useState, useEffect, useCallback } from 'react';
-import { adminApi, changelogApi } from '../utils/api.js';
 import { useAuth } from '../context/AuthContext.jsx';
 import './AdminPage.css';
+import { adminApi, changelogApi } from '../utils/api.js';
 
 const ROLE_LABELS = { admin: 'Admin', uploader: 'Uppladdare', viewer: 'Tittare' };
 
@@ -155,7 +155,7 @@ export default function AdminPage() {
     }
   }, []);
 
-  const fetchChangelog = useCallback(async () => {
+const fetchChangelog = useCallback(async () => {
     setLoading(true);
     try {
       const data = await changelogApi.getChangelog();
@@ -197,7 +197,7 @@ export default function AdminPage() {
     <div className="admin-page">
       <div className="page-header">
         <h1>Administration</h1>
-        <p>Hantera användare, uppladdningar och ändringslogg</p>
+        <p>Hantera användare och övervaka uppladdningar</p>
       </div>
 
       <div className="admin-tabs">
@@ -333,24 +333,6 @@ export default function AdminPage() {
         </div>
       )}
 
-      {tab === 'changelog' && (
-        <div className="admin-section">
-          <h2>Ändringslogg</h2>
-          {loading ? (
-            <div className="loading-container"><div className="spinner" /></div>
-          ) : (
-            <div className="changelog-content">
-              {changelog.split('\n').map((line, i) => {
-                if (line.startsWith('# ')) return <h1 key={i}>{line.slice(2)}</h1>;
-                if (line.startsWith('## ')) return <h2 key={i}>{line.slice(3)}</h2>;
-                if (line.startsWith('- ')) return <li key={i}>{line.slice(2)}</li>;
-                if (line.trim() === '') return <br key={i} />;
-                return <p key={i}>{line}</p>;
-              })}
-            </div>
-          )}
-        </div>
-      )}
 
       {modal && (
         <UserModal

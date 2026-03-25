@@ -98,3 +98,27 @@
     flex-direction: column;
   }
 }
+
+.changelog-content {
+  padding: 1.5rem;
+  line-height: 1.8;
+}
+
+.changelog-content h1 {
+  font-size: 1.5rem;
+  margin-bottom: 1rem;
+  color: var(--gold);
+}
+
+.changelog-content h2 {
+  font-size: 1.2rem;
+  margin-top: 1.5rem;
+  margin-bottom: 0.5rem;
+  color: var(--text-primary);
+}
+
+.changelog-content li {
+  margin-left: 1.5rem;
+  margin-bottom: 0.3rem;
+  color: var(--text-secondary);
+}
