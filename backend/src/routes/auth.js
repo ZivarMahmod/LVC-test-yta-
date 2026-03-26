@@ -6,12 +6,11 @@ import { authController } from '../controllers/authController.js';
 import { authenticateToken } from '../middleware/auth.js';
 import { loginLimiter, refreshLimiter } from '../middleware/rateLimiter.js';
 import { csrfProtection, getCsrfToken } from '../middleware/csrf.js';
-import { loginValidation } from '../middleware/validators.js';
+import { loginValidation, registerValidation } from '../middleware/validators.js';
 import { handleValidationErrors } from '../middleware/validationHandler.js';
 
 const router = Router();
 
-// CSRF-token endpoint (GET — ingen CSRF-kontroll behövs)
 router.get('/csrf-token', getCsrfToken);
 
 // Inloggning
@@ -23,13 +22,32 @@ router.post('/login',
   authController.login
 );
 
+// Registrering via inbjudan
+router.post('/register',
+  loginLimiter,
+  csrfProtection,
+  registerValidation,
+  handleValidationErrors,
+  authController.register
+);
+
+// Validera inbjudan
+router.get('/invite/:token', authController.validateInvite);
+
+// Ändra lösenord
+router.post('/change-password',
+  authenticateToken,
+  csrfProtection,
+  authController.changePassword
+);
+
 // Refresh token
 router.post('/refresh',
   refreshLimiter,
   authController.refresh
 );
 
-// Utloggning (kräver auth)
+// Utloggning
 router.post('/logout',
   authenticateToken,
   csrfProtection,

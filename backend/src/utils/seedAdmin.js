@@ -12,6 +12,7 @@ async function seed() {
   const email = process.env.ADMIN_EMAIL || 'admin@lvcmediahub.com';
   const password = process.env.ADMIN_PASSWORD;
   const name = process.env.ADMIN_NAME || 'Admin';
+  const username = process.env.ADMIN_USERNAME || 'admin';
   const rounds = parseInt(process.env.BCRYPT_ROUNDS || '12');
 
   if (!password || password.startsWith('ÄNDRA_MIG')) {
@@ -30,6 +31,7 @@ async function seed() {
   const user = await prisma.user.create({
     data: {
       email,
+      username,
       name,
       passwordHash,
       role: 'admin',

@@ -1,5 +1,16 @@
 # LVC Media Hub — Ändringslogg
 
+## v1.5.0 — 2026-03-27
+- Login med användarnamn (eller e-post)
+- Inbjudningssystem: admin skapar engångs-/flergångslänkar för registrering
+- Registreringssida via inbjudningslänk med valbart antal användningar
+- Användardropdown i headern med "Ändra lösenord" och "Logga ut"
+- Backend: change-password endpoint
+- Prisma schema: username-fält, InviteToken med maxUses/useCount
+- Spelarfilter-buggfix: filtrerar nu korrekt per lag vid samma tröjnummer
+- "Glömt lösenord? Kontakta admin" på login-sidan
+- Kopierings-fallback för inbjudningslänkar (prompt vid HTTP)
+
 ## v1.4.0 — 2026-03-26
 - Mobilanpassning: responsiv layout med video överst och scout under
 - Hamburger-meny på mobil (☰) istället för full header

@@ -61,6 +61,11 @@ router.get('/seasons', adminController.listSeasons);
 router.post('/seasons', csrfProtection, adminController.createSeason);
 router.delete('/seasons/:id', csrfProtection, adminController.deleteSeason);
 
+// Inbjudningar
+router.post('/invites', csrfProtection, adminController.createInvite);
+router.get('/invites', adminController.listInvites);
+router.delete('/invites/:id', csrfProtection, adminController.deleteInvite);
+
 // Tilldela video till lag/säsong
 router.patch('/videos/:id/assign', csrfProtection, adminController.assignVideo);
 

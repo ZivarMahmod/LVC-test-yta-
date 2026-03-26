@@ -6,6 +6,7 @@ import bcrypt from 'bcrypt';
 import prisma from '../config/database.js';
 import { tokenService } from '../services/tokenService.js';
 import logger from '../utils/logger.js';
+import crypto from 'crypto';
 
 const BCRYPT_ROUNDS = parseInt(process.env.BCRYPT_ROUNDS || '12');
 
@@ -358,6 +359,78 @@ export const adminController = {
   // PATCH /api/admin/videos/:id/assign
   // Tilldela video till lag/säsong
   // -------------------------------------------
+  // -------------------------------------------
+  // POST /api/admin/invites — Skapa inbjudan
+  // -------------------------------------------
+  async createInvite(req, res) {
+    try {
+      const { role, maxUses } = req.body;
+      const validRoles = ['viewer', 'uploader'];
+      if (role && !validRoles.includes(role)) {
+        return res.status(400).json({ error: 'Ogiltig roll.' });
+      }
+
+      const token = crypto.randomBytes(32).toString('hex');
+      const expiresAt = new Date(Date.now() + 48 * 60 * 60 * 1000); // 48 timmar
+
+      const invite = await prisma.inviteToken.create({
+        data: {
+          token,
+          role: role || 'viewer',
+          maxUses: maxUses || 1,
+          expiresAt,
+          createdBy: req.user.id
+        }
+      });
+
+      logger.info('Inbjudan skapad', { inviteId: invite.id, role: invite.role, createdBy: req.user.email });
+
+      res.status(201).json({
+        invite: {
+          id: invite.id,
+          token: invite.token,
+          role: invite.role,
+          expiresAt: invite.expiresAt,
+          url: '/register/' + invite.token
+        }
+      });
+    } catch (error) {
+      logger.error('Skapa inbjudan misslyckades:', error);
+      res.status(500).json({ error: 'Kunde inte skapa inbjudan.' });
+    }
+  },
+
+  // -------------------------------------------
+  // GET /api/admin/invites — Lista inbjudningar
+  // -------------------------------------------
+  async listInvites(req, res) {
+    try {
+      const invites = await prisma.inviteToken.findMany({
+        orderBy: { createdAt: 'desc' },
+        take: 50
+      });
+      res.json({ invites });
+    } catch (error) {
+      logger.error('Lista inbjudningar misslyckades:', error);
+      res.status(500).json({ error: 'Kunde inte hämta inbjudningar.' });
+    }
+  },
+
+  // -------------------------------------------
+  // DELETE /api/admin/invites/:id
+  // -------------------------------------------
+  async deleteInvite(req, res) {
+    try {
+      const { id } = req.params;
+      await prisma.inviteToken.delete({ where: { id } });
+      logger.info('Inbjudan borttagen', { inviteId: id, deletedBy: req.user.email });
+      res.json({ message: 'Inbjudan borttagen.' });
+    } catch (error) {
+      logger.error('Ta bort inbjudan misslyckades:', error);
+      res.status(500).json({ error: 'Kunde inte ta bort inbjudan.' });
+    }
+  },
+
   async assignVideo(req, res) {
     try {
       const { id } = req.params;

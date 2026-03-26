@@ -6,6 +6,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { adminApi, changelogApi } from '../utils/api.js';
 import { teamApi } from '../utils/api.js';
 import { useAuth } from '../context/AuthContext.jsx';
+import { inviteApi } from '../utils/api.js';
 import './AdminPage.css';
 
 const ROLE_LABELS = { admin: 'Admin', uploader: 'Uppladdare', viewer: 'Tittare' };
@@ -193,7 +194,45 @@ function UserModal({ user, onClose, onSave }) {
 export default function AdminPage() {
   const { user: currentUser } = useAuth();
   const [tab, setTab] = useState('users');
+
+  const copyToClipboard = (text) => {
+    if (navigator.clipboard) {
+      navigator.clipboard.writeText(text).then(() => alert('Kopierad!')).catch(() => {
+        prompt('Kopiera länken:', text);
+      });
+    } else {
+      prompt('Kopiera länken:', text);
+    }
+  };
+
+  const fetchInvites = async () => {
+    try {
+      const data = await inviteApi.list();
+      setInvites(data.invites || []);
+    } catch {}
+  };
+
+  const handleCreateInvite = async (role) => {
+    try {
+      const data = await inviteApi.create(role, inviteMaxUses);
+      if (data.invite) {
+        const url = window.location.origin + '/register/' + data.invite.token;
+        setInviteUrl(url);
+        fetchInvites();
+      }
+    } catch {}
+  };
+
+  const handleDeleteInvite = async (id) => {
+    try {
+      await inviteApi.remove(id);
+      fetchInvites();
+    } catch {}
+  };
   const [users, setUsers] = useState([]);
+  const [invites, setInvites] = useState([]);
+  const [inviteMaxUses, setInviteMaxUses] = useState(1);
+  const [inviteUrl, setInviteUrl] = useState('');
   const [uploads, setUploads] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -271,7 +310,7 @@ export default function AdminPage() {
   }, []);
 
   useEffect(() => {
-    if (tab === 'users') fetchUsers();
+    if (tab === 'users') { fetchUsers(); fetchInvites(); }
     else if (tab === 'uploads') fetchUploads();
     else if (tab === 'changelog') fetchChangelog();
     else if (tab === 'teams') fetchTeamsAdmin();
@@ -408,7 +447,80 @@ export default function AdminPage() {
             <button className="btn-gold" onClick={() => setModal('create')}>
               + Ny användare
             </button>
+            <div style={{ marginLeft: '0.5rem', display: 'inline-flex', alignItems: 'center', gap: '0.5rem' }}>
+              <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>Antal:</span>
+              <input
+                type="number"
+                min="1"
+                max="100"
+                value={inviteMaxUses}
+                onChange={e => setInviteMaxUses(Math.max(1, parseInt(e.target.value) || 1))}
+                style={{ width: '60px', padding: '0.3rem 0.5rem', borderRadius: '6px', border: '1px solid var(--border-default)', background: 'var(--surface-raised)', color: 'var(--text-primary)', fontSize: '0.85rem' }}
+              />
+              <button className="btn-primary btn-sm" onClick={() => handleCreateInvite('viewer')}>
+                + Viewer-länk
+              </button>
+              <button className="btn-primary btn-sm" onClick={() => handleCreateInvite('uploader')}>
+                + Uploader-länk
+              </button>
+            </div>
           </div>
+
+          {inviteUrl && (
+            <div className="alert alert-success" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '1rem', marginBottom: '1rem' }}>
+              <div>
+                <strong>Inbjudningslänk skapad!</strong><br/>
+                <code style={{ fontSize: '0.85rem', wordBreak: 'break-all' }}>{inviteUrl}</code>
+              </div>
+              <button className="btn-secondary btn-sm" onClick={() => { copyToClipboard(inviteUrl); }}>
+                Kopiera
+              </button>
+            </div>
+          )}
+
+          {invites.length > 0 && (
+            <div style={{ marginBottom: '1.5rem' }}>
+              <h3 style={{ fontSize: '1rem', marginBottom: '0.5rem' }}>Aktiva inbjudningar</h3>
+              <div className="table-container">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Roll</th>
+                      <th>Användningar</th>
+                      <th>Skapad</th>
+                      <th>Går ut</th>
+                      <th>Status</th>
+                      <th></th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {invites.map(inv => {
+                      const expired = new Date(inv.expiresAt) < new Date();
+                      const used = inv.useCount >= inv.maxUses;
+                      return (
+                        <tr key={inv.id}>
+                          <td><span className={`badge badge-${inv.role}`}>{inv.role}</span></td>
+                          <td>{inv.useCount} / {inv.maxUses}</td>
+                          <td className="text-muted">{new Date(inv.createdAt).toLocaleDateString('sv-SE')}</td>
+                          <td className="text-muted">{new Date(inv.expiresAt).toLocaleDateString('sv-SE')}</td>
+                          <td>{used ? 'Använd' : expired ? 'Utgången' : 'Aktiv'}</td>
+                          <td>
+                            {!used && !expired && (
+                              <button className="btn-secondary btn-sm" onClick={() => {
+                                const url = window.location.origin + '/register/' + inv.token;
+                                copyToClipboard(url);
+                              }}>Kopiera</button>
+                            )}
+                            <button className="btn-danger btn-sm" style={{ marginLeft: '0.5rem' }} onClick={() => handleDeleteInvite(inv.id)}>Ta bort</button>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
 
           {loading ? (
             <div className="loading-container"><div className="spinner" /></div>

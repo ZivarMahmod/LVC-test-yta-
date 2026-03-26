@@ -5,6 +5,7 @@ import { Routes, Route, Navigate } from 'react-router-dom';
 import { useAuth } from './context/AuthContext.jsx';
 import Layout from './components/layout/Layout.jsx';
 import LoginPage from './pages/LoginPage.jsx';
+import RegisterPage from './pages/RegisterPage.jsx';
 import TeamsPage from './pages/TeamsPage.jsx';
 import SeasonsPage from './pages/SeasonsPage.jsx';
 import VideosPage from './pages/VideosPage.jsx';
@@ -49,6 +50,7 @@ export default function App() {
   return (
     <Routes>
       <Route path="/login" element={<LoginPage />} />
+      <Route path="/register/:token" element={<RegisterPage />} />
       <Route
         path="/"
         element={

@@ -72,11 +72,11 @@ async function refreshToken() {
 
 // -------- Auth API --------
 export const authApi = {
-  async login(email, password) {
+  async login(identifier, password) {
     await fetchCsrfToken();
     const res = await apiFetch('/api/auth/login', {
       method: 'POST',
-      body: JSON.stringify({ email, password })
+      body: JSON.stringify({ identifier, password })
     });
     return res.json();
   },
@@ -84,6 +84,19 @@ export const authApi = {
   async logout() {
     const res = await apiFetch('/api/auth/logout', { method: 'POST' });
     csrfToken = null;
+    return res.json();
+  },
+
+  async validateInvite(token) {
+    const res = await apiFetch('/api/auth/invite/' + token);
+    return res.json();
+  },
+
+  async register(token, username, password, name) {
+    const res = await apiFetch('/api/auth/register', {
+      method: 'POST',
+      body: JSON.stringify({ token, username, password, name })
+    });
     return res.json();
   },
 
@@ -315,6 +328,30 @@ export const scoutApi = {
       body: JSON.stringify({ offset })
     });
     if (!res.ok) throw new Error('Kunde inte uppdatera offset');
+    return res.json();
+  }
+};
+
+
+// Invite API (admin)
+export const inviteApi = {
+  async create(role, maxUses) {
+    const res = await apiFetch('/api/admin/invites', {
+      method: 'POST',
+      body: JSON.stringify({ role, maxUses })
+    });
+    return res.json();
+  },
+
+  async list() {
+    const res = await apiFetch('/api/admin/invites');
+    return res.json();
+  },
+
+  async remove(id) {
+    const res = await apiFetch('/api/admin/invites/' + id, {
+      method: 'DELETE'
+    });
     return res.json();
   }
 };

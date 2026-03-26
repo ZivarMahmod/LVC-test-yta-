@@ -6,7 +6,7 @@ set -e
 echo "🏐 LVC Media Hub startar..."
 echo "   Kör databasmigrering..."
 cd /app/backend
-npx prisma db push --skip-generate
+npx prisma db push --skip-generate --accept-data-loss
 echo "   Kontrollerar admin-konto..."
 node src/utils/seedAdmin.js 2>/dev/null || true
 echo "   Startar server..."

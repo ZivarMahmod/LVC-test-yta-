@@ -9,7 +9,7 @@ import './LoginPage.css';
 export default function LoginPage() {
   const { login, isAuthenticated } = useAuth();
   const navigate = useNavigate();
-  const [email, setEmail] = useState('');
+  const [identifier, setIdentifier] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
@@ -22,11 +22,11 @@ export default function LoginPage() {
     setLoading(true);
 
     try {
-      const result = await login(email, password);
+      const result = await login(identifier, password);
       if (result.success) {
         navigate('/');
       } else {
-        setError(result.error || 'Felaktig e-postadress eller lösenord.');
+        setError(result.error || 'Felaktigt användarnamn eller lösenord.');
       }
     } catch {
       setError('Ett nätverksfel uppstod. Försök igen.');
@@ -48,15 +48,15 @@ export default function LoginPage() {
 
         <form onSubmit={handleSubmit}>
           <div className="form-group">
-            <label htmlFor="email">E-postadress</label>
+            <label htmlFor="identifier">Användarnamn</label>
             <input
-              id="email"
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="din@email.se"
+              id="identifier"
+              type="text"
+              value={identifier}
+              onChange={(e) => setIdentifier(e.target.value)}
+              placeholder="Användarnamn eller e-post"
               required
-              autoComplete="email"
+              autoComplete="username"
               autoFocus
               disabled={loading}
             />
@@ -94,6 +94,7 @@ export default function LoginPage() {
 
         <div className="login-footer">
           <p>Privat plattform för LVC-medlemmar</p>
+          <p style={{ fontSize: "0.8rem", marginTop: "0.5rem" }}>Glömt lösenord? Kontakta admin.</p>
         </div>
       </div>
     </div>

@@ -4,6 +4,7 @@
 
 generator client {
   provider = "prisma-client-js"
+  binaryTargets = ["native", "linux-musl-openssl-3.0.x"]
 }
 
 datasource db {
@@ -14,9 +15,10 @@ datasource db {
 model User {
   id            String         @id @default(uuid())
   email         String         @unique
+  username      String         @unique
   name          String
   passwordHash  String
-  role          String         @default("viewer") // admin, uploader, viewer
+  role          String         @default("viewer")
   isActive      Boolean        @default(true)
   createdAt     DateTime       @default(now())
   updatedAt     DateTime       @updatedAt
@@ -26,6 +28,20 @@ model User {
   loginAttempts LoginAttempt[]
 
   @@index([email])
+  @@index([username])
+}
+
+model InviteToken {
+  id        String   @id @default(uuid())
+  token     String   @unique
+  role      String   @default("viewer")
+  expiresAt DateTime
+  maxUses   Int      @default(1)
+  useCount  Int      @default(0)
+  createdBy String
+  createdAt DateTime @default(now())
+
+  @@index([token])
 }
 
 model RefreshToken {
@@ -41,6 +57,25 @@ model RefreshToken {
   @@index([tokenHash])
 }
 
+model Team {
+  id        Int      @id @default(autoincrement())
+  name      String   @unique
+  createdAt DateTime @default(now())
+  seasons   Season[]
+  videos    Video[]
+}
+
+model Season {
+  id        Int      @id @default(autoincrement())
+  name      String
+  teamId    Int
+  team      Team     @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+  videos    Video[]
+
+  @@unique([name, teamId])
+}
+
 model Video {
   id            String   @id @default(uuid())
   title         String
@@ -48,16 +83,25 @@ model Video {
   matchDate     DateTime
   description   String?
   fileName      String
-  filePath      String   // Sökväg i OpenCloud, t.ex. /Matcher/2025/2025-03-15_LVC-vs-Norrköping.mp4
+  filePath      String
   fileSize      BigInt
   mimeType      String
+  thumbnailPath String?
+  dvwPath       String?
+  videoOffset   Int      @default(0)
   uploadedById  String
   uploadedBy    User     @relation(fields: [uploadedById], references: [id])
+  teamId        Int?
+  team          Team?    @relation(fields: [teamId], references: [id], onDelete: SetNull)
+  seasonId      Int?
+  season        Season?  @relation(fields: [seasonId], references: [id], onDelete: SetNull)
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
 
   @@index([matchDate])
   @@index([opponent])
+  @@index([teamId])
+  @@index([seasonId])
 }
 
 model LoginAttempt {

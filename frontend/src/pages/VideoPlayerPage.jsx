@@ -187,7 +187,7 @@ export default function VideoPlayerPage() {
     if (!scout) return [];
     return scout.actions.filter(a => {
       if (filterSkill !== 'ALL' && a.skill !== filterSkill) return false;
-      if (filterPlayer !== 'ALL' && String(a.playerNumber) !== filterPlayer) return false;
+      if (filterPlayer !== 'ALL' && (a.team + '-' + a.playerNumber) !== filterPlayer) return false;
       if (filterSet !== 'ALL' && String(a.set) !== filterSet) return false;
       if (filterTeam !== 'ALL' && a.team !== filterTeam) return false;
       return true;
@@ -216,7 +216,7 @@ export default function VideoPlayerPage() {
 
   const filteredActions = getFilteredActions();
   const uniqueSkills = scout ? [...new Set(scout.actions.map(a => a.skill))] : [];
-  const uniquePlayers = scout ? [...new Set(scout.actions.filter(a => filterTeam === 'ALL' || a.team === filterTeam).map(a => a.playerNumber))].sort((a, b) => a - b) : [];
+  const uniquePlayers = scout ? [...new Map(scout.actions.filter(a => filterTeam === 'ALL' || a.team === filterTeam).map(a => [a.team + '-' + a.playerNumber, { number: a.playerNumber, team: a.team }])).values()].sort((a, b) => a.number - b.number) : [];
   const uniqueSets = scout ? [...new Set(scout.actions.map(a => a.set))].sort() : [];
 
   const hasScout = scout && scout.actions.length > 0;
@@ -372,9 +372,11 @@ export default function VideoPlayerPage() {
                 }}
               >
                 <option value="ALL">Alla spelare</option>
-                {uniquePlayers.map(num => {
-                  const p = scout.players.find(pl => parseInt(pl.number, 10) === num && (filterTeam === 'ALL' || pl.team === filterTeam));
-                  return <option key={num} value={String(num)}>#{num} {p ? p.name : ''}</option>;
+                {uniquePlayers.map(({ number, team }) => {
+                  const key = team + '-' + number;
+                  const p = scout.players.find(pl => parseInt(pl.number, 10) === number && pl.team === team);
+                  const teamName = scout.teams?.[team] || team;
+                  return <option key={key} value={key}>#{number} {p ? p.name : ''} ({teamName})</option>;
                 })}
               </select>
               </div>

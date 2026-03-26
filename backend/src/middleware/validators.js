@@ -7,15 +7,39 @@ import { body, param, query } from 'express-validator';
 // Inloggning
 // -------------------------------------------
 export const loginValidation = [
-  body('email')
+  body('identifier')
     .trim()
-    .isEmail()
-    .normalizeEmail()
-    .withMessage('Ange en giltig e-postadress.'),
+    .isString()
+    .isLength({ min: 1, max: 200 })
+    .withMessage('Ange användarnamn eller e-postadress.'),
   body('password')
     .isString()
     .isLength({ min: 1, max: 128 })
     .withMessage('Lösenord krävs.')
+];
+
+export const registerValidation = [
+  body('token')
+    .isString()
+    .isLength({ min: 1 })
+    .withMessage('Inbjudningstoken krävs.'),
+  body('username')
+    .trim()
+    .isString()
+    .isLength({ min: 3, max: 30 })
+    .matches(/^[a-zA-Z0-9_]+$/)
+    .withMessage('Användarnamn: 3-30 tecken, bara bokstäver, siffror och _.'),
+  body('password')
+    .isString()
+    .isLength({ min: 8, max: 128 })
+    .withMessage('Lösenord måste vara minst 8 tecken.'),
+  body('name')
+    .optional()
+    .trim()
+    .isString()
+    .isLength({ min: 2, max: 100 })
+    .escape()
+    .withMessage('Namn måste vara 2-100 tecken.')
 ];
 
 // -------------------------------------------

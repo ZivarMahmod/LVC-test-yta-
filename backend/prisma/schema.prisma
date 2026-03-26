@@ -1,28 +1,49 @@
 // ===========================================
 // LVC Media Hub — Databasschema (Prisma + SQLite)
 // ===========================================
+
 generator client {
   provider = "prisma-client-js"
   binaryTargets = ["native", "linux-musl-openssl-3.0.x"]
 }
+
 datasource db {
   provider = "sqlite"
   url      = env("DATABASE_URL")
 }
+
 model User {
   id            String         @id @default(uuid())
   email         String         @unique
+  username      String         @unique
   name          String
   passwordHash  String
-  role          String         @default("viewer") // admin, uploader, viewer
+  role          String         @default("viewer")
   isActive      Boolean        @default(true)
   createdAt     DateTime       @default(now())
   updatedAt     DateTime       @updatedAt
+
   refreshTokens RefreshToken[]
   videos        Video[]
   loginAttempts LoginAttempt[]
+
   @@index([email])
+  @@index([username])
 }
+
+model InviteToken {
+  id        String   @id @default(uuid())
+  token     String   @unique
+  role      String   @default("viewer")
+  expiresAt DateTime
+  maxUses   Int      @default(1)
+  useCount  Int      @default(0)
+  createdBy String
+  createdAt DateTime @default(now())
+
+  @@index([token])
+}
+
 model RefreshToken {
   id          String   @id @default(uuid())
   tokenHash   String   @unique
@@ -31,25 +52,30 @@ model RefreshToken {
   expiresAt   DateTime
   createdAt   DateTime @default(now())
   isRevoked   Boolean  @default(false)
+
   @@index([userId])
   @@index([tokenHash])
 }
+
 model Team {
   id        Int      @id @default(autoincrement())
-  name      String   @unique  // t.ex. "LVC Dam", "LVC Herr"
+  name      String   @unique
   createdAt DateTime @default(now())
   seasons   Season[]
   videos    Video[]
 }
+
 model Season {
   id        Int      @id @default(autoincrement())
-  name      String   // t.ex. "25/26", "24/25"
+  name      String
   teamId    Int
   team      Team     @relation(fields: [teamId], references: [id], onDelete: Cascade)
   createdAt DateTime @default(now())
   videos    Video[]
+
   @@unique([name, teamId])
 }
+
 model Video {
   id            String   @id @default(uuid())
   title         String
@@ -71,11 +97,13 @@ model Video {
   season        Season?  @relation(fields: [seasonId], references: [id], onDelete: SetNull)
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
+
   @@index([matchDate])
   @@index([opponent])
   @@index([teamId])
   @@index([seasonId])
 }
+
 model LoginAttempt {
   id        String   @id @default(uuid())
   userId    String?
@@ -84,6 +112,7 @@ model LoginAttempt {
   ipAddress String
   success   Boolean
   createdAt DateTime @default(now())
+
   @@index([email, createdAt])
   @@index([ipAddress, createdAt])
 }
