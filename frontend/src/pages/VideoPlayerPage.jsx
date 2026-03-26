@@ -34,6 +34,12 @@ const SKILL_COLORS = {
   F: '#607D8B', O: '#795548'
 };
 
+const SKILL_NAMES = {
+  S: 'Serve', R: 'Mottagning', E: 'Lyftning',
+  A: 'Anfall', B: 'Block', D: 'Försvar',
+  F: 'Fritt', O: 'Övrigt'
+};
+
 const GRADE_SYMBOLS = {
   '#': '●', '+': '▲', '!': '■', '-': '▼', '/': '✕', '=': '✕'
 };
@@ -58,6 +64,8 @@ export default function VideoPlayerPage() {
   const [offsetInput, setOffsetInput] = useState('0');
   const [activeActionId, setActiveActionId] = useState(null);
   const [skipSeconds, setSkipSeconds] = useState(5);
+  const [filtersOpen, setFiltersOpen] = useState(false);
+  const [autoAction, setAutoAction] = useState(false);
   const actionListRef = useRef(null);
 
   useEffect(() => {
@@ -105,7 +113,45 @@ export default function VideoPlayerPage() {
     return () => window.removeEventListener('keydown', handleKeyDown, true);
   }, [skipSeconds]);
 
-  // Uppdatera aktiv action baserat på videons position
+  // Auto-hoppa till nästa filtrerad action efter delay
+  const autoJumpTimer = useRef(null);
+
+  const jumpToAction = useCallback((action) => {
+    if (videoRef.current && action.videoTime !== null) {
+      videoRef.current.currentTime = action.videoTime;
+      videoRef.current.play().catch(() => {});
+      setActiveActionId(action.id);
+
+      // Rensa eventuell tidigare timer
+      if (autoJumpTimer.current) clearTimeout(autoJumpTimer.current);
+
+      // Hitta nästa action i filtrerad lista
+      const filtered = getFilteredActions();
+      const currentIdx = filtered.findIndex(a => a.id === action.id);
+      const next = filtered[currentIdx + 1];
+
+      if (autoAction && next && next.videoTime !== null) {
+        autoJumpTimer.current = setTimeout(() => {
+          if (videoRef.current && !videoRef.current.paused) {
+            videoRef.current.currentTime = next.videoTime;
+            videoRef.current.play().catch(() => {});
+            setActiveActionId(next.id);
+            // Starta kedjan vidare
+            jumpToAction(next);
+          }
+        }, 5000);
+      }
+    }
+  }, [scout, filterSkill, filterPlayer, filterSet, filterTeam, autoAction]);
+
+  // Rensa timer vid unmount
+  useEffect(() => {
+    return () => {
+      if (autoJumpTimer.current) clearTimeout(autoJumpTimer.current);
+    };
+  }, []);
+
+  // Uppdatera aktiv action baserat på videons position (utan auto-hopp)
   useEffect(() => {
     if (!scout || !videoRef.current) return;
     const interval = setInterval(() => {
@@ -124,13 +170,6 @@ export default function VideoPlayerPage() {
     }, 500);
     return () => clearInterval(interval);
   }, [scout, activeActionId, filterSkill, filterPlayer, filterSet, filterTeam]);
-
-  const jumpToAction = useCallback((action) => {
-    if (videoRef.current && action.videoTime !== null) {
-      videoRef.current.currentTime = action.videoTime;
-      setActiveActionId(action.id);
-    }
-  }, []);
 
   const handleSaveOffset = async () => {
     const newOffset = parseInt(offsetInput, 10);
@@ -186,15 +225,22 @@ export default function VideoPlayerPage() {
     <div className="player-page">
       <Link to="/" className="back-link">← Tillbaka till matcher</Link>
 
-      <div style={{ display: 'flex', gap: "1rem", alignItems: 'flex-start' }}>
+      <div className="player-layout">
 
         {/* VIDEO + INFO */}
-        <div style={{ flex: hasScout ? '0 1 88%' : '1', minWidth: 0 }}>
+        <div className="player-main">
+          <div className="video-title-bar">
+            <h1>{video.title}</h1>
+            {isAdmin && (
+              <button className="btn-danger btn-sm" onClick={handleDelete}>Ta bort</button>
+            )}
+          </div>
           <div className="player-wrapper">
             <video
               ref={videoRef}
               controls
-              autoPlay={false}
+              autoPlay={true}
+              playsInline
               preload="metadata"
               className="video-player"
               key={video.streamUrl}
@@ -202,34 +248,6 @@ export default function VideoPlayerPage() {
               <source src={video.streamUrl} type={video.mimeType} />
               Din webbläsare stöder inte videouppspelning.
             </video>
-          </div>
-
-          <div className="video-details">
-            <div className="video-details-header">
-              <div>
-                <div className="video-match-date">{formatDate(video.matchDate)}</div>
-                <h1>{video.title}</h1>
-              </div>
-
-              {isAdmin && (
-                <button className="btn-danger" onClick={handleDelete}>Ta bort video</button>
-              )}
-            </div>
-            {video.description && <p className="video-description">{video.description}</p>}
-            <div className="video-meta-row">
-              <div className="video-meta-item">
-                <span className="meta-label">Storlek</span>
-                <span className="meta-value">{formatFileSize(video.fileSize)}</span>
-              </div>
-              <div className="video-meta-item">
-                <span className="meta-label">Uppladdad av</span>
-                <span className="meta-value">{video.uploadedBy?.name}</span>
-              </div>
-              <div className="video-meta-item">
-                <span className="meta-label">Uppladdad</span>
-                <span className="meta-value">{new Date(video.createdAt).toLocaleDateString('sv-SE')}</span>
-              </div>
-            </div>
           </div>
         </div>
 
@@ -248,7 +266,29 @@ export default function VideoPlayerPage() {
 
             {/* Header */}
             <div style={{ padding: '1rem', borderBottom: '1px solid var(--border)' }}>
-              <h3 style={{ margin: '0 0 0.75rem', fontSize: '1rem' }}>📊 Scout</h3>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: filtersOpen ? '0.75rem' : 0 }}>
+                <h3 style={{ margin: 0, fontSize: '1rem' }}>📊 Scout</h3>
+                <button
+                  onClick={() => setAutoAction(!autoAction)}
+                  style={{
+                    padding: '0.2rem 0.6rem', fontSize: '0.75rem', borderRadius: '4px',
+                    border: autoAction ? '1px solid var(--lvc-green, #3fb950)' : '1px solid var(--border-default)',
+                    background: autoAction ? 'rgba(63, 185, 80, 0.15)' : 'var(--surface-raised)',
+                    color: autoAction ? 'var(--lvc-green, #3fb950)' : 'var(--text-muted)',
+                    cursor: 'pointer'
+                  }}
+                >
+                  {autoAction ? '▶ Auto' : '■ Auto'}
+                </button>
+                <button
+                  className="scout-filter-toggle"
+                  onClick={() => setFiltersOpen(!filtersOpen)}
+                >
+                  {filtersOpen ? '▲ Dölj filter' : '▼ Visa filter'}
+                </button>
+              </div>
+
+              <div className={filtersOpen ? 'scout-filters scout-filters-open' : 'scout-filters'}>
 
               {/* Offset (admin) */}
               {isAdmin && (
@@ -300,8 +340,13 @@ export default function VideoPlayerPage() {
               <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap', marginBottom: '0.25rem', alignItems: 'center' }}>
                 <button onClick={() => setFilterSkill('ALL')} style={filterBtnStyle(filterSkill === 'ALL')}>Alla</button>
                 {uniqueSkills.map(s => (
-                  <button key={s} onClick={() => setFilterSkill(s)} style={{...filterBtnStyle(filterSkill === s), borderColor: SKILL_COLORS[s] || '#666'}}>
-                    {s}
+                  <button
+                    key={s}
+                    onClick={() => setFilterSkill(s)}
+                    title={SKILL_NAMES[s] || s}
+                    style={{...filterBtnStyle(filterSkill === s), borderColor: SKILL_COLORS[s] || '#666'}}
+                  >
+                    {filterSkill === s ? SKILL_NAMES[s] || s : s}
                   </button>
                 ))}
                 <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: '0.3rem', flexShrink: 0 }}>
@@ -332,6 +377,7 @@ export default function VideoPlayerPage() {
                   return <option key={num} value={String(num)}>#{num} {p ? p.name : ''}</option>;
                 })}
               </select>
+              </div>
             </div>
 
             {/* Action-lista */}
