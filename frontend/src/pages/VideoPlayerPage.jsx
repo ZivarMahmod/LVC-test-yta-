@@ -1,7 +1,7 @@
 // ===========================================
 // LVC Media Hub — Videospelare med Scout-panel
 // ===========================================
-import { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { videoApi } from '../utils/api.js';
 import { scoutApi } from '../utils/api.js';
@@ -66,6 +66,28 @@ export default function VideoPlayerPage() {
   const [skipSeconds, setSkipSeconds] = useState(5);
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [autoAction, setAutoAction] = useState(false);
+  const [scoutTab, setScoutTab] = useState('actions');
+  const [selectedPlayer, setSelectedPlayer] = useState(null);
+
+  const pendingJump = useRef(false);
+
+  const jumpToPlayerActions = (team, number, skill) => {
+    setFilterTeam(team);
+    setFilterPlayer(team + '-' + number);
+    if (skill) setFilterSkill(skill);
+    else setFilterSkill('ALL');
+    setScoutTab('actions');
+    setAutoAction(true);
+    pendingJump.current = true;
+  };
+
+  useEffect(() => {
+    pendingJump.current = false;
+    const filtered = getFilteredActions();
+    if (filtered.length > 0) {
+      jumpToAction(filtered[0]);
+    }
+  }, [filterTeam, filterPlayer, filterSkill]);
   const actionListRef = useRef(null);
 
   useEffect(() => {
@@ -194,6 +216,42 @@ export default function VideoPlayerPage() {
     });
   };
 
+  const getMatchStats = () => {
+    if (!scout || !scout.actions.length) return null;
+    const stats = { H: { name: scout.teams?.H || 'Hemma', serve: { total: 0, err: 0, pts: 0 }, attack: { total: 0, err: 0, blocked: 0, pts: 0 }, reception: { total: 0, pos: 0, exc: 0, err: 0 }, block: { pts: 0 }, dig: { total: 0, pos: 0, err: 0 }, totalPts: 0, players: {} }, V: { name: scout.teams?.V || 'Borta', serve: { total: 0, err: 0, pts: 0 }, attack: { total: 0, err: 0, blocked: 0, pts: 0 }, reception: { total: 0, pos: 0, exc: 0, err: 0 }, block: { pts: 0 }, dig: { total: 0, pos: 0, err: 0 }, totalPts: 0, players: {} } };
+
+    for (const a of scout.actions) {
+      const t = stats[a.team];
+      if (!t) continue;
+      const pKey = a.team + '-' + a.playerNumber;
+      if (!t.players[pKey]) t.players[pKey] = { number: a.playerNumber, name: a.playerName, pts: 0, serve: { total: 0, err: 0, pts: 0 }, attack: { total: 0, err: 0, blocked: 0, pts: 0 }, reception: { total: 0, pos: 0, exc: 0, err: 0 }, block: { pts: 0 }, dig: { total: 0, pos: 0, err: 0 } };
+      const p = t.players[pKey];
+
+      if (a.skill === 'S') {
+        t.serve.total++; p.serve.total++;
+        if (a.grade === '=') { t.serve.err++; p.serve.err++; }
+        if (a.grade === '#') { t.serve.pts++; p.serve.pts++; p.pts++; t.totalPts++; }
+      } else if (a.skill === 'A') {
+        t.attack.total++; p.attack.total++;
+        if (a.grade === '=') { t.attack.err++; p.attack.err++; }
+        if (a.grade === '#') { t.attack.pts++; p.attack.pts++; p.pts++; t.totalPts++; }
+        if (a.grade === '/') { t.attack.blocked++; p.attack.blocked++; }
+      } else if (a.skill === 'R') {
+        t.reception.total++; p.reception.total++;
+        if (a.grade === '#' || a.grade === '+') { t.reception.pos++; p.reception.pos++; }
+        if (a.grade === '#') { t.reception.exc++; p.reception.exc++; }
+        if (a.grade === '=') { t.reception.err++; p.reception.err++; }
+      } else if (a.skill === 'D') {
+        t.dig.total++; p.dig.total++;
+        if (a.grade === '#' || a.grade === '+') { t.dig.pos++; p.dig.pos++; }
+        if (a.grade === '=') { t.dig.err++; p.dig.err++; }
+      } else if (a.skill === 'B') {
+        if (a.grade === '#') { t.block.pts++; p.block.pts++; p.pts++; t.totalPts++; }
+      }
+    }
+    return stats;
+  };
+
   const handleDelete = async () => {
     if (!confirm(`Är du säker på att du vill ta bort "${video.title}"?`)) return;
     try {
@@ -223,7 +281,7 @@ export default function VideoPlayerPage() {
 
   return (
     <div className="player-page">
-      <Link to="/" className="back-link">← Tillbaka till matcher</Link>
+      <button onClick={() => navigate(-1)} className="back-link">← Tillbaka</button>
 
       <div className="player-layout">
 
@@ -266,8 +324,12 @@ export default function VideoPlayerPage() {
 
             {/* Header */}
             <div style={{ padding: '1rem', borderBottom: '1px solid var(--border)' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: filtersOpen ? '0.75rem' : 0 }}>
-                <h3 style={{ margin: 0, fontSize: '1rem' }}>📊 Scout</h3>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
+                <div style={{ display: 'flex', gap: '0.3rem' }}>
+                  <button onClick={() => setScoutTab('actions')} style={{ padding: '0.25rem 0.6rem', fontSize: '0.78rem', borderRadius: '4px', border: scoutTab === 'actions' ? '1px solid var(--lvc-blue, #1a5fb4)' : '1px solid var(--border-default, #333)', background: scoutTab === 'actions' ? 'rgba(26,95,180,0.15)' : 'transparent', color: scoutTab === 'actions' ? 'var(--lvc-blue-light, #3584e4)' : 'var(--text-muted)', cursor: 'pointer' }}>Actions</button>
+                  <button onClick={() => setScoutTab('rapport')} style={{ padding: '0.25rem 0.6rem', fontSize: '0.78rem', borderRadius: '4px', border: scoutTab === 'rapport' ? '1px solid var(--lvc-blue, #1a5fb4)' : '1px solid var(--border-default, #333)', background: scoutTab === 'rapport' ? 'rgba(26,95,180,0.15)' : 'transparent', color: scoutTab === 'rapport' ? 'var(--lvc-blue-light, #3584e4)' : 'var(--text-muted)', cursor: 'pointer' }}>Rapport</button>
+
+                </div>
                 <button
                   onClick={() => setAutoAction(!autoAction)}
                   style={{
@@ -288,6 +350,7 @@ export default function VideoPlayerPage() {
                 </button>
               </div>
 
+              {scoutTab === 'actions' && (
               <div className={filtersOpen ? 'scout-filters scout-filters-open' : 'scout-filters'}>
 
               {/* Offset (admin) */}
@@ -380,9 +443,11 @@ export default function VideoPlayerPage() {
                 })}
               </select>
               </div>
+            )}
             </div>
 
             {/* Action-lista */}
+            {scoutTab === 'actions' && (
             <div ref={actionListRef} style={{ overflowY: 'auto', flex: 1, padding: '0.5rem' }}>
               {scoutLoading ? (
                 <div style={{ textAlign: 'center', padding: '2rem', color: 'var(--text-muted)' }}>Laddar scout...</div>
@@ -433,13 +498,207 @@ export default function VideoPlayerPage() {
                 ))
               )}
             </div>
+            )}
 
             {/* Footer */}
-            {hasScout && (
+            {hasScout && scoutTab === 'actions' && (
               <div style={{ padding: '0.5rem 1rem', borderTop: '1px solid var(--border)', fontSize: '0.78rem', color: 'var(--text-muted)' }}>
                 {filteredActions.length} actions
               </div>
             )}
+
+            {/* Rapport-vy */}
+            {scoutTab === 'rapport' && (() => {
+              const stats = getMatchStats();
+              if (!stats) return <div style={{ padding: '1rem', color: 'var(--text-muted)', textAlign: 'center' }}>Ingen data</div>;
+              const pct = (n, d) => d > 0 ? Math.round(n / d * 100) + '%' : '-';
+              const StatBar = ({ label, home, away, higherIsBetter = true }) => {
+                const hVal = parseFloat(home) || 0;
+                const aVal = parseFloat(away) || 0;
+                const hBetter = higherIsBetter ? hVal >= aVal : hVal <= aVal;
+                return (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', padding: '0.3rem 0', fontSize: '0.8rem' }}>
+                    <span style={{ width: '45px', textAlign: 'right', fontWeight: hBetter ? '700' : '400', color: hBetter ? 'var(--lvc-green, #3fb950)' : 'var(--text-muted)' }}>{home}</span>
+                    <span style={{ flex: 1, textAlign: 'center', fontSize: '0.72rem', color: 'var(--text-muted)' }}>{label}</span>
+                    <span style={{ width: '45px', textAlign: 'left', fontWeight: !hBetter ? '700' : '400', color: !hBetter ? 'var(--lvc-green, #3fb950)' : 'var(--text-muted)' }}>{away}</span>
+                  </div>
+                );
+              };
+
+              const hPlayers = Object.values(stats.H.players).sort((a, b) => b.pts - a.pts);
+              const vPlayers = Object.values(stats.V.players).sort((a, b) => b.pts - a.pts);
+
+              return (
+                <div style={{ overflowY: 'auto', flex: 1, padding: '0.75rem' }}>
+                  {/* Lagnamn */}
+                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.75rem', fontSize: '0.85rem', fontWeight: '600' }}>
+                    <span>{stats.H.name}</span>
+                    <span>{stats.V.name}</span>
+                  </div>
+
+                  {/* Nyckeltal */}
+                  <div style={{ background: 'rgba(255,255,255,0.03)', borderRadius: '8px', padding: '0.5rem', marginBottom: '0.75rem' }}>
+                    <div style={{ textAlign: 'center', fontSize: '0.7rem', color: 'var(--text-muted)', marginBottom: '0.3rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Poäng</div>
+                    <StatBar label="Totalt" home={stats.H.totalPts} away={stats.V.totalPts} />
+                    <StatBar label="Serve ace" home={stats.H.serve.pts} away={stats.V.serve.pts} />
+                    <StatBar label="Attack" home={stats.H.attack.pts} away={stats.V.attack.pts} />
+                    <StatBar label="Block" home={stats.H.block.pts} away={stats.V.block.pts} />
+
+                    <div style={{ textAlign: 'center', fontSize: '0.7rem', color: 'var(--text-muted)', margin: '0.5rem 0 0.3rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Serve</div>
+                    <StatBar label="Totalt" home={stats.H.serve.total} away={stats.V.serve.total} />
+                    <StatBar label="Aces" home={stats.H.serve.pts} away={stats.V.serve.pts} />
+                    <StatBar label="Errors" home={stats.H.serve.err} away={stats.V.serve.err} higherIsBetter={false} />
+                    <StatBar label="Miss %" home={pct(stats.H.serve.err, stats.H.serve.total)} away={pct(stats.V.serve.err, stats.V.serve.total)} higherIsBetter={false} />
+                    <StatBar label="Ace %" home={pct(stats.H.serve.pts, stats.H.serve.total)} away={pct(stats.V.serve.pts, stats.V.serve.total)} />
+
+                    <div style={{ textAlign: 'center', fontSize: '0.7rem', color: 'var(--text-muted)', margin: '0.5rem 0 0.3rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Anfall</div>
+                    <StatBar label="Totalt" home={stats.H.attack.total} away={stats.V.attack.total} />
+                    <StatBar label="Kill" home={stats.H.attack.pts} away={stats.V.attack.pts} />
+                    <StatBar label="Kill %" home={pct(stats.H.attack.pts, stats.H.attack.total)} away={pct(stats.V.attack.pts, stats.V.attack.total)} />
+                    <StatBar label="Errors" home={stats.H.attack.err} away={stats.V.attack.err} higherIsBetter={false} />
+                    <StatBar label="Blocked" home={stats.H.attack.blocked} away={stats.V.attack.blocked} higherIsBetter={false} />
+
+                    <div style={{ textAlign: 'center', fontSize: '0.7rem', color: 'var(--text-muted)', margin: '0.5rem 0 0.3rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Mottagning</div>
+                    <StatBar label="Totalt" home={stats.H.reception.total} away={stats.V.reception.total} />
+                    <StatBar label="Positiv %" home={pct(stats.H.reception.pos, stats.H.reception.total)} away={pct(stats.V.reception.pos, stats.V.reception.total)} />
+                    <StatBar label="Excellent %" home={pct(stats.H.reception.exc, stats.H.reception.total)} away={pct(stats.V.reception.exc, stats.V.reception.total)} />
+                    <StatBar label="Errors" home={stats.H.reception.err} away={stats.V.reception.err} higherIsBetter={false} />
+
+                    <div style={{ textAlign: 'center', fontSize: '0.7rem', color: 'var(--text-muted)', margin: '0.5rem 0 0.3rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Försvar</div>
+                    <StatBar label="Totalt" home={stats.H.dig.total} away={stats.V.dig.total} />
+                    <StatBar label="Positiv %" home={pct(stats.H.dig.pos, stats.H.dig.total)} away={pct(stats.V.dig.pos, stats.V.dig.total)} />
+                  </div>
+
+                  {/* Hemmalag spelare */}
+                  <div style={{ marginBottom: '0.75rem' }}>
+                    <div style={{ fontSize: '0.78rem', fontWeight: '600', marginBottom: '0.3rem', color: 'var(--lvc-blue-light, #3584e4)' }}>{stats.H.name}</div>
+                    <div style={{ display: 'flex', gap: '0.4rem', padding: '0.2rem 0.2rem', fontSize: '0.65rem', color: 'var(--text-muted)', borderBottom: '1px solid rgba(255,255,255,0.08)' }}>
+                      <span style={{ width: '28px' }}></span>
+                      <span style={{ flex: 1 }}>Spelare</span>
+                      <span style={{ width: '35px', textAlign: 'right' }}>Pts</span>
+                      <span style={{ width: '55px', textAlign: 'right' }}>Anfall</span>
+                    </div>
+                    {hPlayers.map(p => (
+                      <React.Fragment key={'H-' + p.number}>
+                        <div onClick={() => setSelectedPlayer(prev => prev && prev.team === 'H' && prev.number === p.number ? null : { ...p, team: 'H', teamName: stats.H.name })} style={{ display: 'flex', gap: '0.4rem', padding: '0.3rem 0.2rem', fontSize: '0.78rem', borderBottom: '1px solid rgba(255,255,255,0.04)', cursor: 'pointer', transition: 'background 0.1s', alignItems: 'center' }} onMouseOver={e => e.currentTarget.style.background='rgba(255,255,255,0.04)'} onMouseOut={e => e.currentTarget.style.background='transparent'}>
+                          <span style={{ width: '28px', color: 'var(--text-muted)', fontSize: '0.72rem' }}>#{p.number}</span>
+                          <span style={{ flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{p.name}</span>
+                          <span style={{ width: '35px', textAlign: 'right', fontWeight: '700' }}>{p.pts}</span>
+                          <span style={{ width: '55px', textAlign: 'right', fontSize: '0.75rem' }}>{p.attack.total > 0 ? pct(p.attack.pts, p.attack.total) : '-'}</span>
+                        </div>
+                        {selectedPlayer && selectedPlayer.team === 'H' && selectedPlayer.number === p.number && (() => {
+                          const sp = selectedPlayer;
+                          const StatRow = ({ label, value }) => (
+                            <div style={{ display: 'flex', justifyContent: 'space-between', padding: '0.2rem 0.5rem', fontSize: '0.75rem' }}>
+                              <span style={{ color: 'var(--text-muted)' }}>{label}</span>
+                              <span style={{ fontWeight: '500' }}>{value}</span>
+                            </div>
+                          );
+                          return (
+                            <div style={{ background: 'rgba(26,95,180,0.08)', borderRadius: '6px', padding: '0.4rem', marginBottom: '0.3rem' }}>
+                              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.3rem' }}>
+                                <div style={{ background: 'rgba(255,255,255,0.03)', borderRadius: '4px', padding: '0.3rem' }}>
+                                  <div onClick={() => jumpToPlayerActions(sp.team, sp.number, 'S')} style={{ fontSize: '0.65rem', color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '0.15rem', cursor: 'pointer' }}>Serve ▶</div>
+                                  <StatRow label="Tot" value={sp.serve.total} />
+                                  <StatRow label="Ace" value={sp.serve.pts} />
+                                  <StatRow label="Err" value={sp.serve.err} />
+                                  <StatRow label="Ace%" value={pct(sp.serve.pts, sp.serve.total)} />
+                                </div>
+                                <div style={{ background: 'rgba(255,255,255,0.03)', borderRadius: '4px', padding: '0.3rem', cursor: 'pointer' }} onClick={() => jumpToPlayerActions(sp.team, sp.number, 'A')}>
+                                  <div style={{ fontSize: '0.65rem', color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '0.15rem' }}>Anfall ▶</div>
+                                  <StatRow label="Tot" value={sp.attack.total} />
+                                  <StatRow label="Kill" value={sp.attack.pts} />
+                                  <StatRow label="Err" value={sp.attack.err} />
+                                  <StatRow label="K%" value={pct(sp.attack.pts, sp.attack.total)} />
+                                </div>
+                                <div style={{ background: 'rgba(255,255,255,0.03)', borderRadius: '4px', padding: '0.3rem', cursor: 'pointer' }} onClick={() => jumpToPlayerActions(sp.team, sp.number, 'R')}>
+                                  <div style={{ fontSize: '0.65rem', color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '0.15rem' }}>Mottagning ▶</div>
+                                  <StatRow label="Tot" value={sp.reception.total} />
+                                  <StatRow label="Pos" value={sp.reception.pos} />
+                                  <StatRow label="Exc" value={sp.reception.exc} />
+                                  <StatRow label="Pos%" value={pct(sp.reception.pos, sp.reception.total)} />
+                                </div>
+                                <div style={{ background: 'rgba(255,255,255,0.03)', borderRadius: '4px', padding: '0.3rem', cursor: 'pointer' }} onClick={() => jumpToPlayerActions(sp.team, sp.number, 'D')}>
+                                  <div style={{ fontSize: '0.65rem', color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '0.15rem' }}>Block & Försvar ▶</div>
+                                  <StatRow label="Block" value={sp.block.pts} />
+                                  <StatRow label="Dig" value={sp.dig.total} />
+                                  <StatRow label="Dig+" value={sp.dig.pos} />
+                                  <StatRow label="D%" value={pct(sp.dig.pos, sp.dig.total)} />
+                                </div>
+                              </div>
+                            </div>
+                          );
+                        })()}
+                      </React.Fragment>
+                    ))}
+                  </div>
+
+                  {/* Bortalag spelare */}
+                  <div>
+                    <div style={{ fontSize: '0.78rem', fontWeight: '600', marginBottom: '0.3rem', color: 'var(--lvc-gold, #e8a825)' }}>{stats.V.name}</div>
+                    <div style={{ display: 'flex', gap: '0.4rem', padding: '0.2rem 0.2rem', fontSize: '0.65rem', color: 'var(--text-muted)', borderBottom: '1px solid rgba(255,255,255,0.08)' }}>
+                      <span style={{ width: '28px' }}></span>
+                      <span style={{ flex: 1 }}>Spelare</span>
+                      <span style={{ width: '35px', textAlign: 'right' }}>Pts</span>
+                      <span style={{ width: '55px', textAlign: 'right' }}>Anfall</span>
+                    </div>
+                    {vPlayers.map(p => (
+                      <React.Fragment key={'V-' + p.number}>
+                        <div onClick={() => setSelectedPlayer(prev => prev && prev.team === 'V' && prev.number === p.number ? null : { ...p, team: 'V', teamName: stats.V.name })} style={{ display: 'flex', gap: '0.4rem', padding: '0.3rem 0.2rem', fontSize: '0.78rem', borderBottom: '1px solid rgba(255,255,255,0.04)', cursor: 'pointer', transition: 'background 0.1s', alignItems: 'center' }} onMouseOver={e => e.currentTarget.style.background='rgba(255,255,255,0.04)'} onMouseOut={e => e.currentTarget.style.background='transparent'}>
+                          <span style={{ width: '28px', color: 'var(--text-muted)', fontSize: '0.72rem' }}>#{p.number}</span>
+                          <span style={{ flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{p.name}</span>
+                          <span style={{ width: '35px', textAlign: 'right', fontWeight: '700' }}>{p.pts}</span>
+                          <span style={{ width: '55px', textAlign: 'right', fontSize: '0.75rem' }}>{p.attack.total > 0 ? pct(p.attack.pts, p.attack.total) : '-'}</span>
+                        </div>
+                        {selectedPlayer && selectedPlayer.team === 'V' && selectedPlayer.number === p.number && (() => {
+                          const sp = selectedPlayer;
+                          const StatRow = ({ label, value }) => (
+                            <div style={{ display: 'flex', justifyContent: 'space-between', padding: '0.2rem 0.5rem', fontSize: '0.75rem' }}>
+                              <span style={{ color: 'var(--text-muted)' }}>{label}</span>
+                              <span style={{ fontWeight: '500' }}>{value}</span>
+                            </div>
+                          );
+                          return (
+                            <div style={{ background: 'rgba(232,168,37,0.08)', borderRadius: '6px', padding: '0.4rem', marginBottom: '0.3rem' }}>
+                              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.3rem' }}>
+                                <div style={{ background: 'rgba(255,255,255,0.03)', borderRadius: '4px', padding: '0.3rem' }}>
+                                  <div onClick={() => jumpToPlayerActions(sp.team, sp.number, 'S')} style={{ fontSize: '0.65rem', color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '0.15rem', cursor: 'pointer' }}>Serve ▶</div>
+                                  <StatRow label="Tot" value={sp.serve.total} />
+                                  <StatRow label="Ace" value={sp.serve.pts} />
+                                  <StatRow label="Err" value={sp.serve.err} />
+                                  <StatRow label="Ace%" value={pct(sp.serve.pts, sp.serve.total)} />
+                                </div>
+                                <div style={{ background: 'rgba(255,255,255,0.03)', borderRadius: '4px', padding: '0.3rem', cursor: 'pointer' }} onClick={() => jumpToPlayerActions(sp.team, sp.number, 'A')}>
+                                  <div style={{ fontSize: '0.65rem', color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '0.15rem' }}>Anfall ▶</div>
+                                  <StatRow label="Tot" value={sp.attack.total} />
+                                  <StatRow label="Kill" value={sp.attack.pts} />
+                                  <StatRow label="Err" value={sp.attack.err} />
+                                  <StatRow label="K%" value={pct(sp.attack.pts, sp.attack.total)} />
+                                </div>
+                                <div style={{ background: 'rgba(255,255,255,0.03)', borderRadius: '4px', padding: '0.3rem', cursor: 'pointer' }} onClick={() => jumpToPlayerActions(sp.team, sp.number, 'R')}>
+                                  <div style={{ fontSize: '0.65rem', color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '0.15rem' }}>Mottagning ▶</div>
+                                  <StatRow label="Tot" value={sp.reception.total} />
+                                  <StatRow label="Pos" value={sp.reception.pos} />
+                                  <StatRow label="Exc" value={sp.reception.exc} />
+                                  <StatRow label="Pos%" value={pct(sp.reception.pos, sp.reception.total)} />
+                                </div>
+                                <div style={{ background: 'rgba(255,255,255,0.03)', borderRadius: '4px', padding: '0.3rem', cursor: 'pointer' }} onClick={() => jumpToPlayerActions(sp.team, sp.number, 'D')}>
+                                  <div style={{ fontSize: '0.65rem', color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '0.15rem' }}>Block & Försvar ▶</div>
+                                  <StatRow label="Block" value={sp.block.pts} />
+                                  <StatRow label="Dig" value={sp.dig.total} />
+                                  <StatRow label="Dig+" value={sp.dig.pos} />
+                                  <StatRow label="D%" value={pct(sp.dig.pos, sp.dig.total)} />
+                                </div>
+                              </div>
+                            </div>
+                          );
+                        })()}
+                      </React.Fragment>
+                    ))}
+                  </div>
+                </div>
+              );
+            })()}
           </div>
         )}
       </div>

@@ -10,6 +10,10 @@
   color: var(--text-muted);
   margin-bottom: var(--space-lg);
   transition: color 0.15s;
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
 }
 
 .back-link:hover {

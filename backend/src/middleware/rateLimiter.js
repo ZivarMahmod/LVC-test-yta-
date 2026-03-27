@@ -6,7 +6,7 @@ import rateLimit from 'express-rate-limit';
 // Generell rate limit för alla endpoints
 export const generalLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: 500,
+  max: 2000,
   message: { error: 'För många förfrågningar. Försök igen om en stund.' },
   standardHeaders: true,
   legacyHeaders: false,

@@ -120,7 +120,7 @@ const parseScout = (lines, players, teams, matchStartSeconds, videoOffset) => {
     const team = code[0] === 'a' ? 'V' : 'H';
     const playerNum = parseInt(code.substring(1, 3), 10);
     const skill = code[3];
-    const grade = code[4] || '';
+    const grade = code[5] || '';
 
     if (!skill || !SKILL_MAP[skill]) continue;
 

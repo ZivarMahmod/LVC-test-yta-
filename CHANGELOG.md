@@ -1,5 +1,18 @@
 # LVC Media Hub — Ändringslogg
 
+## v1.6.0 — 2026-03-28
+- Matchrapport i scout-panelen med lagjämförelse (poäng, serve, anfall, mottagning, försvar)
+- Korrekt DVW-statistikberäkning (grade index 5, = som enda error)
+- Serve: ace%, miss%, totalt, errors
+- Anfall: kill%, blocked, errors
+- Mottagning: positiv%, excellent%, errors
+- Klickbar spelarstatistik i rapporten (expanderbar)
+- Klickbara skill-sektioner → spelar upp actions med auto-hopp
+- Admin-sidan mobiloptimerad (scrollbar tabeller, responsiva knappar)
+- Tillbaka-knappen går nu en sida tillbaka istället för startsidan
+- Rate limit höjd till 2000 för delade nätverk
+- Buggfix: spelarfilter korrekt per lag vid samma tröjnummer
+
 ## v1.5.0 — 2026-03-27
 - Login med användarnamn (eller e-post)
 - Inbjudningssystem: admin skapar engångs-/flergångslänkar för registrering
