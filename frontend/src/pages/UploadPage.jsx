@@ -8,7 +8,7 @@ import './UploadPage.css';
 
 const ALLOWED_TYPES = ['video/mp4', 'video/quicktime', 'video/x-matroska'];
 const MAX_SIZE = 10 * 1024 * 1024 * 1024;
-const CHUNK_SIZE = 50 * 1024 * 1024; // 50 MB per chunk
+const CHUNK_SIZE = 95 * 1024 * 1024; // 95 MB per chunk
 
 export default function UploadPage() {
   const navigate = useNavigate();
