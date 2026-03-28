@@ -5,9 +5,80 @@ import prisma from '../config/database.js';
 import { fileStorageService } from '../services/fileStorage.js';
 import { fileValidator } from '../utils/fileValidator.js';
 import path from 'path';
+import { mkdir, unlink, rename, copyFile, stat as fsStat } from 'fs/promises';
 import logger from '../utils/logger.js';
 
 export const videoController = {
+
+
+  async upload(req, res) {
+    try {
+      const videoFile = req.files && req.files.video && req.files.video[0];
+      const dvwFile = req.files && req.files.dvw && req.files.dvw[0];
+
+      if (!videoFile) return res.status(400).json({ error: 'Ingen videofil bifogad.' });
+
+      const { opponent, matchDate, description, teamId, seasonId } = req.body;
+      if (!opponent || !matchDate) return res.status(400).json({ error: 'Motstandare och matchdatum kravs.' });
+
+      const filePath = fileStorageService.buildFilePath(matchDate, opponent, videoFile.originalname);
+      const absPath = fileStorageService.getAbsolutePath(filePath);
+
+      const dir = path.dirname(absPath);
+      await mkdir(dir, { recursive: true });
+
+      const { createReadStream, createWriteStream } = await import('fs');
+      const { pipeline } = await import('stream/promises');
+      await pipeline(createReadStream(videoFile.path), createWriteStream(absPath));
+      await unlink(videoFile.path).catch(() => {});
+      logger.info('Video sparad till NAS', { path: filePath });
+
+      let dvwPath = null;
+      if (dvwFile) {
+        dvwPath = filePath.replace(/\.[^.]+$/, '.dvw');
+        const dvwAbsPath = fileStorageService.getAbsolutePath(dvwPath);
+        await pipeline(createReadStream(dvwFile.path), createWriteStream(dvwAbsPath));
+        await unlink(dvwFile.path).catch(() => {});
+        logger.info('DVW-fil sparad till NAS', { path: dvwPath });
+      }
+
+      const fileStat = await fsStat(absPath);
+
+      const date = new Date(matchDate);
+      const year = date.getFullYear();
+      const month = String(date.getMonth() + 1).padStart(2, '0');
+      const day = String(date.getDate()).padStart(2, '0');
+      const title = 'LVC vs ' + opponent + ' \u2014 ' + day + '/' + month + '/' + year;
+
+      const ext = path.extname(videoFile.originalname).toLowerCase();
+      const mimeType = ext === '.mp4' ? 'video/mp4' : ext === '.mov' ? 'video/quicktime' : 'video/x-matroska';
+
+      const video = await prisma.video.create({
+        data: {
+          title,
+          opponent,
+          matchDate: date,
+          description: description || null,
+          fileName: path.basename(filePath),
+          filePath,
+          fileSize: BigInt(fileStat.size),
+          mimeType,
+          dvwPath,
+          uploadedById: req.user.id,
+          teamId: teamId ? parseInt(teamId) : null,
+          seasonId: seasonId ? parseInt(seasonId) : null
+        }
+      });
+
+      logger.info('Video uppladdad', { videoId: video.id, title, uploadedBy: req.user.email });
+      res.status(201).json({ video: { id: video.id, title } });
+    } catch (error) {
+      if (req.files && req.files.video && req.files.video[0]) await unlink(req.files.video[0].path).catch(() => {});
+      if (req.files && req.files.dvw && req.files.dvw[0]) await unlink(req.files.dvw[0].path).catch(() => {});
+      logger.error('Upload-fel:', error);
+      res.status(500).json({ error: error.message || 'Uppladdningen misslyckades.' });
+    }
+  },
 
   async list(req, res) {
     try {
@@ -18,7 +89,7 @@ export const videoController = {
       const seasonId = req.query.seasonId ? parseInt(req.query.seasonId) : null;
       const skip = (page - 1) * limit;
 
-      const where = {};
+      const where = { deletedAt: null };
       if (search) {
         where.OR = [
           { opponent: { contains: search } },
@@ -201,14 +272,60 @@ export const videoController = {
     try {
       const video = await prisma.video.findUnique({ where: { id: req.params.id } });
       if (!video) return res.status(404).json({ error: 'Videon kunde inte hittas.' });
-      await fileStorageService.deleteFile(video.filePath);
-      if (video.thumbnailPath) await fileStorageService.deleteFile(video.thumbnailPath);
-      await prisma.video.delete({ where: { id: video.id } });
-      logger.info('Video borttagen', { videoId: video.id, title: video.title, deletedBy: req.user.email });
-      res.json({ message: 'Videon har tagits bort.' });
+
+      if (req.user.role === 'admin') {
+        // Admin = permanent radering
+        await fileStorageService.deleteFile(video.filePath);
+        if (video.dvwPath) await fileStorageService.deleteFile(video.dvwPath);
+        if (video.thumbnailPath) await fileStorageService.deleteFile(video.thumbnailPath);
+        await prisma.video.delete({ where: { id: video.id } });
+        logger.info('Video permanent raderad av admin', { videoId: video.id, title: video.title, deletedBy: req.user.email });
+        res.json({ message: 'Videon har raderats permanent.' });
+      } else {
+        // Uppladdare = soft delete
+        await prisma.video.update({
+          where: { id: video.id },
+          data: { deletedAt: new Date(), deletedById: req.user.id }
+        });
+        logger.info('Video soft-deleted av uppladdare', { videoId: video.id, title: video.title, deletedBy: req.user.email });
+        res.json({ message: 'Videon har tagits bort.' });
+      }
     } catch (error) {
       logger.error('Borttagningsfel:', error);
       res.status(500).json({ error: 'Kunde inte ta bort videon.' });
+    }
+  },
+
+  async restore(req, res) {
+    try {
+      const video = await prisma.video.findUnique({ where: { id: req.params.id } });
+      if (!video) return res.status(404).json({ error: 'Videon kunde inte hittas.' });
+      if (!video.deletedAt) return res.status(400).json({ error: 'Videon ar inte borttagen.' });
+      await prisma.video.update({
+        where: { id: video.id },
+        data: { deletedAt: null, deletedById: null }
+      });
+      logger.info('Video aterstall av admin', { videoId: video.id, title: video.title });
+      res.json({ message: 'Videon har aterstallts.' });
+    } catch (error) {
+      logger.error('Aterstellningsfel:', error);
+      res.status(500).json({ error: 'Kunde inte aterstalla videon.' });
+    }
+  },
+
+  async permanentDelete(req, res) {
+    try {
+      const video = await prisma.video.findUnique({ where: { id: req.params.id } });
+      if (!video) return res.status(404).json({ error: 'Videon kunde inte hittas.' });
+      await fileStorageService.deleteFile(video.filePath);
+      if (video.dvwPath) await fileStorageService.deleteFile(video.dvwPath);
+      if (video.thumbnailPath) await fileStorageService.deleteFile(video.thumbnailPath);
+      await prisma.video.delete({ where: { id: video.id } });
+      logger.info('Video permanent raderad', { videoId: video.id, title: video.title, deletedBy: req.user.email });
+      res.json({ message: 'Videon har raderats permanent.' });
+    } catch (error) {
+      logger.error('Permanent raderingsfel:', error);
+      res.status(500).json({ error: 'Kunde inte radera videon.' });
     }
   }
 };

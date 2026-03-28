@@ -12,6 +12,7 @@ import VideosPage from './pages/VideosPage.jsx';
 import VideoPlayerPage from './pages/VideoPlayerPage.jsx';
 import UploadPage from './pages/UploadPage.jsx';
 import AdminPage from './pages/AdminPage.jsx';
+import ChangelogPage from './pages/ChangelogPage.jsx';
 
 function ProtectedRoute({ children, requiredRole }) {
   const { user, loading } = useAuth();
@@ -64,6 +65,7 @@ export default function App() {
         <Route path="team/:teamId/season/:seasonId" element={<VideosPage />} />
         <Route path="videos" element={<VideosPage />} />
         <Route path="video/:id" element={<VideoPlayerPage />} />
+        <Route path="changelog" element={<ChangelogPage />} />
         <Route
           path="upload"
           element={

@@ -26,7 +26,7 @@ export const adminController = {
           isActive: true,
           createdAt: true,
           updatedAt: true,
-          _count: { select: { videos: true } }
+          _count: { select: { videos: { where: { deletedAt: null } } } }
         }
       });
 
@@ -228,7 +228,7 @@ export const adminController = {
       const teams = await prisma.team.findMany({
         orderBy: { name: 'asc' },
         include: {
-          _count: { select: { videos: true, seasons: true } },
+          _count: { select: { videos: { where: { deletedAt: null } }, seasons: true } },
           seasons: { orderBy: { name: 'desc' } }
         }
       });
@@ -333,7 +333,7 @@ export const adminController = {
         orderBy: { name: 'desc' },
         include: {
           team: { select: { id: true, name: true } },
-          _count: { select: { videos: true } }
+          _count: { select: { videos: { where: { deletedAt: null } } } }
         }
       });
       res.json({ seasons });

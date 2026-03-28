@@ -19,6 +19,7 @@ import logger from './utils/logger.js';
 import authRoutes from './routes/auth.js';
 import videoRoutes from './routes/videos.js';
 import adminRoutes from './routes/admin.js';
+import { authenticateToken, requireAdmin } from './middleware/auth.js';
 import { startFolderScanner } from './services/folderScanner.js';
 
 // Periodisk rensning
@@ -118,19 +119,73 @@ app.use('/api/auth', authRoutes);
 app.use('/api/videos', videoRoutes);
 app.use('/api/admin', adminRoutes);
 
+// Borttagna videor (admin)
+app.get('/api/admin/deleted-videos', authenticateToken, requireAdmin, async (req, res) => {
+  try {
+    const { default: prisma } = await import('./config/database.js');
+    const videos = await prisma.video.findMany({
+      where: { deletedAt: { not: null } },
+      orderBy: { deletedAt: 'desc' },
+      include: { uploadedBy: { select: { id: true, name: true } } }
+    });
+    res.json({ videos: videos.map(v => ({ ...v, fileSize: Number(v.fileSize) })) });
+  } catch (err) {
+    res.status(500).json({ error: 'Kunde inte hamta borttagna videor' });
+  }
+});
+
 // Health check
 app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
 });
 
-// Changelog
-app.get('/api/changelog', (req, res) => {
+// Changelog CRUD
+app.get('/api/changelog', async (req, res) => {
   try {
-    const changelogPath = path.join(__dirname, '..', '..', 'CHANGELOG.md');
-    const content = fs.readFileSync(changelogPath, 'utf-8');
-    res.json({ changelog: content });
-  } catch {
-    res.status(404).json({ error: 'Changelog hittades inte' });
+    const { default: prisma } = await import('./config/database.js');
+    const entries = await prisma.changelogEntry.findMany();
+    entries.sort((a, b) => {
+      const parse = (v) => v.replace('v','').split('.').map(Number);
+      const av = parse(a.version), bv = parse(b.version);
+      for (let i = 0; i < 3; i++) { if ((bv[i]||0) !== (av[i]||0)) return (bv[i]||0) - (av[i]||0); }
+      return 0;
+    });
+    res.json({ entries });
+  } catch (err) {
+    res.status(500).json({ error: 'Kunde inte h\u00e4mta \u00e4ndringslogg' });
+  }
+});
+
+app.post('/api/changelog', authenticateToken, requireAdmin, async (req, res) => {
+  try {
+    const { default: prisma } = await import('./config/database.js');
+    const { version, title, content: body } = req.body;
+    if (!version || !title || !body) return res.status(400).json({ error: 'Version, titel och inneh\u00e5ll kr\u00e4vs' });
+    const entry = await prisma.changelogEntry.create({ data: { version, title, content: body } });
+    res.status(201).json({ entry });
+  } catch (err) {
+    res.status(500).json({ error: 'Kunde inte skapa post' });
+  }
+});
+
+app.put('/api/changelog/:id', authenticateToken, requireAdmin, async (req, res) => {
+  try {
+    const { default: prisma } = await import('./config/database.js');
+    const { version, title, content: body } = req.body;
+    const entry = await prisma.changelogEntry.update({ where: { id: req.params.id }, data: { version, title, content: body } });
+    res.json({ entry });
+  } catch (err) {
+    res.status(500).json({ error: 'Kunde inte uppdatera post' });
+  }
+});
+
+app.delete('/api/changelog/:id', authenticateToken, requireAdmin, async (req, res) => {
+  try {
+    const { default: prisma } = await import('./config/database.js');
+    await prisma.changelogEntry.delete({ where: { id: req.params.id } });
+    res.json({ message: 'Post borttagen' });
+  } catch (err) {
+    res.status(500).json({ error: 'Kunde inte ta bort post' });
   }
 });
 

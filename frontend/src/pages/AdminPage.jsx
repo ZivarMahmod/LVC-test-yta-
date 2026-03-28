@@ -3,7 +3,7 @@
 // Hantera användare, visa uppladdningshistorik
 // ===========================================
 import { useState, useEffect, useCallback } from 'react';
-import { adminApi, changelogApi } from '../utils/api.js';
+import { adminApi, videoApi } from '../utils/api.js';
 import { teamApi } from '../utils/api.js';
 import { useAuth } from '../context/AuthContext.jsx';
 import { inviteApi } from '../utils/api.js';
@@ -237,7 +237,6 @@ export default function AdminPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [modal, setModal] = useState(null); // null | 'create' | user object
-  const [changelog, setChangelog] = useState('');
   const [teams, setTeams] = useState([]);
   const [seasons, setSeasons] = useState([]);
   const [newTeamName, setNewTeamName] = useState('');
@@ -248,6 +247,7 @@ export default function AdminPage() {
   const [assignTeamId, setAssignTeamId] = useState({});
   const [assignSeasonId, setAssignSeasonId] = useState({});
   const [showAssigned, setShowAssigned] = useState(false);
+  const [deletedVideos, setDeletedVideos] = useState([]);
 
   const fetchUsers = useCallback(async () => {
     setLoading(true);
@@ -273,13 +273,14 @@ export default function AdminPage() {
     }
   }, []);
 
-  const fetchChangelog = useCallback(async () => {
+  const fetchDeletedVideos = useCallback(async () => {
     setLoading(true);
     try {
-      const data = await changelogApi.getChangelog();
-      setChangelog(data.changelog);
+      const res = await fetch('/api/admin/deleted-videos', { credentials: 'include' });
+      const data = await res.json();
+      setDeletedVideos(data.videos || []);
     } catch {
-      setError('Kunde inte hämta ändringslogg.');
+      setError('Kunde inte hamta borttagna videor.');
     } finally {
       setLoading(false);
     }
@@ -312,9 +313,9 @@ export default function AdminPage() {
   useEffect(() => {
     if (tab === 'users') { fetchUsers(); fetchInvites(); }
     else if (tab === 'uploads') fetchUploads();
-    else if (tab === 'changelog') fetchChangelog();
     else if (tab === 'teams') fetchTeamsAdmin();
-  }, [tab, fetchUsers, fetchUploads, fetchChangelog, fetchTeamsAdmin]);
+    else if (tab === 'deleted') fetchDeletedVideos();
+  }, [tab, fetchUsers, fetchUploads, fetchTeamsAdmin, fetchDeletedVideos]);
 
   const handleCreateUser = async (userData) => {
     await adminApi.createUser(userData);
@@ -424,17 +425,18 @@ export default function AdminPage() {
         >
           Uppladdningshistorik
         </button>
-        <button
-          className={`admin-tab ${tab === 'changelog' ? 'active' : ''}`}
-          onClick={() => setTab('changelog')}
-        >
-          Ändringslogg
-        </button>
+
         <button
           className={`admin-tab ${tab === 'teams' ? 'active' : ''}`}
           onClick={() => setTab('teams')}
         >
           Lag & Säsonger
+        </button>
+        <button
+          className={`admin-tab ${tab === 'deleted' ? 'active' : ''}`}
+          onClick={() => setTab('deleted')}
+        >
+          Borttagna{deletedVideos.length > 0 ? ` (${deletedVideos.length})` : ''}
         </button>
       </div>
 
@@ -623,20 +625,44 @@ export default function AdminPage() {
         </div>
       )}
 
-      {tab === 'changelog' && (
+
+
+      {tab === 'deleted' && (
         <div className="admin-section">
-          <h2>Ändringslogg</h2>
+          <h2>Borttagna videor</h2>
           {loading ? (
             <div className="loading-container"><div className="spinner" /></div>
+          ) : deletedVideos.length === 0 ? (
+            <p style={{ color: 'var(--text-muted)', textAlign: 'center', padding: '2rem' }}>Inga borttagna videor.</p>
           ) : (
-            <div className="changelog-content">
-              {changelog.split('\n').map((line, i) => {
-                if (line.startsWith('# ')) return <h1 key={i}>{line.slice(2)}</h1>;
-                if (line.startsWith('## ')) return <h2 key={i}>{line.slice(3)}</h2>;
-                if (line.startsWith('- ')) return <li key={i}>{line.slice(2)}</li>;
-                if (line.trim() === '') return <br key={i} />;
-                return <p key={i}>{line}</p>;
-              })}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+              {deletedVideos.map(v => (
+                <div key={v.id} style={{
+                  display: 'flex', alignItems: 'center', gap: '1rem',
+                  padding: '0.75rem 1rem', borderRadius: '8px',
+                  background: 'var(--surface)', border: '1px solid var(--border)'
+                }}>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontWeight: '600', fontSize: '0.95rem' }}>{v.title}</div>
+                    <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
+                      Borttagen {new Date(v.deletedAt).toLocaleDateString('sv-SE')} av {v.uploadedBy?.name || 'okand'}
+                    </div>
+                  </div>
+                  <button className="btn-primary btn-sm" onClick={async () => {
+                    try {
+                      await videoApi.restore(v.id);
+                      fetchDeletedVideos();
+                    } catch (err) { alert(err.message); }
+                  }}>Återställ</button>
+                  <button className="btn-danger btn-sm" onClick={async () => {
+                    if (!confirm('Radera permanent? Filen tas bort fran NAS.')) return;
+                    try {
+                      await videoApi.permanentDelete(v.id);
+                      fetchDeletedVideos();
+                    } catch (err) { alert(err.message); }
+                  }}>Radera</button>
+                </div>
+              ))}
             </div>
           )}
         </div>

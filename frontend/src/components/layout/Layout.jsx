@@ -108,6 +108,9 @@ export default function Layout() {
                 Admin
               </NavLink>
             )}
+            <NavLink to="/changelog" className="nav-link">
+              Logg
+            </NavLink>
           </nav>
 
           <div className="user-section" ref={dropdownRef}>
@@ -209,6 +212,9 @@ export default function Layout() {
                 Admin
               </NavLink>
             )}
+            <NavLink to="/changelog" className="mobile-nav-link" onClick={closeMenu}>
+              Logg
+            </NavLink>
           </nav>
           <div className="mobile-menu-footer">
             <span className="mobile-user">{user?.name} <span className={`badge badge-${user?.role}`}>{user?.role}</span></span>

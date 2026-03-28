@@ -3,10 +3,11 @@
 // ===========================================
 import { Router } from 'express';
 import multer from 'multer';
-const upload = multer({ dest: '/tmp/uploads/', limits: { fileSize: 5 * 1024 * 1024 } });
+const thumbnailUpload = multer({ dest: '/tmp/uploads/', limits: { fileSize: 5 * 1024 * 1024 } });
+const videoUpload = multer({ dest: '/tmp/uploads/', limits: { fileSize: 15 * 1024 * 1024 * 1024 } });
 import { videoController, scoutController } from '../controllers/videoController.js';
 import { adminController } from '../controllers/adminController.js';
-import { authenticateToken, requireViewer, requireAdmin } from '../middleware/auth.js';
+import { authenticateToken, requireViewer, requireAdmin, requireUploader } from '../middleware/auth.js';
 import { csrfProtection } from '../middleware/csrf.js';
 import { videoIdValidation, searchValidation } from '../middleware/validators.js';
 import { handleValidationErrors } from '../middleware/validationHandler.js';
@@ -79,18 +80,50 @@ router.post('/:id/thumbnail',
   authenticateToken,
   requireAdmin,
   csrfProtection,
-  upload.single('thumbnail'),
+  thumbnailUpload.single('thumbnail'),
   videoController.uploadThumbnail
 );
 
-// Ta bort video (admin)
+// Ladda upp video (uploader+)
+router.post('/upload',
+  authenticateToken,
+  requireUploader,
+  csrfProtection,
+  videoUpload.fields([
+    { name: 'video', maxCount: 1 },
+    { name: 'dvw', maxCount: 1 }
+  ]),
+  videoController.upload
+);
+
+// Ta bort video (admin permanent, uploader soft delete)
 router.delete('/:id',
+  authenticateToken,
+  requireUploader,
+  csrfProtection,
+  videoIdValidation,
+  handleValidationErrors,
+  videoController.remove
+);
+
+// Aterstall soft-deleted video (admin)
+router.patch('/:id/restore',
   authenticateToken,
   requireAdmin,
   csrfProtection,
   videoIdValidation,
   handleValidationErrors,
-  videoController.remove
+  videoController.restore
+);
+
+// Permanent radera video (admin)
+router.delete('/:id/permanent',
+  authenticateToken,
+  requireAdmin,
+  csrfProtection,
+  videoIdValidation,
+  handleValidationErrors,
+  videoController.permanentDelete
 );
 
 export default router;

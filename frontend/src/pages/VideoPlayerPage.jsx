@@ -47,7 +47,7 @@ const GRADE_SYMBOLS = {
 export default function VideoPlayerPage() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { isAdmin } = useAuth();
+  const { isAdmin, isUploader } = useAuth();
   const [video, setVideo] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -64,6 +64,7 @@ export default function VideoPlayerPage() {
   const [offsetInput, setOffsetInput] = useState('0');
   const [activeActionId, setActiveActionId] = useState(null);
   const [skipSeconds, setSkipSeconds] = useState(5);
+  const [preRoll, setPreRoll] = useState(0);
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [autoAction, setAutoAction] = useState(false);
   const [scoutTab, setScoutTab] = useState('actions');
@@ -129,18 +130,32 @@ export default function VideoPlayerPage() {
       if (!vid) return;
       if (e.key === 'ArrowRight') { e.preventDefault(); vid.currentTime = Math.min(vid.currentTime + skipSeconds, vid.duration); }
       else if (e.key === 'ArrowLeft') { e.preventDefault(); vid.currentTime = Math.max(vid.currentTime - skipSeconds, 0); }
+      else if (e.key === 'ArrowDown') {
+        e.preventDefault();
+        const filtered = getFilteredActions();
+        const currentIdx = filtered.findIndex(a => a.id === activeActionId);
+        const next = filtered[currentIdx + 1];
+        if (next) jumpToAction(next);
+      }
+      else if (e.key === 'ArrowUp') {
+        e.preventDefault();
+        const filtered = getFilteredActions();
+        const currentIdx = filtered.findIndex(a => a.id === activeActionId);
+        const prev = filtered[currentIdx - 1];
+        if (prev) jumpToAction(prev);
+      }
       else if (e.key === ' ') { e.preventDefault(); vid.paused ? vid.play() : vid.pause(); }
     };
     window.addEventListener('keydown', handleKeyDown, true);
     return () => window.removeEventListener('keydown', handleKeyDown, true);
-  }, [skipSeconds]);
+  }, [skipSeconds, activeActionId]);
 
   // Auto-hoppa till nästa filtrerad action efter delay
   const autoJumpTimer = useRef(null);
 
   const jumpToAction = useCallback((action) => {
     if (videoRef.current && action.videoTime !== null) {
-      videoRef.current.currentTime = action.videoTime;
+      videoRef.current.currentTime = Math.max(0, action.videoTime - preRoll);
       videoRef.current.play().catch(() => {});
       setActiveActionId(action.id);
 
@@ -164,7 +179,7 @@ export default function VideoPlayerPage() {
         }, 5000);
       }
     }
-  }, [scout, filterSkill, filterPlayer, filterSet, filterTeam, autoAction]);
+  }, [scout, filterSkill, filterPlayer, filterSet, filterTeam, autoAction, preRoll]);
 
   // Rensa timer vid unmount
   useEffect(() => {
@@ -289,7 +304,7 @@ export default function VideoPlayerPage() {
         <div className="player-main">
           <div className="video-title-bar">
             <h1>{video.title}</h1>
-            {isAdmin && (
+            {(isAdmin || isUploader) && (
               <button className="btn-danger btn-sm" onClick={handleDelete}>Ta bort</button>
             )}
           </div>
@@ -415,6 +430,14 @@ export default function VideoPlayerPage() {
                   </button>
                 ))}
                 <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: '0.3rem', flexShrink: 0 }}>
+                  <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Pre</span>
+                  <select
+                    value={preRoll}
+                    onChange={e => setPreRoll(Number(e.target.value))}
+                    style={{ padding: '0.15rem 0.35rem', borderRadius: '4px', border: '1px solid var(--border)', background: 'var(--surface-2)', color: 'var(--text)', fontSize: '0.78rem' }}
+                  >
+                    {[0,2,3,5].map(s => <option key={s} value={s}>{s}s</option>)}
+                  </select>
                   <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Skip</span>
                   <select
                     value={skipSeconds}

@@ -198,6 +198,24 @@ export const videoApi = {
       throw new Error(data.error || 'Kunde inte ta bort videon');
     }
     return res.json();
+  },
+
+  async restore(id) {
+    const res = await apiFetch(`/api/videos/${id}/restore`, { method: 'PATCH' });
+    if (!res.ok) {
+      const data = await res.json();
+      throw new Error(data.error || 'Kunde inte aterstalla videon');
+    }
+    return res.json();
+  },
+
+  async permanentDelete(id) {
+    const res = await apiFetch(`/api/videos/${id}/permanent`, { method: 'DELETE' });
+    if (!res.ok) {
+      const data = await res.json();
+      throw new Error(data.error || 'Kunde inte radera videon');
+    }
+    return res.json();
   }
 };
 
@@ -302,12 +320,33 @@ export const adminApi = {
 };
 
 export const changelogApi = {
-  async getChangelog() {
+  async list() {
     const res = await apiFetch('/api/changelog');
-    if (!res.ok) throw new Error('Kunde inte hämta ändringslogg');
+    if (!res.ok) throw new Error('Kunde inte hamta andringslogg');
+    return res.json();
+  },
+  async create(version, title, content) {
+    const res = await apiFetch('/api/changelog', {
+      method: 'POST',
+      body: JSON.stringify({ version, title, content })
+    });
+    if (!res.ok) throw new Error('Kunde inte skapa post');
+    return res.json();
+  },
+  async update(id, version, title, content) {
+    const res = await apiFetch('/api/changelog/' + id, {
+      method: 'PUT',
+      body: JSON.stringify({ version, title, content })
+    });
+    if (!res.ok) throw new Error('Kunde inte uppdatera post');
+    return res.json();
+  },
+  async remove(id) {
+    const res = await apiFetch('/api/changelog/' + id, { method: 'DELETE' });
+    if (!res.ok) throw new Error('Kunde inte ta bort post');
     return res.json();
   }
-};
+}
 
 // Scout-tillägg (läggs till videoApi manuellt nedan)
 // -------- Team API (publik, kräver bara inloggning) --------
