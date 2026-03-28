@@ -164,7 +164,7 @@ app.post('/api/admin/thumbnail-library', authenticateToken, requireAdmin, async 
       await fsp.mkdir(thumbDir, { recursive: true });
       const created = [];
       for (const file of req.files) {
-        const name = file.originalname.replace(/\.[^.]+$/, '');
+        const name = Buffer.from(file.originalname, 'latin1').toString('utf8').replace(/\.[^.]+$/, '');
         const ext = p.default.extname(file.originalname).toLowerCase() || '.jpg';
         const id = crypto.randomUUID();
         const fileName = id + ext;
