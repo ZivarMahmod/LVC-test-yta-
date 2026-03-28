@@ -147,7 +147,7 @@ export default function UploadPage() {
       const completeRes = await fetch('/api/videos/upload/complete', {
         method: 'POST', credentials: 'include',
         headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': csrfToken },
-        body: JSON.stringify({ uploadId, fileName: file.name, opponent, matchDate, description: description || null, teamId: selectedTeam || null, seasonId: selectedSeason || null })
+        body: JSON.stringify({ uploadId, fileName: file.name, opponent, matchDate, description: description || null, teamId: selectedTeam || null, seasonId: selectedSeason || null, thumbnailId: selectedThumb || null })
       });
       if (!completeRes.ok) {
         const data = await completeRes.json();
