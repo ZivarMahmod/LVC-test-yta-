@@ -8,7 +8,7 @@ import './UploadPage.css';
 
 const ALLOWED_TYPES = ['video/mp4', 'video/quicktime', 'video/x-matroska'];
 const MAX_SIZE = 10 * 1024 * 1024 * 1024;
-const CHUNK_SIZE = 95 * 1024 * 1024; // 95 MB per chunk
+const CHUNK_SIZE = 95 * 1024 * 1024;
 
 export default function UploadPage() {
   const navigate = useNavigate();
@@ -53,7 +53,7 @@ export default function UploadPage() {
       return;
     }
     if (selected.size > MAX_SIZE) {
-      setError('Filen är för stor. Maximal storlek är 10 GB.');
+      setError('Filen är för stor. Max 10 GB.');
       setFile(null);
       return;
     }
@@ -77,91 +77,60 @@ export default function UploadPage() {
     e.preventDefault();
     setError('');
     setSuccess('');
-
     if (!file || !opponent || !matchDate) {
       setError('Fyll i alla obligatoriska fält och välj en fil.');
       return;
     }
-
     setUploading(true);
     setProgress(0);
-
     try {
       const csrfToken = await getCsrfToken();
       const uploadId = crypto.randomUUID();
       const totalChunks = Math.ceil(file.size / CHUNK_SIZE);
-
-      // Skicka chunks
       for (let i = 0; i < totalChunks; i++) {
         const start = i * CHUNK_SIZE;
         const end = Math.min(start + CHUNK_SIZE, file.size);
         const chunk = file.slice(start, end);
-
-        setStatus(`Laddar upp del ${i + 1} av ${totalChunks}...`);
-
+        setStatus(`Del ${i + 1} av ${totalChunks}`);
         const formData = new FormData();
         formData.append('chunk', chunk, 'chunk');
         formData.append('uploadId', uploadId);
         formData.append('chunkIndex', String(i));
         formData.append('totalChunks', String(totalChunks));
         formData.append('fileName', file.name);
-
         const res = await fetch('/api/videos/upload/chunk', {
-          method: 'POST',
-          credentials: 'include',
+          method: 'POST', credentials: 'include',
           headers: { 'X-CSRF-Token': csrfToken },
           body: formData
         });
-
         if (!res.ok) {
           const data = await res.json();
-          throw new Error(data.error || 'Chunk-uppladdning misslyckades');
+          throw new Error(data.error || 'Uppladdning misslyckades');
         }
-
         setProgress(Math.round(((i + 1) / totalChunks) * 90));
       }
-
-      // Slutför uppladdningen
       setStatus('Sätter ihop filen...');
       const completeRes = await fetch('/api/videos/upload/complete', {
-        method: 'POST',
-        credentials: 'include',
+        method: 'POST', credentials: 'include',
         headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': csrfToken },
-        body: JSON.stringify({
-          uploadId,
-          fileName: file.name,
-          opponent,
-          matchDate,
-          description: description || null,
-          teamId: selectedTeam || null,
-          seasonId: selectedSeason || null
-        })
+        body: JSON.stringify({ uploadId, fileName: file.name, opponent, matchDate, description: description || null, teamId: selectedTeam || null, seasonId: selectedSeason || null })
       });
-
       if (!completeRes.ok) {
         const data = await completeRes.json();
         throw new Error(data.error || 'Kunde inte slutföra uppladdningen');
       }
-
       const result = await completeRes.json();
       setProgress(95);
-
-      // Ladda upp DVW om bifogad
       if (dvwFile && result.video?.id) {
         setStatus('Laddar upp scout-fil...');
         const dvwForm = new FormData();
         dvwForm.append('dvw', dvwFile);
-        const dvwRes = await fetch(`/api/videos/${result.video.id}/dvw`, {
-          method: 'POST',
-          credentials: 'include',
+        await fetch(`/api/videos/${result.video.id}/dvw`, {
+          method: 'POST', credentials: 'include',
           headers: { 'X-CSRF-Token': csrfToken },
           body: dvwForm
         });
-        if (!dvwRes.ok) {
-          console.warn('DVW-uppladdning misslyckades, men videon sparades.');
-        }
       }
-
       setProgress(100);
       setStatus('');
       setSuccess('Videon har laddats upp!');
@@ -182,16 +151,12 @@ export default function UploadPage() {
 
   return (
     <div className="upload-page">
-      <div className="page-header">
-        <h1>Ladda upp match</h1>
-        <p>Ladda upp en matchvideo till klubbens arkiv</p>
-      </div>
-
       <div className="upload-card card">
         {error && <div className="alert alert-error">{error}</div>}
         {success && <div className="alert alert-success">{success}</div>}
 
         <form onSubmit={handleSubmit}>
+          {/* Drop zone */}
           <div
             className={`drop-zone ${file ? 'has-file' : ''} ${uploading ? 'uploading' : ''}`}
             onClick={() => !uploading && fileRef.current?.click()}
@@ -200,7 +165,7 @@ export default function UploadPage() {
           >
             {file ? (
               <div className="drop-zone-file">
-                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
                   <polygon points="23 7 16 12 23 17 23 7"/>
                   <rect x="1" y="5" width="15" height="14" rx="2" ry="2"/>
                 </svg>
@@ -214,45 +179,26 @@ export default function UploadPage() {
               </div>
             ) : (
               <div className="drop-zone-empty">
-                <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" opacity="0.4">
+                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" style={{opacity: 0.4}}>
                   <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
                   <polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/>
                 </svg>
                 <p>Dra och släpp en videofil här</p>
-                <span>eller klicka för att välja — MP4, MOV, MKV (max 10 GB)</span>
+                <span>MP4, MOV, MKV — max 10 GB</span>
               </div>
             )}
-            <input
-              ref={fileRef}
-              type="file"
-              accept=".mp4,.mov,.mkv,video/mp4,video/quicktime,video/x-matroska"
-              onChange={handleFileChange}
-              hidden
-              disabled={uploading}
-            />
+            <input ref={fileRef} type="file" accept=".mp4,.mov,.mkv,video/mp4,video/quicktime,video/x-matroska" onChange={handleFileChange} hidden disabled={uploading} />
           </div>
 
-          {/* DVW-fil */}
-          <div style={{ marginTop: '0.75rem' }}>
-            <label style={{ fontSize: '0.9rem', fontWeight: '500', marginBottom: '0.4rem', display: 'block' }}>
-              Scout-fil (DVW) — valfri
-            </label>
-            <div style={{
-              display: 'flex', alignItems: 'center', gap: '0.75rem',
-              padding: '0.6rem 0.75rem', borderRadius: '8px',
-              border: '1px solid var(--border)', background: 'var(--surface-2)'
-            }}>
-              <button type="button" className="btn-secondary btn-sm" onClick={() => dvwRef.current?.click()} disabled={uploading}>
-                Välj DVW-fil
-              </button>
-              <span style={{ fontSize: '0.85rem', color: dvwFile ? 'var(--text)' : 'var(--text-muted)' }}>
-                {dvwFile ? dvwFile.name : 'Ingen fil vald'}
-              </span>
-              {dvwFile && !uploading && (
-                <button type="button" style={{ marginLeft: 'auto', background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', fontSize: '1.1rem' }} onClick={() => setDvwFile(null)}>×</button>
-              )}
-              <input ref={dvwRef} type="file" accept=".dvw" onChange={(e) => setDvwFile(e.target.files[0] || null)} hidden disabled={uploading} />
-            </div>
+          {/* DVW */}
+          <div className="upload-dvw-row">
+            <span className="upload-section-label">SCOUT-FIL</span>
+            <button type="button" className="btn-dvw" onClick={() => dvwRef.current?.click()} disabled={uploading}>Välj DVW</button>
+            <span className="upload-dvw-name">{dvwFile ? dvwFile.name : 'Ingen fil vald'}</span>
+            {dvwFile && !uploading && (
+              <button type="button" className="drop-zone-remove" onClick={() => setDvwFile(null)} style={{marginLeft: 'auto'}}>×</button>
+            )}
+            <input ref={dvwRef} type="file" accept=".dvw" onChange={(e) => setDvwFile(e.target.files[0] || null)} hidden disabled={uploading} />
           </div>
 
           {/* Progress */}
@@ -261,7 +207,7 @@ export default function UploadPage() {
               <div className="progress-bar-track">
                 <div className="progress-bar-fill" style={{ width: `${progress}%` }} />
               </div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.82rem' }}>
                 <span className="progress-text">{progress}%</span>
                 {status && <span style={{ color: 'var(--text-muted)' }}>{status}</span>}
               </div>
@@ -269,45 +215,47 @@ export default function UploadPage() {
           )}
 
           {/* Matchinfo */}
-          <div className="form-row">
+          <p className="upload-section-label" style={{marginBottom: '0.75rem'}}>MATCHINFO</p>
+          <div className="form-row" style={{marginBottom: '1rem'}}>
             <div className="form-group">
-              <label htmlFor="opponent">Motståndare *</label>
+              <label htmlFor="opponent">Motståndare</label>
               <input id="opponent" type="text" value={opponent} onChange={(e) => setOpponent(e.target.value)} placeholder="t.ex. Norrköping" required disabled={uploading} />
             </div>
             <div className="form-group">
-              <label htmlFor="matchDate">Matchdatum *</label>
+              <label htmlFor="matchDate">Datum</label>
               <input id="matchDate" type="date" value={matchDate} onChange={(e) => setMatchDate(e.target.value)} required disabled={uploading} />
             </div>
           </div>
 
-          <div className="form-row">
+          {/* Placering */}
+          <p className="upload-section-label" style={{marginBottom: '0.75rem'}}>PLACERING</p>
+          <div className="form-row" style={{marginBottom: '1rem'}}>
             <div className="form-group">
               <label htmlFor="team">Lag</label>
-              <select id="team" value={selectedTeam} onChange={(e) => setSelectedTeam(e.target.value)} disabled={uploading}
-                style={{ width: '100%', padding: '0.5rem 0.75rem', borderRadius: '8px', border: '1px solid var(--border)', background: 'var(--surface-2)', color: 'var(--text)', fontSize: '0.9rem' }}>
-                <option value="">Välj lag (valfritt)</option>
+              <select id="team" value={selectedTeam} onChange={(e) => setSelectedTeam(e.target.value)} disabled={uploading}>
+                <option value="">Välj lag</option>
                 {teams.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
               </select>
             </div>
             <div className="form-group">
               <label htmlFor="season">Säsong</label>
-              <select id="season" value={selectedSeason} onChange={(e) => setSelectedSeason(e.target.value)} disabled={uploading || !selectedTeam}
-                style={{ width: '100%', padding: '0.5rem 0.75rem', borderRadius: '8px', border: '1px solid var(--border)', background: 'var(--surface-2)', color: 'var(--text)', fontSize: '0.9rem' }}>
-                <option value="">Välj säsong (valfritt)</option>
+              <select id="season" value={selectedSeason} onChange={(e) => setSelectedSeason(e.target.value)} disabled={uploading || !selectedTeam}>
+                <option value="">Välj säsong</option>
                 {seasons.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
               </select>
             </div>
           </div>
 
-          <div className="form-group">
-            <label htmlFor="description">Beskrivning (valfri)</label>
-            <textarea id="description" value={description} onChange={(e) => setDescription(e.target.value)} placeholder="t.ex. Kvartsfinal, hemmaplan, vinst 3-1" rows={3} disabled={uploading} />
+          {/* Beskrivning */}
+          <div className="form-group" style={{marginBottom: '1.75rem'}}>
+            <label htmlFor="description">Beskrivning <span style={{color: 'var(--text-muted)', fontWeight: 400}}>valfri</span></label>
+            <textarea id="description" value={description} onChange={(e) => setDescription(e.target.value)} placeholder="t.ex. Kvartsfinal, hemmaplan, vinst 3-1" rows={2} disabled={uploading} />
           </div>
 
           <div className="form-actions">
             <button type="button" className="btn-secondary" onClick={() => navigate('/')} disabled={uploading}>Avbryt</button>
             <button type="submit" className="btn-gold" disabled={uploading || !file || !opponent || !matchDate}>
-              {uploading ? 'Laddar upp...' : 'Ladda upp video'}
+              {uploading ? 'Laddar upp...' : 'Ladda upp'}
             </button>
           </div>
         </form>

@@ -1,5 +1,5 @@
 .upload-page {
-  max-width: 680px;
+  max-width: 620px;
   margin: 0 auto;
 }
 
@@ -7,43 +7,53 @@
   padding: var(--space-xl);
 }
 
+/* Section labels */
+.upload-section-label {
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--lvc-blue-light);
+  font-weight: 500;
+}
+
 /* Drop zone */
 .drop-zone {
-  border: 2px dashed var(--border-default);
+  border: 1.5px dashed rgba(53, 132, 228, 0.35);
   border-radius: var(--radius-md);
-  padding: var(--space-2xl);
+  padding: var(--space-2xl) var(--space-lg);
   text-align: center;
   cursor: pointer;
   transition: border-color 0.2s, background 0.2s;
-  margin-bottom: var(--space-lg);
+  margin-bottom: 1.5rem;
+  background: rgba(26, 95, 180, 0.03);
 }
 
 .drop-zone:hover:not(.uploading) {
-  border-color: var(--lvc-blue);
-  background: rgba(26, 95, 180, 0.04);
+  border-color: rgba(53, 132, 228, 0.6);
+  background: rgba(26, 95, 180, 0.06);
 }
 
 .drop-zone.has-file {
   border-style: solid;
   border-color: var(--lvc-blue);
-  background: rgba(26, 95, 180, 0.04);
+  background: rgba(26, 95, 180, 0.05);
   padding: var(--space-lg);
 }
 
 .drop-zone.uploading {
   cursor: default;
-  opacity: 0.8;
+  opacity: 0.7;
 }
 
 .drop-zone-empty p {
-  color: var(--text-secondary);
-  font-size: 0.95rem;
+  color: rgba(244, 245, 247, 0.85);
+  font-size: 0.92rem;
   margin-top: var(--space-sm);
 }
 
 .drop-zone-empty span {
   color: var(--text-muted);
-  font-size: 0.82rem;
+  font-size: 0.78rem;
 }
 
 .drop-zone-file {
@@ -67,12 +77,12 @@
 
 .file-name {
   font-weight: 500;
-  font-size: 0.95rem;
+  font-size: 0.92rem;
   word-break: break-all;
 }
 
 .file-size {
-  font-size: 0.82rem;
+  font-size: 0.78rem;
   color: var(--text-muted);
   font-family: var(--font-mono);
 }
@@ -80,46 +90,127 @@
 .drop-zone-remove {
   background: none;
   color: var(--text-muted);
-  font-size: 1.4rem;
+  font-size: 1.3rem;
   padding: 0.25rem;
   line-height: 1;
   flex-shrink: 0;
+  border: none;
+  cursor: pointer;
 }
 
 .drop-zone-remove:hover {
   color: var(--lvc-red);
 }
 
-/* Progress */
-.upload-progress {
+/* DVW row */
+.upload-dvw-row {
   display: flex;
   align-items: center;
-  gap: var(--space-md);
+  gap: 0.75rem;
+  margin-bottom: 1.75rem;
+  padding-bottom: 1.5rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.btn-dvw {
+  padding: 0.35rem 0.85rem;
+  border-radius: 6px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.04);
+  color: rgba(244, 245, 247, 0.7);
+  font-size: 0.82rem;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.btn-dvw:hover {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.upload-dvw-name {
+  font-size: 0.82rem;
+  color: var(--text-muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Progress */
+.upload-progress {
   margin-bottom: var(--space-lg);
 }
 
 .upload-progress .progress-bar-track {
-  flex: 1;
-  height: 8px;
+  height: 6px;
+  margin-bottom: 0.4rem;
 }
 
 .progress-text {
   font-family: var(--font-mono);
-  font-size: 0.85rem;
+  font-size: 0.82rem;
   color: var(--lvc-blue-light);
-  min-width: 3em;
-  text-align: right;
 }
 
-/* Form row */
+/* Form */
 .form-row {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: var(--space-md);
 }
 
+.form-group label {
+  display: block;
+  font-size: 0.78rem;
+  color: rgba(244, 245, 247, 0.9);
+  margin-bottom: 0.4rem;
+  font-weight: 500;
+}
+
+.form-group input,
+.form-group select,
+.form-group textarea {
+  width: 100%;
+  padding: 0.55rem 0.75rem;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.04);
+  color: rgba(244, 245, 247, 0.9);
+  font-size: 0.88rem;
+  outline: none;
+  font-family: inherit;
+  transition: border-color 0.15s;
+}
+
+.form-group input:focus,
+.form-group select:focus,
+.form-group textarea:focus {
+  border-color: rgba(53, 132, 228, 0.5);
+}
+
+.form-group textarea {
+  resize: vertical;
+  line-height: 1.5;
+}
+
+.form-group select {
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath d='M6 8L1 3h10z' fill='%237c8294'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 0.75rem center;
+  padding-right: 2rem;
+}
+
+.form-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.75rem;
+}
+
 @media (max-width: 600px) {
   .form-row {
     grid-template-columns: 1fr;
+  }
+  .upload-dvw-row {
+    flex-wrap: wrap;
   }
 }
