@@ -29,6 +29,9 @@ export default function UploadPage() {
   const [selectedTeam, setSelectedTeam] = useState('');
   const [selectedSeason, setSelectedSeason] = useState('');
   const uploadStart = useRef(null);
+  const [thumbnails, setThumbnails] = useState([]);
+  const [selectedThumb, setSelectedThumb] = useState(null);
+  const [opponents, setOpponents] = useState([]);
 
   useEffect(() => {
     teamApi.listTeams().then(data => setTeams(data.teams || [])).catch(() => {});
@@ -37,10 +40,22 @@ export default function UploadPage() {
   useEffect(() => {
     if (selectedTeam) {
       teamApi.listSeasons(selectedTeam).then(data => setSeasons(data.seasons || [])).catch(() => {});
+      fetch('/api/thumbnail-library?teamId=' + selectedTeam, { credentials: 'include' })
+        .then(r => r.json()).then(d => {
+          const thumbs = d.thumbnails || [];
+          setThumbnails(thumbs);
+          setOpponents(thumbs.filter(t => t.name.toLowerCase() !== 'standard').map(t => t.name).sort());
+        }).catch(() => {});
       setSelectedSeason('');
+      setOpponent('');
+      setSelectedThumb(null);
     } else {
       setSeasons([]);
       setSelectedSeason('');
+      setThumbnails([]);
+      setOpponents([]);
+      setOpponent('');
+      setSelectedThumb(null);
     }
   }, [selectedTeam]);
 
@@ -60,6 +75,17 @@ export default function UploadPage() {
     }
     setFile(selected);
   };
+
+  useEffect(() => {
+    if (!opponent || thumbnails.length === 0) { setSelectedThumb(null); return; }
+    const match = thumbnails.find(t => t.name.toLowerCase() === opponent.toLowerCase());
+    if (match) {
+      setSelectedThumb(match.filePath);
+    } else {
+      const standard = thumbnails.find(t => t.name.toLowerCase() === 'standard');
+      setSelectedThumb(standard ? standard.filePath : null);
+    }
+  }, [opponent, thumbnails]);
 
   const handleDrop = (e) => {
     e.preventDefault();
@@ -209,6 +235,20 @@ export default function UploadPage() {
             <input ref={dvwRef} type="file" accept=".dvw" onChange={(e) => setDvwFile(e.target.files[0] || null)} hidden disabled={uploading} />
           </div>
 
+          {/* Thumbnail preview */}
+          {selectedThumb && (
+            <div style={{ marginBottom: '1.5rem' }}>
+              <p className="upload-section-label" style={{ marginBottom: '0.6rem' }}>THUMBNAIL</p>
+              <div style={{ maxWidth: '220px', borderRadius: '8px', overflow: 'hidden', border: '2px solid var(--lvc-blue-light)' }}>
+                <img
+                  src={`/api/thumbnail-library/image/${selectedThumb}`}
+                  alt="Vald thumbnail"
+                  style={{ width: '100%', aspectRatio: '16/9', objectFit: 'cover', display: 'block' }}
+                />
+              </div>
+            </div>
+          )}
+
           {/* Progress */}
           {uploading && (
             <div className="upload-progress">
@@ -221,19 +261,6 @@ export default function UploadPage() {
               </div>
             </div>
           )}
-
-          {/* Matchinfo */}
-          <p className="upload-section-label" style={{marginBottom: '0.75rem'}}>MATCHINFO</p>
-          <div className="form-row" style={{marginBottom: '1rem'}}>
-            <div className="form-group">
-              <label htmlFor="opponent">Motståndare</label>
-              <input id="opponent" type="text" value={opponent} onChange={(e) => setOpponent(e.target.value)} placeholder="t.ex. Norrköping" required disabled={uploading} />
-            </div>
-            <div className="form-group">
-              <label htmlFor="matchDate">Datum</label>
-              <input id="matchDate" type="date" value={matchDate} onChange={(e) => setMatchDate(e.target.value)} required disabled={uploading} />
-            </div>
-          </div>
 
           {/* Placering */}
           <p className="upload-section-label" style={{marginBottom: '0.75rem'}}>PLACERING</p>
@@ -253,6 +280,24 @@ export default function UploadPage() {
               </select>
             </div>
           </div>
+
+          {/* Matchinfo */}
+          <p className="upload-section-label" style={{marginBottom: '0.75rem'}}>MATCHINFO</p>
+          <div className="form-row" style={{marginBottom: '1rem'}}>
+            <div className="form-group">
+              <label htmlFor="opponent">Motståndare</label>
+              <select id="opponent" value={opponent} onChange={(e) => setOpponent(e.target.value)} required disabled={uploading || !selectedTeam}>
+                <option value="">Välj motståndare</option>
+                {opponents.map(o => <option key={o} value={o}>{o}</option>)}
+              </select>
+            </div>
+            <div className="form-group">
+              <label htmlFor="matchDate">Datum</label>
+              <input id="matchDate" type="date" value={matchDate} onChange={(e) => setMatchDate(e.target.value)} required disabled={uploading} />
+            </div>
+          </div>
+
+
 
           {/* Beskrivning */}
           <div className="form-group" style={{marginBottom: '1.75rem'}}>

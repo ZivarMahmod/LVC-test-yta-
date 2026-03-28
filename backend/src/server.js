@@ -14,6 +14,7 @@ import { fileURLToPath } from 'url';
 import { generalLimiter } from './middleware/rateLimiter.js';
 import { errorHandler, notFoundHandler } from './middleware/errorHandler.js';
 import logger from './utils/logger.js';
+import crypto from 'crypto';
 
 // Routes
 import authRoutes from './routes/auth.js';
@@ -131,6 +132,86 @@ app.get('/api/admin/deleted-videos', authenticateToken, requireAdmin, async (req
     res.json({ videos: videos.map(v => ({ ...v, fileSize: Number(v.fileSize) })) });
   } catch (err) {
     res.status(500).json({ error: 'Kunde inte hamta borttagna videor' });
+  }
+});
+
+// Thumbnail Library
+app.get('/api/thumbnail-library', authenticateToken, async (req, res) => {
+  try {
+    const { default: prisma } = await import('./config/database.js');
+    const teamId = req.query.teamId ? parseInt(req.query.teamId) : null;
+    const where = teamId ? { teamId } : {};
+    const thumbs = await prisma.thumbnailLibrary.findMany({ where, orderBy: { name: 'asc' }, include: { team: { select: { id: true, name: true } } } });
+    res.json({ thumbnails: thumbs });
+  } catch (err) {
+    res.status(500).json({ error: 'Kunde inte hamta thumbnails' });
+  }
+});
+
+app.post('/api/admin/thumbnail-library', authenticateToken, requireAdmin, async (req, res) => {
+  try {
+    const multer = (await import('multer')).default;
+    const upload = multer({ dest: '/tmp/uploads/', limits: { fileSize: 5 * 1024 * 1024 } });
+    upload.array('images', 20)(req, res, async (err) => {
+      if (err) return res.status(400).json({ error: 'Uppladdning misslyckades' });
+      if (!req.files || req.files.length === 0) return res.status(400).json({ error: 'Inga bilder bifogade' });
+      const teamId = parseInt(req.body.teamId);
+      if (!teamId) return res.status(400).json({ error: 'teamId kravs' });
+      const { default: prisma } = await import('./config/database.js');
+      const fsp = await import('fs/promises');
+      const p = await import('path');
+      const thumbDir = '/app/data/thumbnails/library';
+      await fsp.mkdir(thumbDir, { recursive: true });
+      const created = [];
+      for (const file of req.files) {
+        const name = file.originalname.replace(/\.[^.]+$/, '');
+        const ext = p.default.extname(file.originalname).toLowerCase() || '.jpg';
+        const id = crypto.randomUUID();
+        const fileName = id + ext;
+        const destPath = p.default.join(thumbDir, fileName);
+        await fsp.copyFile(file.path, destPath);
+        await fsp.unlink(file.path).catch(() => {});
+        const entry = await prisma.thumbnailLibrary.create({
+          data: { id, name, filePath: fileName, teamId }
+        });
+        created.push(entry);
+      }
+      res.status(201).json({ thumbnails: created });
+    });
+  } catch (err) {
+    res.status(500).json({ error: 'Kunde inte ladda upp thumbnails' });
+  }
+});
+
+app.delete('/api/admin/thumbnail-library/:id', authenticateToken, requireAdmin, async (req, res) => {
+  try {
+    const { default: prisma } = await import('./config/database.js');
+    const fsp = await import('fs/promises');
+    const p = await import('path');
+    const entry = await prisma.thumbnailLibrary.findUnique({ where: { id: req.params.id } });
+    if (!entry) return res.status(404).json({ error: 'Hittades inte' });
+    await fsp.unlink(p.default.join('/app/data/thumbnails/library', entry.filePath)).catch(() => {});
+    await prisma.thumbnailLibrary.delete({ where: { id: req.params.id } });
+    res.json({ message: 'Borttagen' });
+  } catch (err) {
+    res.status(500).json({ error: 'Kunde inte ta bort thumbnail' });
+  }
+});
+
+app.get('/api/thumbnail-library/image/:file', authenticateToken, async (req, res) => {
+  try {
+    const file = req.params.file.replace(/\.\./g, '');
+    const thumbPath = '/app/data/thumbnails/library/' + file;
+    const fs = await import('fs');
+    const p = await import('path');
+    if (!fs.existsSync(thumbPath)) return res.status(404).json({ error: 'Bild hittades inte' });
+    const ext = p.default.extname(thumbPath).toLowerCase();
+    const mimes = { '.jpg': 'image/jpeg', '.jpeg': 'image/jpeg', '.png': 'image/png', '.webp': 'image/webp' };
+    res.set('Content-Type', mimes[ext] || 'image/jpeg');
+    res.set('Cache-Control', 'public, max-age=86400');
+    fs.createReadStream(thumbPath).pipe(res);
+  } catch (err) {
+    res.status(500).json({ error: 'Serverfel' });
   }
 });
 
