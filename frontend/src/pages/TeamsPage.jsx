@@ -65,7 +65,7 @@ export default function TeamsPage() {
               onClick={() => navigate(`/team/${team.id}`)}
             >
               {team.thumbnailPath ? (
-                <img className="team-card-img" src={'/api/admin/team-thumbnail/' + team.thumbnailPath.replace('/teams/', '')} alt={team.name} />
+                <img className="team-card-img" src={'/api/team-thumbnail/' + team.thumbnailPath.replace('/teams/', '')} alt={team.name} />
               ) : (
                 <div className="team-card-bg" />
               )}

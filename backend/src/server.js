@@ -277,7 +277,7 @@ const frontendPath = path.join(__dirname, '../../frontend/dist');
 app.use(express.static(frontendPath));
 
 // Team thumbnails
-app.get('/api/admin/team-thumbnail/:file', (req, res) => {
+app.get('/api/team-thumbnail/:file', (req, res) => {
   const file = req.params.file.replace(/\.\./, '');
   const thumbPath = '/app/data/thumbnails/teams/' + file;
   import('fs').then(fs => {
