@@ -48,12 +48,12 @@ export default function UploadPage() {
     setError('');
     if (!selected) { setFile(null); return; }
     if (!ALLOWED_TYPES.includes(selected.type)) {
-      setError('Otill\u00e5ten filtyp. Anv\u00e4nd MP4, MOV eller MKV.');
+      setError('Otillåten filtyp. Använd MP4, MOV eller MKV.');
       setFile(null);
       return;
     }
     if (selected.size > MAX_SIZE) {
-      setError('Filen \u00e4r f\u00f6r stor. Maximal storlek \u00e4r 10 GB.');
+      setError('Filen är för stor. Maximal storlek är 10 GB.');
       setFile(null);
       return;
     }
@@ -79,7 +79,7 @@ export default function UploadPage() {
     setSuccess('');
 
     if (!file || !opponent || !matchDate) {
-      setError('Fyll i alla obligatoriska f\u00e4lt och v\u00e4lj en fil.');
+      setError('Fyll i alla obligatoriska fält och välj en fil.');
       return;
     }
 
@@ -121,8 +121,8 @@ export default function UploadPage() {
         setProgress(Math.round(((i + 1) / totalChunks) * 90));
       }
 
-      // Slutf\u00f6r uppladdningen
-      setStatus('S\u00e4tter ihop filen...');
+      // Slutför uppladdningen
+      setStatus('Sätter ihop filen...');
       const completeRes = await fetch('/api/videos/upload/complete', {
         method: 'POST',
         credentials: 'include',
@@ -140,7 +140,7 @@ export default function UploadPage() {
 
       if (!completeRes.ok) {
         const data = await completeRes.json();
-        throw new Error(data.error || 'Kunde inte slutf\u00f6ra uppladdningen');
+        throw new Error(data.error || 'Kunde inte slutföra uppladdningen');
       }
 
       const result = await completeRes.json();
@@ -209,7 +209,7 @@ export default function UploadPage() {
                   <span className="file-size">{formatSize(file.size)}</span>
                 </div>
                 {!uploading && (
-                  <button type="button" className="drop-zone-remove" onClick={(e) => { e.stopPropagation(); setFile(null); }}>\u00d7</button>
+                  <button type="button" className="drop-zone-remove" onClick={(e) => { e.stopPropagation(); setFile(null); }}>×</button>
                 )}
               </div>
             ) : (
@@ -218,8 +218,8 @@ export default function UploadPage() {
                   <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
                   <polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/>
                 </svg>
-                <p>Dra och sl\u00e4pp en videofil h\u00e4r</p>
-                <span>eller klicka f\u00f6r att v\u00e4lja \u2014 MP4, MOV, MKV (max 10 GB)</span>
+                <p>Dra och släpp en videofil här</p>
+                <span>eller klicka för att välja — MP4, MOV, MKV (max 10 GB)</span>
               </div>
             )}
             <input
@@ -235,7 +235,7 @@ export default function UploadPage() {
           {/* DVW-fil */}
           <div style={{ marginTop: '0.75rem' }}>
             <label style={{ fontSize: '0.9rem', fontWeight: '500', marginBottom: '0.4rem', display: 'block' }}>
-              Scout-fil (DVW) \u2014 valfri
+              Scout-fil (DVW) — valfri
             </label>
             <div style={{
               display: 'flex', alignItems: 'center', gap: '0.75rem',
@@ -243,13 +243,13 @@ export default function UploadPage() {
               border: '1px solid var(--border)', background: 'var(--surface-2)'
             }}>
               <button type="button" className="btn-secondary btn-sm" onClick={() => dvwRef.current?.click()} disabled={uploading}>
-                V\u00e4lj DVW-fil
+                Välj DVW-fil
               </button>
               <span style={{ fontSize: '0.85rem', color: dvwFile ? 'var(--text)' : 'var(--text-muted)' }}>
                 {dvwFile ? dvwFile.name : 'Ingen fil vald'}
               </span>
               {dvwFile && !uploading && (
-                <button type="button" style={{ marginLeft: 'auto', background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', fontSize: '1.1rem' }} onClick={() => setDvwFile(null)}>\u00d7</button>
+                <button type="button" style={{ marginLeft: 'auto', background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', fontSize: '1.1rem' }} onClick={() => setDvwFile(null)}>×</button>
               )}
               <input ref={dvwRef} type="file" accept=".dvw" onChange={(e) => setDvwFile(e.target.files[0] || null)} hidden disabled={uploading} />
             </div>
@@ -271,8 +271,8 @@ export default function UploadPage() {
           {/* Matchinfo */}
           <div className="form-row">
             <div className="form-group">
-              <label htmlFor="opponent">Motst\u00e5ndare *</label>
-              <input id="opponent" type="text" value={opponent} onChange={(e) => setOpponent(e.target.value)} placeholder="t.ex. Norrk\u00f6ping" required disabled={uploading} />
+              <label htmlFor="opponent">Motståndare *</label>
+              <input id="opponent" type="text" value={opponent} onChange={(e) => setOpponent(e.target.value)} placeholder="t.ex. Norrköping" required disabled={uploading} />
             </div>
             <div className="form-group">
               <label htmlFor="matchDate">Matchdatum *</label>
@@ -285,15 +285,15 @@ export default function UploadPage() {
               <label htmlFor="team">Lag</label>
               <select id="team" value={selectedTeam} onChange={(e) => setSelectedTeam(e.target.value)} disabled={uploading}
                 style={{ width: '100%', padding: '0.5rem 0.75rem', borderRadius: '8px', border: '1px solid var(--border)', background: 'var(--surface-2)', color: 'var(--text)', fontSize: '0.9rem' }}>
-                <option value="">V\u00e4lj lag (valfritt)</option>
+                <option value="">Välj lag (valfritt)</option>
                 {teams.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
               </select>
             </div>
             <div className="form-group">
-              <label htmlFor="season">S\u00e4song</label>
+              <label htmlFor="season">Säsong</label>
               <select id="season" value={selectedSeason} onChange={(e) => setSelectedSeason(e.target.value)} disabled={uploading || !selectedTeam}
                 style={{ width: '100%', padding: '0.5rem 0.75rem', borderRadius: '8px', border: '1px solid var(--border)', background: 'var(--surface-2)', color: 'var(--text)', fontSize: '0.9rem' }}>
-                <option value="">V\u00e4lj s\u00e4song (valfritt)</option>
+                <option value="">Välj säsong (valfritt)</option>
                 {seasons.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
               </select>
             </div>
