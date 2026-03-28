@@ -28,6 +28,7 @@ export default function UploadPage() {
   const [seasons, setSeasons] = useState([]);
   const [selectedTeam, setSelectedTeam] = useState('');
   const [selectedSeason, setSelectedSeason] = useState('');
+  const uploadStart = useRef(null);
 
   useEffect(() => {
     teamApi.listTeams().then(data => setTeams(data.teams || [])).catch(() => {});
@@ -91,7 +92,14 @@ export default function UploadPage() {
         const start = i * CHUNK_SIZE;
         const end = Math.min(start + CHUNK_SIZE, file.size);
         const chunk = file.slice(start, end);
-        setStatus(`Del ${i + 1} av ${totalChunks}`);
+        if (i === 0) uploadStart.current = Date.now();
+        const elapsed = (Date.now() - uploadStart.current) / 1000;
+        const bytesUploaded = i * CHUNK_SIZE;
+        const speed = bytesUploaded > 0 ? bytesUploaded / elapsed : 0;
+        const bytesLeft = file.size - bytesUploaded;
+        const secsLeft = speed > 0 ? Math.round(bytesLeft / speed) : 0;
+        const timeStr = secsLeft > 60 ? `${Math.floor(secsLeft / 60)}m ${secsLeft % 60}s` : `${secsLeft}s`;
+        setStatus(i === 0 ? `Del 1 av ${totalChunks}` : `Del ${i + 1} av ${totalChunks} — ~${timeStr} kvar`);
         const formData = new FormData();
         formData.append('chunk', chunk, 'chunk');
         formData.append('uploadId', uploadId);
