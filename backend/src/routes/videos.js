@@ -84,6 +84,30 @@ router.post('/:id/thumbnail',
   videoController.uploadThumbnail
 );
 
+// Chunked upload
+router.post('/upload/chunk',
+  authenticateToken,
+  requireUploader,
+  csrfProtection,
+  videoUpload.single('chunk'),
+  videoController.uploadChunk
+);
+
+router.post('/upload/complete',
+  authenticateToken,
+  requireUploader,
+  csrfProtection,
+  videoController.uploadComplete
+);
+
+router.post('/:id/dvw',
+  authenticateToken,
+  requireUploader,
+  csrfProtection,
+  thumbnailUpload.single('dvw'),
+  videoController.uploadDvw
+);
+
 // Ladda upp video (uploader+)
 router.post('/upload',
   authenticateToken,

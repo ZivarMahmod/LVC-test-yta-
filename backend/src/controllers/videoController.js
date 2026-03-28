@@ -80,6 +80,144 @@ export const videoController = {
     }
   },
 
+
+  async uploadChunk(req, res) {
+    try {
+      const chunk = req.file;
+      if (!chunk) return res.status(400).json({ error: 'Ingen chunk bifogad.' });
+
+      const { uploadId, chunkIndex, totalChunks, fileName } = req.body;
+      if (!uploadId || chunkIndex === undefined || !totalChunks) {
+        return res.status(400).json({ error: 'uploadId, chunkIndex och totalChunks kravs.' });
+      }
+
+      const chunkDir = path.join('/tmp/uploads', uploadId);
+      await mkdir(chunkDir, { recursive: true });
+
+      const chunkPath = path.join(chunkDir, `chunk_${String(chunkIndex).padStart(5, '0')}`);
+      const { createReadStream: crs, createWriteStream: cws } = await import('fs');
+      const { pipeline: pl } = await import('stream/promises');
+      await pl(crs(chunk.path), cws(chunkPath));
+      await unlink(chunk.path).catch(() => {});
+
+      logger.info('Chunk mottagen', { uploadId, chunkIndex, totalChunks });
+      res.json({ received: parseInt(chunkIndex) });
+    } catch (error) {
+      logger.error('Chunk upload-fel:', error);
+      res.status(500).json({ error: 'Chunk-uppladdning misslyckades.' });
+    }
+  },
+
+  async uploadComplete(req, res) {
+    try {
+      const { uploadId, fileName, opponent, matchDate, description, teamId, seasonId } = req.body;
+      if (!uploadId || !fileName || !opponent || !matchDate) {
+        return res.status(400).json({ error: 'Saknar obligatoriska falt.' });
+      }
+
+      const chunkDir = path.join('/tmp/uploads', uploadId);
+      const { readdir: rd } = await import('fs/promises');
+      const chunks = (await rd(chunkDir)).filter(f => f.startsWith('chunk_')).sort();
+
+      if (chunks.length === 0) {
+        return res.status(400).json({ error: 'Inga chunks hittades.' });
+      }
+
+      // Bygg filsokvag
+      const filePath = fileStorageService.buildFilePath(matchDate, opponent, fileName);
+      const absPath = fileStorageService.getAbsolutePath(filePath);
+      const dir = path.dirname(absPath);
+      await mkdir(dir, { recursive: true });
+
+      // Satt ihop chunks direkt till NAS
+      const { createReadStream: crs, createWriteStream: cws } = await import('fs');
+      const writeStream = cws(absPath);
+
+      for (const chunkFile of chunks) {
+        const chunkPath = path.join(chunkDir, chunkFile);
+        await new Promise((resolve, reject) => {
+          const readStream = crs(chunkPath);
+          readStream.pipe(writeStream, { end: false });
+          readStream.on('end', resolve);
+          readStream.on('error', reject);
+        });
+      }
+      writeStream.end();
+      await new Promise((resolve) => writeStream.on('finish', resolve));
+
+      logger.info('Video ihopsatt och sparad till NAS', { path: filePath });
+
+      // Rensa chunks
+      for (const chunkFile of chunks) {
+        await unlink(path.join(chunkDir, chunkFile)).catch(() => {});
+      }
+      const { rmdir } = await import('fs/promises');
+      await rmdir(chunkDir).catch(() => {});
+
+      // Filstorlek
+      const fileStat = await fsStat(absPath);
+
+      // Skapa datum och titel
+      const date = new Date(matchDate);
+      const year = date.getFullYear();
+      const month = String(date.getMonth() + 1).padStart(2, '0');
+      const day = String(date.getDate()).padStart(2, '0');
+      const title = 'LVC vs ' + opponent + ' \u2014 ' + day + '/' + month + '/' + year;
+
+      const ext = path.extname(fileName).toLowerCase();
+      const mimeType = ext === '.mp4' ? 'video/mp4' : ext === '.mov' ? 'video/quicktime' : 'video/x-matroska';
+
+      const video = await prisma.video.create({
+        data: {
+          title,
+          opponent,
+          matchDate: date,
+          description: description || null,
+          fileName: path.basename(filePath),
+          filePath,
+          fileSize: BigInt(fileStat.size),
+          mimeType,
+          dvwPath: null,
+          uploadedById: req.user.id,
+          teamId: teamId ? parseInt(teamId) : null,
+          seasonId: seasonId ? parseInt(seasonId) : null
+        }
+      });
+
+      logger.info('Video uppladdad via chunks', { videoId: video.id, title, uploadedBy: req.user.email });
+      res.status(201).json({ video: { id: video.id, title } });
+    } catch (error) {
+      logger.error('Upload complete-fel:', error);
+      res.status(500).json({ error: error.message || 'Kunde inte slutfora uppladdningen.' });
+    }
+  },
+
+  async uploadDvw(req, res) {
+    try {
+      const { id } = req.params;
+      const dvwFile = req.file;
+      if (!dvwFile) return res.status(400).json({ error: 'Ingen DVW-fil bifogad.' });
+
+      const video = await prisma.video.findUnique({ where: { id } });
+      if (!video) return res.status(404).json({ error: 'Videon hittades inte.' });
+
+      const dvwPath = video.filePath.replace(/\.[^.]+$/, '.dvw');
+      const dvwAbsPath = fileStorageService.getAbsolutePath(dvwPath);
+
+      const { createReadStream: crs, createWriteStream: cws } = await import('fs');
+      const { pipeline: pl } = await import('stream/promises');
+      await pl(crs(dvwFile.path), cws(dvwAbsPath));
+      await unlink(dvwFile.path).catch(() => {});
+
+      await prisma.video.update({ where: { id }, data: { dvwPath } });
+      logger.info('DVW-fil uppladdad', { videoId: id, dvwPath });
+      res.json({ dvwPath });
+    } catch (error) {
+      logger.error('DVW upload-fel:', error);
+      res.status(500).json({ error: 'Kunde inte ladda upp DVW-filen.' });
+    }
+  },
+
   async list(req, res) {
     try {
       const page = parseInt(req.query.page) || 1;
