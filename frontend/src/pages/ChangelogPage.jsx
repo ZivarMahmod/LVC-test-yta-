@@ -1,5 +1,5 @@
 // ===========================================
-// LVC Media Hub — Andringslogg
+// LVC Media Hub — Ändringslogg
 // ===========================================
 import React, { useState, useEffect } from 'react';
 import { changelogApi } from '../utils/api.js';
@@ -79,7 +79,7 @@ export default function ChangelogPage() {
   return (
     <div style={{ maxWidth: '700px', margin: '0 auto' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
-        <h1 style={{ fontSize: '1.5rem', fontWeight: '700' }}>Andringslogg</h1>
+        <h1 style={{ fontSize: '1.5rem', fontWeight: '700' }}>Ändringslogg</h1>
         {isAdmin && !showForm && (
           <button onClick={() => setShowForm(true)} className="btn-primary btn-sm">
             + Ny post
@@ -96,7 +96,7 @@ export default function ChangelogPage() {
           marginBottom: '1.5rem'
         }}>
           <h3 style={{ fontSize: '1rem', marginBottom: '1rem' }}>
-            {editing ? 'Redigera post' : 'Ny andringslogg'}
+            {editing ? 'Redigera post' : 'Ny ändringslogg'}
           </h3>
           <div style={{ display: 'flex', gap: '0.75rem', marginBottom: '0.75rem' }}>
             <input
@@ -123,7 +123,7 @@ export default function ChangelogPage() {
             />
           </div>
           <textarea
-            placeholder="Beskriv andringarna..."
+            placeholder="Beskriv ändringarna..."
             value={body}
             onChange={e => setBody(e.target.value)}
             rows={6}
@@ -145,7 +145,7 @@ export default function ChangelogPage() {
 
       {entries.length === 0 ? (
         <div style={{ textAlign: 'center', padding: '3rem', color: 'var(--text-muted)' }}>
-          Inga andringar publicerade an.
+          Inga ändringar publicerade än.
         </div>
       ) : (
         entries.map(entry => (
