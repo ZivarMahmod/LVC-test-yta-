@@ -4,13 +4,30 @@
 // ===========================================
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { teamApi } from '../utils/api.js';
+import { teamApi, teamAdminApi } from '../utils/api.js';
+import { useAuth } from '../context/AuthContext.jsx';
+import React from 'react';
 import './TeamsPage.css';
 
 export default function TeamsPage() {
   const [teams, setTeams] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const { isAdmin } = useAuth();
+  const thumbInputRef = React.useRef(null);
+  const [thumbTeamId, setThumbTeamId] = React.useState(null);
+
+  const handleThumbUpload = async (e) => {
+    const file = e.target.files[0];
+    if (!file || !thumbTeamId) return;
+    try {
+      await teamAdminApi.uploadThumbnail(thumbTeamId, file);
+      const data = await teamApi.listTeams();
+      setTeams(data.teams);
+    } catch {}
+    setThumbTeamId(null);
+    if (thumbInputRef.current) thumbInputRef.current.value = '';
+  };
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -32,6 +49,7 @@ export default function TeamsPage() {
 
   return (
     <div className="teams-page">
+      <input type="file" ref={thumbInputRef} accept="image/*" style={{ display: 'none' }} onChange={handleThumbUpload} />
       <h1 className="teams-title">Välj lag</h1>
       {teams.length === 0 ? (
         <div className="teams-empty">
@@ -43,14 +61,26 @@ export default function TeamsPage() {
           {teams.map(team => (
             <button
               key={team.id}
-              className="team-card"
+              className="team-card-overlay"
               onClick={() => navigate(`/team/${team.id}`)}
             >
-              <div className="team-card-icon">🏐</div>
-              <div className="team-card-name">{team.name}</div>
-              <div className="team-card-meta">
-                {team._count?.seasons ?? 0} säsonger &middot; {team._count?.videos ?? 0} matcher
+              {team.thumbnailPath ? (
+                <img className="team-card-img" src={'/api/admin/team-thumbnail/' + team.thumbnailPath.replace('/teams/', '')} alt={team.name} />
+              ) : (
+                <div className="team-card-bg" />
+              )}
+              <div className="team-card-gradient" />
+              <div className="team-card-content">
+                <div className="team-card-name">{team.name}</div>
+                <div className="team-card-meta">
+                  {team._count?.seasons ?? 0} säsonger · {team._count?.videos ?? 0} matcher
+                </div>
               </div>
+              {isAdmin && (
+                <div className="team-card-upload" onClick={(e) => { e.stopPropagation(); setThumbTeamId(team.id); thumbInputRef.current?.click(); }}>
+                  📷
+                </div>
+              )}
             </button>
           ))}
         </div>

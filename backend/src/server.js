@@ -140,6 +140,20 @@ app.get('/api/changelog', (req, res) => {
 const frontendPath = path.join(__dirname, '../../frontend/dist');
 app.use(express.static(frontendPath));
 
+// Team thumbnails
+app.get('/api/admin/team-thumbnail/:file', (req, res) => {
+  const file = req.params.file.replace(/\.\./, '');
+  const thumbPath = '/app/data/thumbnails/teams/' + file;
+  import('fs').then(fs => {
+    if (!fs.existsSync(thumbPath)) return res.status(404).json({ error: 'Bild hittades inte.' });
+    const ext = thumbPath.split('.').pop().toLowerCase();
+    const mimes = { jpg: 'image/jpeg', jpeg: 'image/jpeg', png: 'image/png', webp: 'image/webp' };
+    res.set('Content-Type', mimes[ext] || 'image/jpeg');
+    res.set('Cache-Control', 'no-cache');
+    fs.createReadStream(thumbPath).pipe(res);
+  }).catch(() => res.status(500).json({ error: 'Serverfel.' }));
+});
+
 // SPA fallback — alla icke-API-routes skickas till React
 app.get('*', (req, res, next) => {
   if (req.path.startsWith('/api/')) {

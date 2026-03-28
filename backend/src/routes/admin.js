@@ -2,6 +2,8 @@
 // LVC Media Hub — Admin Routes
 // ===========================================
 import { Router } from 'express';
+import multer from 'multer';
+const upload = multer({ dest: '/tmp/uploads/', limits: { fileSize: 5 * 1024 * 1024 } });
 import { adminController } from '../controllers/adminController.js';
 import { authenticateToken, requireAdmin } from '../middleware/auth.js';
 import { adminLimiter } from '../middleware/rateLimiter.js';
@@ -55,6 +57,7 @@ router.get('/uploads',
 router.get('/teams', adminController.listTeams);
 router.post('/teams', csrfProtection, adminController.createTeam);
 router.delete('/teams/:id', csrfProtection, adminController.deleteTeam);
+router.post('/teams/:id/thumbnail', csrfProtection, upload.single('thumbnail'), adminController.uploadTeamThumbnail);
 
 // Säsonger
 router.get('/seasons', adminController.listSeasons);

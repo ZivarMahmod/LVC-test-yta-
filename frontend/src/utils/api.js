@@ -181,6 +181,16 @@ export const videoApi = {
     throw new Error(result.data?.error || 'Uppladdning misslyckades');
   },
 
+  async uploadThumbnail(id, file) {
+    const formData = new FormData();
+    formData.append('thumbnail', file);
+    const res = await apiFetch('/api/videos/' + id + '/thumbnail', {
+      method: 'POST',
+      body: formData
+    });
+    return res.json();
+  },
+
   async remove(id) {
     const res = await apiFetch(`/api/videos/${id}`, { method: 'DELETE' });
     if (!res.ok) {
@@ -334,6 +344,18 @@ export const scoutApi = {
 
 
 // Invite API (admin)
+export const teamAdminApi = {
+  async uploadThumbnail(teamId, file) {
+    const formData = new FormData();
+    formData.append('thumbnail', file);
+    const res = await apiFetch('/api/admin/teams/' + teamId + '/thumbnail', {
+      method: 'POST',
+      body: formData
+    });
+    return res.json();
+  }
+};
+
 export const inviteApi = {
   async create(role, maxUses) {
     const res = await apiFetch('/api/admin/invites', {
@@ -345,6 +367,16 @@ export const inviteApi = {
 
   async list() {
     const res = await apiFetch('/api/admin/invites');
+    return res.json();
+  },
+
+  async uploadThumbnail(id, file) {
+    const formData = new FormData();
+    formData.append('thumbnail', file);
+    const res = await apiFetch('/api/videos/' + id + '/thumbnail', {
+      method: 'POST',
+      body: formData
+    });
     return res.json();
   },
 

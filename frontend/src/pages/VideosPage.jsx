@@ -1,7 +1,7 @@
 // ===========================================
 // LVC Media Hub — Videobibliotek
 // ===========================================
-import { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { videoApi, teamApi } from '../utils/api.js';
 import { useAuth } from '../context/AuthContext.jsx';
@@ -29,6 +29,25 @@ export default function VideosPage() {
   const [error, setError] = useState('');
   const [viewMode, setViewMode] = useState('grid');
   const [deleting, setDeleting] = useState(null);
+
+  useEffect(() => {
+    if (window.innerWidth <= 768) setViewMode('list');
+  }, []);
+  const thumbnailInputRef = React.useRef(null);
+  const [thumbnailVideoId, setThumbnailVideoId] = useState(null);
+
+  const handleThumbnailUpload = async (e) => {
+    const file = e.target.files[0];
+    if (!file || !thumbnailVideoId) return;
+    try {
+      await videoApi.uploadThumbnail(thumbnailVideoId, file);
+      fetchVideos(pagination.page);
+    } catch (err) {
+      alert('Kunde inte ladda upp thumbnail: ' + err.message);
+    }
+    setThumbnailVideoId(null);
+    if (thumbnailInputRef.current) thumbnailInputRef.current.value = '';
+  };
   const [teamName, setTeamName] = useState('');
   const [seasonName, setSeasonName] = useState('');
 
@@ -82,6 +101,8 @@ export default function VideosPage() {
   };
 
   return (
+    <>
+      <input type="file" ref={thumbnailInputRef} accept="image/*" style={{ display: 'none' }} onChange={handleThumbnailUpload} />
     <div className="videos-page">
       <div className="page-header">
         {teamId && (
@@ -156,87 +177,61 @@ export default function VideosPage() {
       ) : viewMode === 'grid' ? (
         <div className="video-grid">
           {videos.map(video => (
-            <Link key={video.id} to={`/video/${video.id}`} className="video-card card">
-              <div className="video-card-thumb">
+            <Link key={video.id} to={`/video/${video.id}`} className="video-card-overlay">
+              <div className="video-card-overlay-thumb">
                 {video.thumbnailUrl ? (
-                  <img
-                    src={video.thumbnailUrl}
-                    alt={video.title}
-                    style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-                    onError={(e) => { e.target.style.display = 'none'; e.target.nextSibling.style.display = 'flex'; }}
-                  />
+                  <img src={video.thumbnailUrl + "?t=" + new Date(video.updatedAt).getTime()} alt={video.title} onError={(e) => { e.target.style.display = 'none'; }} />
                 ) : null}
-                <div style={{ display: video.thumbnailUrl ? 'none' : 'flex', alignItems: 'center', justifyContent: 'center', width: '100%', height: '100%' }}>
-                  <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" opacity="0.4">
-                    <polygon points="5 3 19 12 5 21 5 3"/>
-                  </svg>
+                <div className="video-card-overlay-gradient" />
+                <div className="video-card-overlay-text">
+                  <div className="video-card-overlay-title">LVC vs {video.opponent}</div>
+                  <div className="video-card-overlay-date">{formatDate(video.matchDate)}</div>
                 </div>
-              </div>
-              <div className="video-card-info">
-                <div className="video-card-date">{formatDate(video.matchDate)}</div>
-                <h3 className="video-card-title">LVC vs {video.opponent}</h3>
-                {video.description && (
-                  <p className="video-card-desc">{video.description}</p>
+                {isAdmin && (
+                  <>
+                    <button
+                      className="video-card-delete"
+                      onClick={(e) => { e.preventDefault(); handleDelete(video.id, video.title); }}
+                      disabled={deleting === video.id}
+                      title="Ta bort"
+                    >x</button>
+                    <button
+                      className="video-card-thumb-btn"
+                      onClick={(e) => { e.preventDefault(); setThumbnailVideoId(video.id); thumbnailInputRef.current?.click(); }}
+                      title="Byt thumbnail"
+                    >📷</button>
+                  </>
                 )}
-                <div className="video-card-meta">
-                  <span>{formatFileSize(video.fileSize)}</span>
-                  <span>•</span>
-                  <span>{video.uploadedBy?.name}</span>
-                </div>
               </div>
-              {isAdmin && (
-                <button
-                  className="video-card-delete"
-                  onClick={(e) => { e.preventDefault(); handleDelete(video.id, video.title); }}
-                  disabled={deleting === video.id}
-                  title="Ta bort"
-                >
-                  ×
-                </button>
-              )}
             </Link>
           ))}
         </div>
       ) : (
-        <div className="table-container">
-          <table>
-            <thead>
-              <tr>
-                <th>Datum</th>
-                <th>Match</th>
-                <th>Beskrivning</th>
-                <th>Storlek</th>
-                <th>Uppladdad av</th>
-                {isAdmin && <th></th>}
-              </tr>
-            </thead>
-            <tbody>
-              {videos.map(video => (
-                <tr key={video.id}>
-                  <td>{formatDate(video.matchDate)}</td>
-                  <td>
-                    <Link to={`/video/${video.id}`} className="list-link">
-                      LVC vs {video.opponent}
-                    </Link>
-                  </td>
-                  <td className="text-muted">{video.description || '—'}</td>
-                  <td className="text-muted">{formatFileSize(video.fileSize)}</td>
-                  <td className="text-muted">{video.uploadedBy?.name}</td>
-                  {isAdmin && (
-                    <td>
-                      <button
-                        className="btn-danger btn-sm"
-                        onClick={() => handleDelete(video.id, video.title)}
-                        disabled={deleting === video.id}
-                      >
-                        Ta bort
-                      </button>
-                    </td>
-                  )}
-                </tr>
-              ))}
-            </tbody>
-          </table>
+        <div className="video-list">
+          {videos.map(video => (
+            <Link key={video.id} to={`/video/${video.id}`} className="video-list-item">
+              <div className="video-list-thumb">
+                {video.thumbnailUrl ? (
+                  <img src={video.thumbnailUrl + "?t=" + new Date(video.updatedAt).getTime()} alt={video.title} />
+                ) : (
+                  <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" opacity="0.3">
+                    <polygon points="5 3 19 12 5 21 5 3"/>
+                  </svg>
+                )}
+              </div>
+              <div className="video-list-info">
+                <div className="video-list-title">LVC vs {video.opponent}</div>
+                <div className="video-list-date">{formatDate(video.matchDate)}</div>
+              </div>
+              {isAdmin && (
+                <button
+                  className="video-list-delete"
+                  onClick={(e) => { e.preventDefault(); handleDelete(video.id, video.title); }}
+                  disabled={deleting === video.id}
+                >x</button>
+              )}
+            </Link>
+          ))}
         </div>
       )}
 
@@ -262,5 +257,6 @@ export default function VideosPage() {
         </div>
       )}
     </div>
+    </>
   );
 }

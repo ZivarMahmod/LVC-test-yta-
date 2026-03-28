@@ -2,6 +2,8 @@
 // LVC Media Hub — Video Routes
 // ===========================================
 import { Router } from 'express';
+import multer from 'multer';
+const upload = multer({ dest: '/tmp/uploads/', limits: { fileSize: 5 * 1024 * 1024 } });
 import { videoController, scoutController } from '../controllers/videoController.js';
 import { adminController } from '../controllers/adminController.js';
 import { authenticateToken, requireViewer, requireAdmin } from '../middleware/auth.js';
@@ -70,6 +72,15 @@ router.patch('/:id/offset',
   videoIdValidation,
   handleValidationErrors,
   scoutController.updateOffset
+);
+
+// Ladda upp thumbnail (admin)
+router.post('/:id/thumbnail',
+  authenticateToken,
+  requireAdmin,
+  csrfProtection,
+  upload.single('thumbnail'),
+  videoController.uploadThumbnail
 );
 
 // Ta bort video (admin)

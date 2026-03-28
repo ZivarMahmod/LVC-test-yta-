@@ -298,9 +298,11 @@ export default function VideoPlayerPage() {
               ref={videoRef}
               controls
               autoPlay={true}
+              muted={false}
               playsInline
               preload="metadata"
               className="video-player"
+              onLoadedMetadata={(e) => { e.target.volume = 0.15; }}
               key={video.streamUrl}
             >
               <source src={video.streamUrl} type={video.mimeType} />

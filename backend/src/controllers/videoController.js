@@ -4,6 +4,7 @@
 import prisma from '../config/database.js';
 import { fileStorageService } from '../services/fileStorage.js';
 import { fileValidator } from '../utils/fileValidator.js';
+import path from 'path';
 import logger from '../utils/logger.js';
 
 export const videoController = {
@@ -55,7 +56,7 @@ export const videoController = {
         season: video.season,
         createdAt: video.createdAt,
         streamUrl: fileStorageService.generateSignedUrl(video.id).url,
-        thumbnailUrl: video.thumbnailPath ? `/api/videos/thumbnail${video.thumbnailPath}` : null
+        thumbnailUrl: video.thumbnailPath ? `/api/videos/thumbnail/${video.thumbnailPath.replace('/local/', '')}` : null
       }));
       res.json({ videos: videosWithUrls, pagination: { page, limit, total, totalPages: Math.ceil(total / limit) } });
     } catch (error) {
@@ -85,7 +86,7 @@ export const videoController = {
           createdAt: video.createdAt,
           streamUrl: streamUrl.url,
           streamUrlExpires: streamUrl.expiresAt,
-          thumbnailUrl: video.thumbnailPath ? `/api/videos/thumbnail${video.thumbnailPath}` : null
+          thumbnailUrl: video.thumbnailPath ? `/api/videos/thumbnail/${video.thumbnailPath.replace('/local/', '')}` : null
         }
       });
     } catch (error) {
@@ -100,14 +101,68 @@ export const videoController = {
       if (!filePath || filePath.includes('..')) {
         return res.status(400).json({ error: 'Ogiltig sökväg.' });
       }
+
+      const fs = await import('fs');
+      const fsp = await import('fs/promises');
+
+      // Kolla lokalt först (/app/data/thumbnails/)
+      const localPath = path.join('/app/data/thumbnails', filePath);
+      try {
+        await fsp.access(localPath);
+        const ext = path.extname(filePath).toLowerCase();
+        const mimeTypes = { '.jpg': 'image/jpeg', '.jpeg': 'image/jpeg', '.png': 'image/png', '.webp': 'image/webp', '.gif': 'image/gif' };
+        res.set('Content-Type', mimeTypes[ext] || 'image/jpeg');
+        res.set('Cache-Control', 'no-cache');
+        fs.createReadStream(localPath).pipe(res);
+        return;
+      } catch {}
+
+      // Fallback: kolla storage
       const result = await fileStorageService.streamFile(filePath, null);
       if (!result) return res.status(404).json({ error: 'Bild hittades inte.' });
       res.set('Content-Type', 'image/jpeg');
-      res.set('Cache-Control', 'public, max-age=86400');
+      res.set('Cache-Control', 'no-cache');
       result.stream.pipe(res);
     } catch (error) {
       logger.error('Thumbnail-fel:', error);
       res.status(500).json({ error: 'Kunde inte hämta bilden.' });
+    }
+  },
+
+  async uploadThumbnail(req, res) {
+    try {
+      const { id } = req.params;
+      const video = await prisma.video.findUnique({ where: { id } });
+      if (!video) return res.status(404).json({ error: 'Videon hittades inte.' });
+
+      if (!req.file) return res.status(400).json({ error: 'Ingen bild bifogad.' });
+
+      const fs = await import('fs/promises');
+      // Radera gamla thumbnails (alla extensions)
+      const exts = ['.jpg', '.jpeg', '.png', '.webp'];
+      for (const e of exts) {
+        await fs.unlink(path.join('/app/data/thumbnails', id + e)).catch(() => {});
+      }
+
+      const ext = path.extname(req.file.originalname).toLowerCase() || '.jpg';
+      const thumbDir = '/app/data/thumbnails';
+      await fs.mkdir(thumbDir, { recursive: true });
+      const thumbFile = id + ext;
+      const destPath = path.join(thumbDir, thumbFile);
+      await fs.copyFile(req.file.path, destPath);
+      await fs.unlink(req.file.path).catch(() => {});
+
+      const thumbnailPath = '/local/' + thumbFile;
+      await prisma.video.update({
+        where: { id },
+        data: { thumbnailPath }
+      });
+
+      logger.info('Thumbnail uppladdad', { videoId: id, thumbnailPath });
+      res.json({ thumbnailUrl: '/api/videos/thumbnail/' + thumbFile + '?t=' + Date.now() });
+    } catch (error) {
+      logger.error('Thumbnail upload-fel:', error);
+      res.status(500).json({ error: 'Kunde inte ladda upp bilden.' });
     }
   },
 
