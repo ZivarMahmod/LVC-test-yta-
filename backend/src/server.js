@@ -122,6 +122,12 @@ app.use('/api/videos', videoRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/reviews', reviewRoutes);
 
+// Avsluta impersonering (tillgänglig för alla inloggade)
+app.post('/api/admin/stop-impersonate', authenticateToken, csrfProtection, async (req, res) => {
+  const { adminController: ac } = await import('./controllers/adminController.js');
+  return ac.stopImpersonate(req, res);
+});
+
 // Borttagna videor (admin)
 app.get('/api/admin/deleted-videos', authenticateToken, requireAdmin, async (req, res) => {
   try {

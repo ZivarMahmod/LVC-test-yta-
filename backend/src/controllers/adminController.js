@@ -11,6 +11,65 @@ import crypto from 'crypto';
 const BCRYPT_ROUNDS = parseInt(process.env.BCRYPT_ROUNDS || '12');
 
 export const adminController = {
+
+  // -------------------------------------------
+  // POST /api/admin/impersonate/:id
+  // -------------------------------------------
+  async impersonate(req, res) {
+    try {
+      const targetUser = await prisma.user.findUnique({ where: { id: req.params.id } });
+      if (!targetUser) return res.status(404).json({ error: 'Användaren hittades inte.' });
+
+      // Spara admin-ID i cookie så vi kan byta tillbaka
+      const isProduction = process.env.NODE_ENV === 'production';
+      res.cookie('adminId', req.user.id, {
+        httpOnly: true,
+        secure: isProduction,
+        sameSite: 'strict',
+        maxAge: 24 * 60 * 60 * 1000,
+        path: '/'
+      });
+
+      // Generera tokens för målsanvändaren
+      const accessToken = tokenService.generateAccessToken(targetUser);
+      const refreshToken = await tokenService.generateRefreshToken(targetUser);
+      tokenService.setTokenCookies(res, accessToken, refreshToken);
+
+      logger.info('Admin impersonerar användare', { adminId: req.user.id, targetUserId: targetUser.id, targetName: targetUser.name });
+      res.json({ user: { id: targetUser.id, name: targetUser.name, role: targetUser.role, username: targetUser.username } });
+    } catch (error) {
+      logger.error('Impersonate-fel:', error);
+      res.status(500).json({ error: 'Kunde inte byta användare.' });
+    }
+  },
+
+  // -------------------------------------------
+  // POST /api/admin/stop-impersonate
+  // -------------------------------------------
+  async stopImpersonate(req, res) {
+    try {
+      const adminId = req.cookies?.adminId;
+      if (!adminId) return res.status(400).json({ error: 'Ingen aktiv impersonering.' });
+
+      const admin = await prisma.user.findUnique({ where: { id: adminId } });
+      if (!admin || admin.role !== 'admin') return res.status(403).json({ error: 'Ogiltigt admin-ID.' });
+
+      // Rensa adminId-cookie
+      res.clearCookie('adminId', { path: '/' });
+
+      // Generera tokens för admin
+      const accessToken = tokenService.generateAccessToken(admin);
+      const refreshToken = await tokenService.generateRefreshToken(admin);
+      tokenService.setTokenCookies(res, accessToken, refreshToken);
+
+      logger.info('Admin avslutar impersonering', { adminId: admin.id });
+      res.json({ user: { id: admin.id, name: admin.name, role: admin.role, username: admin.username } });
+    } catch (error) {
+      logger.error('Stop impersonate-fel:', error);
+      res.status(500).json({ error: 'Kunde inte byta tillbaka.' });
+    }
+  },
+
   // -------------------------------------------
   // GET /api/admin/users
   // -------------------------------------------

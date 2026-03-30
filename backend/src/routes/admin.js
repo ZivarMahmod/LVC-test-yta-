@@ -45,6 +45,9 @@ router.delete('/users/:id',
   adminController.deleteUser
 );
 
+// Impersonera användare (byt vy)
+router.post('/impersonate/:id', csrfProtection, adminController.impersonate);
+
 // Uppladdningshistorik
 router.get('/uploads',
   searchValidation,

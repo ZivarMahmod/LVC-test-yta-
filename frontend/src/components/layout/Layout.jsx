@@ -8,11 +8,14 @@ import { authApi } from '../../utils/api.js';
 import './Layout.css';
 
 export default function Layout() {
-  const { user, logout, isAdmin, isUploader, isCoach } = useAuth();
+  const { user, logout, isAdmin, isUploader, isCoach, setUser, checkAuth } = useAuth();
   const navigate = useNavigate();
   const [menuOpen, setMenuOpen] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
   const [dropdownOpen, setDropdownOpen] = useState(false);
+  const [impersonating, setImpersonating] = useState(false);
+  const [allUsers, setAllUsers] = useState([]);
+  const [showUserSwitch, setShowUserSwitch] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [oldPassword, setOldPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
@@ -37,6 +40,59 @@ export default function Layout() {
       setUnreadCount(unread);
     } catch {}
   }
+
+  // Kolla om vi impersonerar (adminId cookie finns)
+  useEffect(() => {
+    const hasAdminCookie = document.cookie.includes('adminId=');
+    setImpersonating(hasAdminCookie);
+  }, [user]);
+
+  // Hämta alla användare för admin user-switch
+  useEffect(() => {
+    if (!isAdmin || impersonating) return;
+    fetch('/api/admin/users', { credentials: 'include' })
+      .then(r => r.ok ? r.json() : { users: [] })
+      .then(d => setAllUsers(d.users || []))
+      .catch(() => {});
+  }, [isAdmin, impersonating]);
+
+  const handleImpersonate = async (userId) => {
+    try {
+      const csrfRes = await fetch('/api/auth/csrf-token', { credentials: 'include' });
+      const { csrfToken } = await csrfRes.json();
+      const res = await fetch(`/api/admin/impersonate/${userId}`, {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'X-CSRF-Token': csrfToken }
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setUser(data.user);
+        setImpersonating(true);
+        setShowUserSwitch(false);
+        setDropdownOpen(false);
+        navigate('/');
+      }
+    } catch {}
+  };
+
+  const handleStopImpersonate = async () => {
+    try {
+      const csrfRes = await fetch('/api/auth/csrf-token', { credentials: 'include' });
+      const { csrfToken } = await csrfRes.json();
+      const res = await fetch('/api/admin/stop-impersonate', {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'X-CSRF-Token': csrfToken }
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setUser(data.user);
+        setImpersonating(false);
+        navigate('/');
+      }
+    } catch {}
+  };
 
   const handleLogout = async () => {
     setMenuOpen(false);
@@ -102,6 +158,23 @@ export default function Layout() {
 
   return (
     <div className="layout">
+      {impersonating && (
+        <div style={{
+          background: 'var(--lvc-gold)', color: '#000', textAlign: 'center',
+          padding: '4px 12px', fontSize: '0.78rem', fontWeight: 600,
+          display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '0.5rem'
+        }}>
+          <span>Visar som: {user?.name} ({user?.role})</span>
+          <button
+            onClick={handleStopImpersonate}
+            style={{
+              padding: '2px 8px', borderRadius: 4, border: '1px solid rgba(0,0,0,0.3)',
+              background: 'rgba(0,0,0,0.1)', color: '#000', cursor: 'pointer',
+              fontSize: '0.72rem', fontWeight: 600
+            }}
+          >Tillbaka till admin</button>
+        </div>
+      )}
       <header className="topbar">
         <div className="topbar-inner">
           <NavLink to="/" className="logo" onClick={closeMenu}>
@@ -171,8 +244,18 @@ export default function Layout() {
                   </div>
                 </div>
 
-                {!showPassword ? (
+                {!showPassword && !showUserSwitch ? (
                   <>
+                    {isAdmin && !impersonating && (
+                      <button className="dropdown-item" onClick={() => setShowUserSwitch(true)}>
+                        Byt användare
+                      </button>
+                    )}
+                    {impersonating && (
+                      <button className="dropdown-item" onClick={handleStopImpersonate} style={{ color: 'var(--lvc-gold)' }}>
+                        ← Tillbaka till admin
+                      </button>
+                    )}
                     <button className="dropdown-item" onClick={() => setShowPassword(true)}>
                       Ändra lösenord
                     </button>
@@ -180,6 +263,32 @@ export default function Layout() {
                       Logga ut
                     </button>
                   </>
+                ) : showUserSwitch ? (
+                  <div style={{ padding: '0.5rem' }}>
+                    <div style={{ fontSize: '0.78rem', fontWeight: 600, marginBottom: '0.4rem', color: 'var(--text-muted)' }}>Byt till användare:</div>
+                    <div style={{ maxHeight: 200, overflowY: 'auto' }}>
+                      {allUsers.filter(u => u.id !== user?.id).map(u => (
+                        <div
+                          key={u.id}
+                          onClick={() => handleImpersonate(u.id)}
+                          style={{
+                            display: 'flex', alignItems: 'center', gap: '0.5rem',
+                            padding: '0.4rem 0.5rem', borderRadius: 6, cursor: 'pointer',
+                            marginBottom: 2, fontSize: '0.82rem',
+                            transition: 'background 0.1s'
+                          }}
+                          onMouseOver={e => e.currentTarget.style.background = 'rgba(255,255,255,0.06)'}
+                          onMouseOut={e => e.currentTarget.style.background = 'transparent'}
+                        >
+                          <span className={`badge badge-${u.role}`} style={{ fontSize: '0.65rem' }}>{u.role}</span>
+                          <span style={{ flex: 1 }}>{u.name}</span>
+                        </div>
+                      ))}
+                    </div>
+                    <button className="btn-secondary btn-sm" onClick={() => setShowUserSwitch(false)} style={{ marginTop: '0.4rem', width: '100%' }}>
+                      Avbryt
+                    </button>
+                  </div>
                 ) : (
                   <div className="dropdown-password">
                     {pwError && <div className="alert alert-error" style={{ padding: '0.4rem 0.6rem', fontSize: '0.8rem', marginBottom: '0.5rem' }}>{pwError}</div>}
