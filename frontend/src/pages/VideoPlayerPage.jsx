@@ -74,6 +74,14 @@ export default function VideoPlayerPage() {
   const [editingTitle, setEditingTitle] = useState(false);
   const [titleInput, setTitleInput] = useState('');
   const [titleSaving, setTitleSaving] = useState(false);
+  // DVW-kodsökning
+  const [dvwSearchOpen, setDvwSearchOpen] = useState(false);
+  const [dvwSearchQuery, setDvwSearchQuery] = useState('');
+  const [dvwSearchPos, setDvwSearchPos] = useState({ x: 60, y: 120 });
+  const dvwSearchRef = useRef(null);
+  const dvwDragging = useRef(false);
+  const dvwDragOffset = useRef({ x: 0, y: 0 });
+  const dvwInputRef2 = useRef(null);
   const [scoutTab, setScoutTab] = useState('actions');
   // Draggbar review-panel state
   const [panelPos, setPanelPos] = useState({ x: 20, y: 80 });
@@ -225,6 +233,22 @@ export default function VideoPlayerPage() {
   // Keyboard shortcuts
   useEffect(() => {
     const handleKeyDown = (e) => {
+      // Ctrl+Q — öppna/stäng DVW-sökning (fungerar alltid)
+      if (e.ctrlKey && e.key === 'q') {
+        e.preventDefault();
+        setDvwSearchOpen(prev => {
+          if (!prev) setTimeout(() => dvwInputRef2.current?.focus(), 50);
+          return !prev;
+        });
+        setDvwSearchQuery('');
+        return;
+      }
+      // Escape stänger sökningen om den är öppen
+      if (e.key === 'Escape' && dvwSearchOpen) {
+        setDvwSearchOpen(false);
+        setDvwSearchQuery('');
+        return;
+      }
       const tag = document.activeElement?.tagName;
       if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return;
       const vid = videoRef.current;
@@ -249,7 +273,23 @@ export default function VideoPlayerPage() {
     };
     window.addEventListener('keydown', handleKeyDown, true);
     return () => window.removeEventListener('keydown', handleKeyDown, true);
-  }, [skipSeconds, activeActionId]);
+  }, [skipSeconds, activeActionId, dvwSearchOpen]);
+
+  // DVW-sökning drag
+  useEffect(() => {
+    const onMove = (e) => {
+      if (!dvwDragging.current) return;
+      setDvwSearchPos({ x: e.clientX - dvwDragOffset.current.x, y: e.clientY - dvwDragOffset.current.y });
+    };
+    const onUp = () => { dvwDragging.current = false; };
+    window.addEventListener('mousemove', onMove);
+    window.addEventListener('mouseup', onUp);
+    return () => { window.removeEventListener('mousemove', onMove); window.removeEventListener('mouseup', onUp); };
+  }, []);
+
+  const dvwSearchResults = dvwSearchOpen && dvwSearchQuery.length > 0 && scout
+    ? scout.actions.filter(a => a.rawCode.toLowerCase().includes(dvwSearchQuery.toLowerCase()))
+    : [];
 
   // Auto-hoppa till nästa filtrerad action efter delay
   const autoJumpTimer = useRef(null);
@@ -1156,6 +1196,119 @@ export default function VideoPlayerPage() {
           </div>
         )}
       </div>
+
+      {/* DVW-kodsökning — Ctrl+Q */}
+      {dvwSearchOpen && scout && (isCoach || isUploader || isAdmin) && (
+        <div
+          ref={dvwSearchRef}
+          style={{
+            position: 'fixed', left: dvwSearchPos.x, top: dvwSearchPos.y,
+            zIndex: 10000, width: 300, userSelect: 'none'
+          }}
+        >
+          <div style={{
+            background: 'rgba(15, 15, 30, 0.95)', borderRadius: 12,
+            boxShadow: '0 8px 32px rgba(0,0,0,0.7)',
+            border: '1px solid var(--border)',
+            backdropFilter: 'blur(8px)', overflow: 'hidden'
+          }}>
+            {/* Drag-bar */}
+            <div
+              onMouseDown={(e) => {
+                dvwDragging.current = true;
+                dvwDragOffset.current = { x: e.clientX - dvwSearchPos.x, y: e.clientY - dvwSearchPos.y };
+                e.preventDefault();
+              }}
+              style={{
+                display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                padding: '8px 14px', cursor: 'grab',
+                background: 'rgba(99,102,241,0.2)',
+                borderBottom: '1px solid var(--border)'
+              }}
+            >
+              <span style={{ fontWeight: 700, fontSize: 13 }}>DVW-sökning</span>
+              <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+                <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>Ctrl+Q</span>
+                <button
+                  onMouseDown={e => e.stopPropagation()}
+                  onClick={() => { setDvwSearchOpen(false); setDvwSearchQuery(''); }}
+                  style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-secondary)', fontSize: 16, padding: '0 4px' }}
+                >×</button>
+              </div>
+            </div>
+            {/* Sökfält */}
+            <div style={{ padding: '10px 14px' }}>
+              <input
+                ref={dvwInputRef2}
+                value={dvwSearchQuery}
+                onChange={e => setDvwSearchQuery(e.target.value)}
+                onKeyDown={e => {
+                  e.stopPropagation();
+                  if (e.key === 'Escape') { setDvwSearchOpen(false); setDvwSearchQuery(''); }
+                  if (e.key === 'Enter' && dvwSearchResults.length > 0) {
+                    jumpToAction(dvwSearchResults[0]);
+                    setActiveActionId(dvwSearchResults[0].id);
+                  }
+                }}
+                placeholder="Sök DVW-kod, t.ex. *20S#"
+                style={{
+                  width: '100%', padding: '8px 10px', borderRadius: 8,
+                  border: '1px solid var(--border)', background: 'var(--surface-raised)',
+                  color: 'var(--text-primary)', fontSize: 14, fontFamily: 'var(--font-mono)',
+                  boxSizing: 'border-box'
+                }}
+              />
+              {dvwSearchQuery && (
+                <div style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 4 }}>
+                  {dvwSearchResults.length} träff{dvwSearchResults.length !== 1 ? 'ar' : ''}
+                </div>
+              )}
+            </div>
+            {/* Resultat */}
+            {dvwSearchResults.length > 0 && (
+              <div style={{ maxHeight: 250, overflowY: 'auto', padding: '0 8px 8px' }}>
+                {dvwSearchResults.slice(0, 50).map(action => (
+                  <div
+                    key={action.id}
+                    onClick={() => {
+                      jumpToAction(action);
+                      setActiveActionId(action.id);
+                    }}
+                    style={{
+                      display: 'flex', alignItems: 'center', gap: '0.5rem',
+                      padding: '6px 8px', borderRadius: 6, cursor: 'pointer',
+                      marginBottom: 2,
+                      background: activeActionId === action.id ? 'var(--accent-subtle, rgba(99,102,241,0.15))' : 'transparent',
+                      border: activeActionId === action.id ? '1px solid var(--accent)' : '1px solid transparent',
+                      transition: 'background 0.1s'
+                    }}
+                    onMouseOver={e => { if (activeActionId !== action.id) e.currentTarget.style.background = 'rgba(255,255,255,0.04)'; }}
+                    onMouseOut={e => { if (activeActionId !== action.id) e.currentTarget.style.background = 'transparent'; }}
+                  >
+                    <span style={{
+                      width: 22, height: 22, borderRadius: 4, flexShrink: 0,
+                      background: SKILL_COLORS[action.skill] || '#666',
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      fontSize: '0.7rem', fontWeight: 'bold', color: '#fff'
+                    }}>{action.skill}</span>
+                    <span style={{ fontSize: '0.72rem', fontFamily: 'var(--font-mono)', color: 'var(--lvc-gold)', minWidth: 55 }}>
+                      {action.rawCode}
+                    </span>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ fontSize: '0.75rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                        #{action.playerNumber} {action.playerName}
+                      </div>
+                    </div>
+                    <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)', flexShrink: 0 }}>
+                      S{action.set} {formatVideoTime(action.videoTime)}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* Review Panel — draggbar */}
       {reviewModal && (
