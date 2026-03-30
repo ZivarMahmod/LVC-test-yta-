@@ -316,7 +316,14 @@ app.get('/api/changelog', async (req, res) => {
   try {
     const { default: prisma } = await import('./config/database.js');
     const entries = await prisma.changelogEntry.findMany({
-      orderBy: { updatedAt: 'desc' }
+      orderBy: { createdAt: 'desc' }
+    });
+    // Sortera på versionsnummer (nyast först)
+    entries.sort((a, b) => {
+      const parse = (v) => v.replace('v','').split('.').map(Number);
+      const av = parse(a.version), bv = parse(b.version);
+      for (let i = 0; i < 3; i++) { if ((bv[i]||0) !== (av[i]||0)) return (bv[i]||0) - (av[i]||0); }
+      return 0;
     });
     res.json({ entries });
   } catch (err) {
