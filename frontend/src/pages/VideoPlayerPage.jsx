@@ -329,6 +329,13 @@ export default function VideoPlayerPage() {
     };
   }, []);
 
+  // Scrolla till aktiv action i listan
+  useEffect(() => {
+    if (!activeActionId || !actionListRef.current) return;
+    const el = actionListRef.current.querySelector(`[data-action-id="${activeActionId}"]`);
+    if (el) el.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+  }, [activeActionId]);
+
   // Uppdatera aktiv action baserat på videons position (utan auto-hopp)
   useEffect(() => {
     if (!scout || !videoRef.current) return;
@@ -826,7 +833,7 @@ export default function VideoPlayerPage() {
                   const isExpanded = expandedReviewAction === actionIdx;
 
                   return (
-                  <div key={action.id}>
+                  <div key={action.id} data-action-id={action.id}>
                   <div
                     onClick={() => jumpToAction(action)}
                     style={{
