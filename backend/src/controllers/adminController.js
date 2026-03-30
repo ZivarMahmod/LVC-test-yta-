@@ -54,10 +54,18 @@ export const adminController = {
       }
 
       const passwordHash = await bcrypt.hash(password, BCRYPT_ROUNDS);
+      const username = email.toLowerCase().split('@')[0];
+
+      // Kolla om username redan finns
+      const existingUsername = await prisma.user.findUnique({ where: { username } });
+      if (existingUsername) {
+        return res.status(409).json({ error: 'Användarnamnet är redan taget.' });
+      }
 
       const user = await prisma.user.create({
         data: {
           email: email.toLowerCase(),
+          username,
           name,
           passwordHash,
           role
