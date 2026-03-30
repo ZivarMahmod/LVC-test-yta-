@@ -564,6 +564,13 @@ export default function VideoPlayerPage() {
                 <div style={{ display: 'flex', gap: '0.3rem' }}>
                   <button onClick={() => setScoutTab('actions')} style={{ padding: '0.25rem 0.6rem', fontSize: '0.78rem', borderRadius: '4px', border: scoutTab === 'actions' ? '1px solid var(--lvc-blue, #1a5fb4)' : '1px solid var(--border-default, #333)', background: scoutTab === 'actions' ? 'rgba(26,95,180,0.15)' : 'transparent', color: scoutTab === 'actions' ? 'var(--lvc-blue-light, #3584e4)' : 'var(--text-muted)', cursor: 'pointer' }}>Actions</button>
                   <button onClick={() => setScoutTab('rapport')} style={{ padding: '0.25rem 0.6rem', fontSize: '0.78rem', borderRadius: '4px', border: scoutTab === 'rapport' ? '1px solid var(--lvc-blue, #1a5fb4)' : '1px solid var(--border-default, #333)', background: scoutTab === 'rapport' ? 'rgba(26,95,180,0.15)' : 'transparent', color: scoutTab === 'rapport' ? 'var(--lvc-blue-light, #3584e4)' : 'var(--text-muted)', cursor: 'pointer' }}>Rapport</button>
+                  {hasScout && isAdmin && (
+                    <a
+                      href={`/api/videos/${id}/dvw/download`}
+                      title="Ladda ner scout-fil"
+                      style={{ padding: '0.25rem 0.5rem', fontSize: '0.75rem', borderRadius: '4px', border: '1px solid var(--border-default, #333)', background: 'transparent', color: 'var(--text-muted)', cursor: 'pointer', textDecoration: 'none', display: 'inline-flex', alignItems: 'center' }}
+                    >↓</a>
+                  )}
                   {(isUploader || isCoach) && hasScout && (
                     <button
                       onClick={() => dvwInputRef.current?.click()}

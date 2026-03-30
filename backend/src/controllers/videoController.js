@@ -564,6 +564,27 @@ export const scoutController = {
     }
   },
 
+  async downloadDvw(req, res) {
+    try {
+      const video = await prisma.video.findUnique({ where: { id: req.params.id } });
+      if (!video) return res.status(404).json({ error: 'Videon kunde inte hittas.' });
+      if (!video.dvwPath) return res.status(404).json({ error: 'Ingen scout-fil hittades.' });
+
+      const absPath = fileStorageService.getAbsolutePath(video.dvwPath);
+      const { existsSync } = await import('fs');
+      if (!existsSync(absPath)) return res.status(404).json({ error: 'Filen hittades inte på disk.' });
+
+      const fileName = video.dvwPath.split('/').pop();
+      res.setHeader('Content-Disposition', `attachment; filename="${fileName}"`);
+      res.setHeader('Content-Type', 'application/octet-stream');
+      const { createReadStream } = await import('fs');
+      createReadStream(absPath).pipe(res);
+    } catch (error) {
+      logger.error('DVW download-fel:', error);
+      res.status(500).json({ error: 'Kunde inte ladda ner filen.' });
+    }
+  },
+
   async updateOffset(req, res) {
     try {
       const { offset } = req.body;

@@ -65,6 +65,13 @@ router.get('/:id/scout',
   scoutController.getScout
 );
 
+// Ladda ner scout-fil (admin)
+router.get('/:id/dvw/download',
+  authenticateToken,
+  requireAdmin,
+  scoutController.downloadDvw
+);
+
 // Uppdatera offset (admin)
 router.patch('/:id/offset',
   authenticateToken,
