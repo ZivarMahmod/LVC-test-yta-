@@ -315,12 +315,8 @@ app.get('/api/health', (req, res) => {
 app.get('/api/changelog', async (req, res) => {
   try {
     const { default: prisma } = await import('./config/database.js');
-    const entries = await prisma.changelogEntry.findMany();
-    entries.sort((a, b) => {
-      const parse = (v) => v.replace('v','').split('.').map(Number);
-      const av = parse(a.version), bv = parse(b.version);
-      for (let i = 0; i < 3; i++) { if ((bv[i]||0) !== (av[i]||0)) return (bv[i]||0) - (av[i]||0); }
-      return 0;
+    const entries = await prisma.changelogEntry.findMany({
+      orderBy: { updatedAt: 'desc' }
     });
     res.json({ entries });
   } catch (err) {

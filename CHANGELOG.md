@@ -1,5 +1,27 @@
 # LVC Media Hub — Ändringslogg
 
+## v1.9.1 — 2026-03-30
+- Coach Review-bubblor: spelare ser coach-kommentarer som 💬-ikoner direkt i action-listan
+- Bekräfta reviews med lösenord — bubblan byts till ✅ och blir kvar för genomgång med tränare
+- Toggle för att visa/dölja bekräftade reviews i footern
+- Ladda upp och byt scout-fil (.dvw) direkt i videospelaren (admin/coach/uploader)
+- Ladda ner scout-fil som admin (↓-knapp)
+- Ändra motståndarnamn direkt i videospelaren (admin klickar på titeln)
+- Titel och opponent uppdateras automatiskt på videokort
+- Fritt motståndarnamn vid uppladdning — textfält med förslag från thumbnail-bibliotek
+- DVW-kodsökning med Ctrl+Q — sök på rawCode och hoppa direkt till action
+- Vinkel 2-funktionen borttagen
+- Auto-knappen konsekvent storlek för alla roller
+
+## v1.8.0 — 2026-03-29
+- Coach Review System: coach kan skicka feedback på actions till spelare
+- Draggbar review-panel i videospelaren med auto-matchning av spelare
+- Inbox-sida med olästa/bekräftade reviews
+- Coach-översikt med lagspelare och review-status
+- Lösenordsbekräftelse vid acknowledge
+- Badge i headern med oläst-antal (uppdateras var 60:e sekund)
+- Navigering från inbox till specifik action i videon
+
 ## v1.7.0 — 2026-03-28
 - Videokort redesign: overlay-stil med gradient-fade och hover-reveal text
 - Horisontell listvy för videor (default på mobil)

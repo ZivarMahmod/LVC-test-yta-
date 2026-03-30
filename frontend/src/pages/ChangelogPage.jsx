@@ -176,8 +176,8 @@ export default function ChangelogPage() {
               )}
             </div>
             <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '0.75rem' }}>
-              {new Date(entry.createdAt).toLocaleDateString('sv-SE', { year: 'numeric', month: 'long', day: 'numeric' })}
-              {entry.updatedAt !== entry.createdAt && ' (redigerad)'}
+              {new Date(entry.updatedAt || entry.createdAt).toLocaleDateString('sv-SE', { year: 'numeric', month: 'long', day: 'numeric' })}
+              {entry.updatedAt && entry.updatedAt !== entry.createdAt && ' (redigerad)'}
             </div>
             <div style={{ fontSize: '0.9rem', lineHeight: '1.6', whiteSpace: 'pre-wrap' }}>
               {entry.content}
