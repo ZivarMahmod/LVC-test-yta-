@@ -7,7 +7,7 @@ const thumbnailUpload = multer({ dest: '/tmp/uploads/', limits: { fileSize: 5 * 
 const videoUpload = multer({ dest: '/tmp/uploads/', limits: { fileSize: 15 * 1024 * 1024 * 1024 } });
 import { videoController, scoutController } from '../controllers/videoController.js';
 import { adminController } from '../controllers/adminController.js';
-import { authenticateToken, requireViewer, requireAdmin, requireUploader } from '../middleware/auth.js';
+import { authenticateToken, requireRole, requireViewer, requireAdmin, requireUploader } from '../middleware/auth.js';
 import { csrfProtection } from '../middleware/csrf.js';
 import { videoIdValidation, searchValidation } from '../middleware/validators.js';
 import { handleValidationErrors } from '../middleware/validationHandler.js';
@@ -102,7 +102,7 @@ router.post('/upload/complete',
 
 router.post('/:id/dvw',
   authenticateToken,
-  requireUploader,
+  requireRole('admin', 'uploader', 'coach'),
   csrfProtection,
   thumbnailUpload.single('dvw'),
   videoController.uploadDvw

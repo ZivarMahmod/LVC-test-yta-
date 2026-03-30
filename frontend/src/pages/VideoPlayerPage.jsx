@@ -70,6 +70,9 @@ export default function VideoPlayerPage() {
   const [preRoll, setPreRoll] = useState(0);
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [autoAction, setAutoAction] = useState(false);
+  const [dvwUploading, setDvwUploading] = useState(false);
+  const [dvwMsg, setDvwMsg] = useState('');
+  const dvwInputRef = useRef(null);
   const [scoutTab, setScoutTab] = useState('actions');
   // Draggbar review-panel state
   const [panelPos, setPanelPos] = useState({ x: 20, y: 80 });
@@ -317,6 +320,39 @@ export default function VideoPlayerPage() {
     } catch {}
   };
 
+  const handleDvwUpload = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setDvwUploading(true);
+    setDvwMsg('');
+    try {
+      const csrfRes = await fetch('/api/auth/csrf-token', { credentials: 'include' });
+      const csrfData = await csrfRes.json();
+      const formData = new FormData();
+      formData.append('dvw', file);
+      const res = await fetch(`/api/videos/${id}/dvw`, {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'X-CSRF-Token': csrfData.token },
+        body: formData
+      });
+      if (!res.ok) {
+        const data = await res.json();
+        setDvwMsg(data.error || 'Uppladdning misslyckades');
+        return;
+      }
+      setDvwMsg('Scout-fil uppladdad!');
+      const data = await scoutApi.getScout(id);
+      setScout(data);
+      setTimeout(() => setDvwMsg(''), 3000);
+    } catch {
+      setDvwMsg('Serverfel');
+    } finally {
+      setDvwUploading(false);
+      if (dvwInputRef.current) dvwInputRef.current.value = '';
+    }
+  };
+
   // Hämta lagspelare för coach
   useEffect(() => {
     if (!isCoach) return;
@@ -510,7 +546,7 @@ export default function VideoPlayerPage() {
         </div>
 
         {/* SCOUT PANEL */}
-        {(hasScout || scoutLoading) && (
+        {(hasScout || scoutLoading || isUploader || isCoach) && (
           <div style={{
             flex: '0 0 280px',
             background: 'var(--surface)',
@@ -528,7 +564,14 @@ export default function VideoPlayerPage() {
                 <div style={{ display: 'flex', gap: '0.3rem' }}>
                   <button onClick={() => setScoutTab('actions')} style={{ padding: '0.25rem 0.6rem', fontSize: '0.78rem', borderRadius: '4px', border: scoutTab === 'actions' ? '1px solid var(--lvc-blue, #1a5fb4)' : '1px solid var(--border-default, #333)', background: scoutTab === 'actions' ? 'rgba(26,95,180,0.15)' : 'transparent', color: scoutTab === 'actions' ? 'var(--lvc-blue-light, #3584e4)' : 'var(--text-muted)', cursor: 'pointer' }}>Actions</button>
                   <button onClick={() => setScoutTab('rapport')} style={{ padding: '0.25rem 0.6rem', fontSize: '0.78rem', borderRadius: '4px', border: scoutTab === 'rapport' ? '1px solid var(--lvc-blue, #1a5fb4)' : '1px solid var(--border-default, #333)', background: scoutTab === 'rapport' ? 'rgba(26,95,180,0.15)' : 'transparent', color: scoutTab === 'rapport' ? 'var(--lvc-blue-light, #3584e4)' : 'var(--text-muted)', cursor: 'pointer' }}>Rapport</button>
-
+                  {(isUploader || isCoach) && hasScout && (
+                    <button
+                      onClick={() => dvwInputRef.current?.click()}
+                      disabled={dvwUploading}
+                      title="Byt scout-fil"
+                      style={{ padding: '0.25rem 0.5rem', fontSize: '0.75rem', borderRadius: '4px', border: '1px solid var(--border-default, #333)', background: 'transparent', color: 'var(--text-muted)', cursor: 'pointer' }}
+                    >{dvwUploading ? '...' : '↻'}</button>
+                  )}
                 </div>
                 <button
                   onClick={() => setAutoAction(!autoAction)}
@@ -654,8 +697,41 @@ export default function VideoPlayerPage() {
             )}
             </div>
 
+            {/* Dold filinput för DVW-upload */}
+            <input
+              ref={dvwInputRef}
+              type="file"
+              accept=".dvw"
+              style={{ display: 'none' }}
+              onChange={handleDvwUpload}
+            />
+            {dvwMsg && (
+              <div style={{ padding: '0.4rem 1rem', fontSize: '0.75rem', color: dvwMsg.includes('!') ? '#4CAF50' : '#F44336', background: dvwMsg.includes('!') ? 'rgba(76,175,80,0.1)' : 'rgba(244,67,54,0.1)' }}>
+                {dvwMsg}
+              </div>
+            )}
+
+            {/* Ingen scout-data — visa upload-prompt */}
+            {!hasScout && !scoutLoading && (isUploader || isCoach) && (
+              <div style={{ padding: '2rem 1rem', textAlign: 'center' }}>
+                <div style={{ fontSize: '2rem', marginBottom: '0.5rem' }}>📊</div>
+                <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginBottom: '1rem' }}>Ingen scout-fil kopplad till denna video</p>
+                <button
+                  onClick={() => dvwInputRef.current?.click()}
+                  disabled={dvwUploading}
+                  style={{
+                    padding: '0.5rem 1.2rem', borderRadius: '8px', border: '1px solid var(--lvc-blue, #1a5fb4)',
+                    background: 'rgba(26,95,180,0.15)', color: 'var(--lvc-blue-light, #3584e4)',
+                    cursor: 'pointer', fontSize: '0.82rem', fontWeight: 600
+                  }}
+                >
+                  {dvwUploading ? 'Laddar upp...' : 'Ladda upp scout-fil (.dvw)'}
+                </button>
+              </div>
+            )}
+
             {/* Action-lista */}
-            {scoutTab === 'actions' && (
+            {scoutTab === 'actions' && hasScout && (
             <div ref={actionListRef} style={{ overflowY: 'auto', flex: 1, padding: '0.5rem' }}>
               {scoutLoading ? (
                 <div style={{ textAlign: 'center', padding: '2rem', color: 'var(--text-muted)' }}>Laddar scout...</div>
