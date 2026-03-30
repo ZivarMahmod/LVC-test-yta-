@@ -568,7 +568,7 @@ export default function VideoPlayerPage() {
                     <a
                       href={`/api/videos/${id}/dvw/download`}
                       title="Ladda ner scout-fil"
-                      style={{ padding: '0.25rem 0.5rem', fontSize: '0.75rem', borderRadius: '4px', border: '1px solid var(--border-default, #333)', background: 'transparent', color: 'var(--text-muted)', cursor: 'pointer', textDecoration: 'none', display: 'inline-flex', alignItems: 'center' }}
+                      style={{ padding: '0.25rem 0.6rem', fontSize: '0.78rem', borderRadius: '4px', border: '1px solid var(--border-default, #333)', background: 'transparent', color: 'var(--text-muted)', cursor: 'pointer', textDecoration: 'none', display: 'inline-flex', alignItems: 'center' }}
                     >↓</a>
                   )}
                   {(isUploader || isCoach) && hasScout && (
@@ -576,14 +576,14 @@ export default function VideoPlayerPage() {
                       onClick={() => dvwInputRef.current?.click()}
                       disabled={dvwUploading}
                       title="Byt scout-fil"
-                      style={{ padding: '0.25rem 0.5rem', fontSize: '0.75rem', borderRadius: '4px', border: '1px solid var(--border-default, #333)', background: 'transparent', color: 'var(--text-muted)', cursor: 'pointer' }}
+                      style={{ padding: '0.25rem 0.6rem', fontSize: '0.78rem', borderRadius: '4px', border: '1px solid var(--border-default, #333)', background: 'transparent', color: 'var(--text-muted)', cursor: 'pointer' }}
                     >{dvwUploading ? '...' : '↻'}</button>
                   )}
                 </div>
                 <button
                   onClick={() => setAutoAction(!autoAction)}
                   style={{
-                    padding: '0.2rem 0.6rem', fontSize: '0.75rem', borderRadius: '4px',
+                    padding: '0.25rem 0.6rem', fontSize: '0.78rem', borderRadius: '4px',
                     border: autoAction ? '1px solid var(--lvc-green, #3fb950)' : '1px solid var(--border-default)',
                     background: autoAction ? 'rgba(63, 185, 80, 0.15)' : 'var(--surface-raised)',
                     color: autoAction ? 'var(--lvc-green, #3fb950)' : 'var(--text-muted)',
