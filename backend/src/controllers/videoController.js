@@ -296,18 +296,25 @@ export const videoController = {
   async updateTitle(req, res) {
     try {
       const { id } = req.params;
-      const { title } = req.body;
-      if (!title || !title.trim()) return res.status(400).json({ error: 'Titel krävs.' });
+      const { opponent } = req.body;
+      if (!opponent || !opponent.trim()) return res.status(400).json({ error: 'Motståndarnamn krävs.' });
 
       const video = await prisma.video.findUnique({ where: { id } });
       if (!video) return res.status(404).json({ error: 'Videon hittades inte.' });
 
+      const newOpponent = opponent.trim();
+      const date = new Date(video.matchDate);
+      const day = String(date.getDate()).padStart(2, '0');
+      const month = String(date.getMonth() + 1).padStart(2, '0');
+      const year = date.getFullYear();
+      const newTitle = 'LVC vs ' + newOpponent + ' \u2014 ' + day + '/' + month + '/' + year;
+
       const updated = await prisma.video.update({
         where: { id },
-        data: { title: title.trim() }
+        data: { title: newTitle, opponent: newOpponent }
       });
-      logger.info('Videotitel uppdaterad', { videoId: id, title: updated.title });
-      res.json({ title: updated.title });
+      logger.info('Videotitel uppdaterad', { videoId: id, title: updated.title, opponent: updated.opponent });
+      res.json({ title: updated.title, opponent: updated.opponent });
     } catch (error) {
       logger.error('Titel update-fel:', error);
       res.status(500).json({ error: 'Kunde inte uppdatera titeln.' });

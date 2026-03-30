@@ -355,7 +355,7 @@ export default function VideoPlayerPage() {
   };
 
   const handleSaveTitle = async () => {
-    if (!titleInput.trim() || titleInput.trim() === video.title) {
+    if (!titleInput.trim() || titleInput.trim() === video.opponent) {
       setEditingTitle(false);
       return;
     }
@@ -367,11 +367,11 @@ export default function VideoPlayerPage() {
         method: 'PATCH',
         credentials: 'include',
         headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': csrfToken },
-        body: JSON.stringify({ title: titleInput.trim() })
+        body: JSON.stringify({ opponent: titleInput.trim() })
       });
       if (res.ok) {
         const data = await res.json();
-        setVideo(prev => ({ ...prev, title: data.title }));
+        setVideo(prev => ({ ...prev, title: data.title, opponent: data.opponent }));
       }
     } catch {}
     setTitleSaving(false);
@@ -516,10 +516,12 @@ export default function VideoPlayerPage() {
           <div className="video-title-bar">
             {editingTitle ? (
               <div style={{ display: 'flex', gap: '0.4rem', alignItems: 'center', flex: 1 }}>
+                <span style={{ fontSize: '1.1rem', fontWeight: 600, whiteSpace: 'nowrap' }}>LVC vs</span>
                 <input
                   autoFocus
                   value={titleInput}
                   onChange={e => setTitleInput(e.target.value)}
+                  placeholder="Motståndarnamn"
                   onKeyDown={e => {
                     e.stopPropagation();
                     if (e.key === 'Enter') handleSaveTitle();
@@ -552,7 +554,7 @@ export default function VideoPlayerPage() {
               </div>
             ) : (
               <h1
-                onClick={() => { if (isAdmin) { setTitleInput(video.title); setEditingTitle(true); } }}
+                onClick={() => { if (isAdmin) { setTitleInput(video.opponent || ''); setEditingTitle(true); } }}
                 style={isAdmin ? { cursor: 'pointer', borderBottom: '1px dashed var(--border-default)' } : {}}
                 title={isAdmin ? 'Klicka för att ändra titel' : undefined}
               >{video.title}</h1>
