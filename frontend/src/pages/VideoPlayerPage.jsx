@@ -594,8 +594,7 @@ export default function VideoPlayerPage() {
 
             {/* Header */}
             <div style={{ padding: '1rem', borderBottom: '1px solid var(--border)' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
-                <div style={{ display: 'flex', gap: '0.3rem' }}>
+              <div style={{ display: 'flex', gap: '0.3rem', flexWrap: 'wrap', alignItems: 'center', marginBottom: '0.5rem' }}>
                   <button onClick={() => setScoutTab('actions')} style={{ padding: '0.25rem 0.6rem', fontSize: '0.78rem', borderRadius: '4px', border: scoutTab === 'actions' ? '1px solid var(--lvc-blue, #1a5fb4)' : '1px solid var(--border-default, #333)', background: scoutTab === 'actions' ? 'rgba(26,95,180,0.15)' : 'transparent', color: scoutTab === 'actions' ? 'var(--lvc-blue-light, #3584e4)' : 'var(--text-muted)', cursor: 'pointer' }}>Actions</button>
                   <button onClick={() => setScoutTab('rapport')} style={{ padding: '0.25rem 0.6rem', fontSize: '0.78rem', borderRadius: '4px', border: scoutTab === 'rapport' ? '1px solid var(--lvc-blue, #1a5fb4)' : '1px solid var(--border-default, #333)', background: scoutTab === 'rapport' ? 'rgba(26,95,180,0.15)' : 'transparent', color: scoutTab === 'rapport' ? 'var(--lvc-blue-light, #3584e4)' : 'var(--text-muted)', cursor: 'pointer' }}>Rapport</button>
                   {hasScout && isAdmin && (
@@ -613,19 +612,18 @@ export default function VideoPlayerPage() {
                       style={{ padding: '0.25rem 0.6rem', fontSize: '0.78rem', borderRadius: '4px', border: '1px solid var(--border-default, #333)', background: 'transparent', color: 'var(--text-muted)', cursor: 'pointer' }}
                     >{dvwUploading ? '...' : '↻'}</button>
                   )}
-                </div>
-                <button
-                  onClick={() => setAutoAction(!autoAction)}
-                  style={{
-                    padding: '0.25rem 0.6rem', fontSize: '0.78rem', borderRadius: '4px',
-                    border: autoAction ? '1px solid var(--lvc-green, #3fb950)' : '1px solid var(--border-default)',
-                    background: autoAction ? 'rgba(63, 185, 80, 0.15)' : 'var(--surface-raised)',
-                    color: autoAction ? 'var(--lvc-green, #3fb950)' : 'var(--text-muted)',
-                    cursor: 'pointer'
-                  }}
-                >
-                  {autoAction ? '▶ Auto' : '■ Auto'}
-                </button>
+                  <button
+                    onClick={() => setAutoAction(!autoAction)}
+                    style={{
+                      padding: '0.25rem 0.6rem', fontSize: '0.78rem', borderRadius: '4px',
+                      border: autoAction ? '1px solid var(--lvc-green, #3fb950)' : '1px solid var(--border-default)',
+                      background: autoAction ? 'rgba(63, 185, 80, 0.15)' : 'var(--surface-raised)',
+                      color: autoAction ? 'var(--lvc-green, #3fb950)' : 'var(--text-muted)',
+                      cursor: 'pointer', marginLeft: 'auto'
+                    }}
+                  >
+                    {autoAction ? '▶ Auto' : '■ Auto'}
+                  </button>
                 <button
                   className="scout-filter-toggle"
                   onClick={() => setFiltersOpen(!filtersOpen)}
