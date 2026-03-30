@@ -12,16 +12,21 @@ const CHUNK_SIZE = 95 * 1024 * 1024;
 
 export default function UploadPage() {
   const navigate = useNavigate();
+  const generateId = () => Math.random().toString(36).substring(2) + Date.now().toString(36);
   const fileRef = useRef(null);
   const dvwRef = useRef(null);
+  const secondaryRef = useRef(null);
   const [file, setFile] = useState(null);
   const [dvwFile, setDvwFile] = useState(null);
+  const [secondaryFile, setSecondaryFile] = useState(null);
   const [opponent, setOpponent] = useState('');
   const [matchDate, setMatchDate] = useState('');
   const [description, setDescription] = useState('');
   const [uploading, setUploading] = useState(false);
   const [progress, setProgress] = useState(0);
   const [status, setStatus] = useState('');
+  const [secProgress, setSecProgress] = useState(0);
+  const [secStatus, setSecStatus] = useState('');
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [teams, setTeams] = useState([]);
@@ -112,7 +117,7 @@ export default function UploadPage() {
     setProgress(0);
     try {
       const csrfToken = await getCsrfToken();
-      const uploadId = crypto.randomUUID();
+      const uploadId = generateId();
       const totalChunks = Math.ceil(file.size / CHUNK_SIZE);
       for (let i = 0; i < totalChunks; i++) {
         const start = i * CHUNK_SIZE;
@@ -155,6 +160,46 @@ export default function UploadPage() {
       }
       const result = await completeRes.json();
       setProgress(95);
+      if (secondaryFile && result.video?.id) {
+        const secUploadId = generateId();
+        const secTotalChunks = Math.ceil(secondaryFile.size / CHUNK_SIZE);
+        const secUploadStart = Date.now();
+        setSecProgress(0);
+        for (let i = 0; i < secTotalChunks; i++) {
+          const start = i * CHUNK_SIZE;
+          const end = Math.min(start + CHUNK_SIZE, secondaryFile.size);
+          const chunk = secondaryFile.slice(start, end);
+          const elapsed = (Date.now() - secUploadStart) / 1000;
+          const bytesUploaded = i * CHUNK_SIZE;
+          const speed = bytesUploaded > 0 ? bytesUploaded / elapsed : 0;
+          const bytesLeft = secondaryFile.size - bytesUploaded;
+          const secsLeft = speed > 0 ? Math.round(bytesLeft / speed) : 0;
+          const timeStr = secsLeft > 60 ? `${Math.floor(secsLeft / 60)}m ${secsLeft % 60}s` : `${secsLeft}s`;
+          setSecStatus(i === 0 ? `Del 1 av ${secTotalChunks}` : `Del ${i + 1} av ${secTotalChunks} — ~${timeStr} kvar`);
+          const formData = new FormData();
+          formData.append('chunk', chunk, 'chunk');
+          formData.append('uploadId', secUploadId);
+          formData.append('chunkIndex', String(i));
+          formData.append('totalChunks', String(secTotalChunks));
+          formData.append('fileName', secondaryFile.name);
+          const secRes = await fetch(`/api/videos/${result.video.id}/secondary/chunk`, {
+            method: 'POST', credentials: 'include',
+            headers: { 'X-CSRF-Token': csrfToken },
+            body: formData
+          });
+          if (!secRes.ok) throw new Error('Vinkel 2 chunk-uppladdning misslyckades');
+          setSecProgress(Math.round(((i + 1) / secTotalChunks) * 95));
+        }
+        setSecStatus('Sätter ihop vinkel 2...');
+        setSecProgress(98);
+        await fetch(`/api/videos/${result.video.id}/secondary/complete`, {
+          method: 'POST', credentials: 'include',
+          headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': csrfToken },
+          body: JSON.stringify({ uploadId: secUploadId, fileName: secondaryFile.name })
+        });
+        setSecProgress(100);
+        setSecStatus('');
+      }
       if (dvwFile && result.video?.id) {
         setStatus('Laddar upp scout-fil...');
         const dvwForm = new FormData();
@@ -224,6 +269,16 @@ export default function UploadPage() {
             <input ref={fileRef} type="file" accept=".mp4,.mov,.mkv,video/mp4,video/quicktime,video/x-matroska" onChange={handleFileChange} hidden disabled={uploading} />
           </div>
 
+          {/* Vinkel 2 */}
+          <div className="upload-dvw-row">
+            <span className="upload-section-label">VINKEL 2</span>
+            <button type="button" className="btn-dvw" onClick={() => secondaryRef.current?.click()} disabled={uploading}>Välj fil (valfritt)</button>
+            <span className="upload-dvw-name">{secondaryFile ? secondaryFile.name : 'Ingen fil vald'}</span>
+            {secondaryFile && !uploading && (
+              <button type="button" className="drop-zone-remove" onClick={() => setSecondaryFile(null)} style={{marginLeft: 'auto'}}>×</button>
+            )}
+            <input ref={secondaryRef} type="file" accept="video/*" onChange={(e) => setSecondaryFile(e.target.files[0] || null)} hidden disabled={uploading} />
+          </div>
           {/* DVW */}
           <div className="upload-dvw-row">
             <span className="upload-section-label">SCOUT-FIL</span>
@@ -252,13 +307,26 @@ export default function UploadPage() {
           {/* Progress */}
           {uploading && (
             <div className="upload-progress">
+              <p style={{ fontSize: '0.78rem', color: 'var(--text-muted)', marginBottom: '4px' }}>Huvudvideo</p>
               <div className="progress-bar-track">
                 <div className="progress-bar-fill" style={{ width: `${progress}%` }} />
               </div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.82rem' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.82rem', marginBottom: '0.75rem' }}>
                 <span className="progress-text">{progress}%</span>
                 {status && <span style={{ color: 'var(--text-muted)' }}>{status}</span>}
               </div>
+              {secondaryFile && (
+                <>
+                  <p style={{ fontSize: '0.78rem', color: 'var(--text-muted)', marginBottom: '4px' }}>Vinkel 2</p>
+                  <div className="progress-bar-track">
+                    <div className="progress-bar-fill" style={{ width: `${secProgress}%`, background: 'var(--accent-secondary, #6366f1)' }} />
+                  </div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.82rem' }}>
+                    <span className="progress-text">{secProgress}%</span>
+                    {secStatus && <span style={{ color: 'var(--text-muted)' }}>{secStatus}</span>}
+                  </div>
+                </>
+              )}
             </div>
           )}
 

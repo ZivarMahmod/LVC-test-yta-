@@ -20,7 +20,8 @@ import crypto from 'crypto';
 import authRoutes from './routes/auth.js';
 import videoRoutes from './routes/videos.js';
 import adminRoutes from './routes/admin.js';
-import { authenticateToken, requireAdmin } from './middleware/auth.js';
+import reviewRoutes from './routes/reviews.js';
+import { authenticateToken, requireAdmin, requireCoach } from './middleware/auth.js';
 import { startFolderScanner } from './services/folderScanner.js';
 
 // Periodisk rensning
@@ -119,6 +120,7 @@ app.use((req, res, next) => {
 app.use('/api/auth', authRoutes);
 app.use('/api/videos', videoRoutes);
 app.use('/api/admin', adminRoutes);
+app.use('/api/reviews', reviewRoutes);
 
 // Borttagna videor (admin)
 app.get('/api/admin/deleted-videos', authenticateToken, requireAdmin, async (req, res) => {
@@ -212,6 +214,95 @@ app.get('/api/thumbnail-library/image/:file', authenticateToken, async (req, res
     fs.createReadStream(thumbPath).pipe(res);
   } catch (err) {
     res.status(500).json({ error: 'Serverfel' });
+  }
+});
+
+
+// ===========================================
+// UserTeam — Lag-kopplingar för användare
+// ===========================================
+app.post('/api/admin/users/:id/teams', authenticateToken, requireAdmin, async (req, res) => {
+  try {
+    const { default: prisma } = await import('./config/database.js');
+    const { teamId } = req.body;
+    if (!teamId) return res.status(400).json({ error: 'teamId krävs' });
+    const entry = await prisma.userTeam.create({
+      data: { userId: req.params.id, teamId: parseInt(teamId) }
+    });
+    res.status(201).json({ entry });
+  } catch (err) {
+    if (err.code === 'P2002') return res.status(400).json({ error: 'Användaren är redan i detta lag' });
+    res.status(500).json({ error: 'Kunde inte lägga till lag' });
+  }
+});
+
+app.delete('/api/admin/users/:id/teams/:teamId', authenticateToken, requireAdmin, async (req, res) => {
+  try {
+    const { default: prisma } = await import('./config/database.js');
+    await prisma.userTeam.delete({
+      where: {
+        userId_teamId: {
+          userId: req.params.id,
+          teamId: parseInt(req.params.teamId)
+        }
+      }
+    });
+    res.json({ message: 'Lag borttaget från användare' });
+  } catch (err) {
+    res.status(500).json({ error: 'Kunde inte ta bort lag' });
+  }
+});
+
+app.put('/api/admin/users/:id/role', authenticateToken, requireAdmin, async (req, res) => {
+  try {
+    const { default: prisma } = await import('./config/database.js');
+    const { role } = req.body;
+    const validRoles = ['viewer', 'uploader', 'coach', 'admin'];
+    if (!validRoles.includes(role)) return res.status(400).json({ error: 'Ogiltig roll' });
+    const user = await prisma.user.update({
+      where: { id: req.params.id },
+      data: { role }
+    });
+    res.json({ user });
+  } catch (err) {
+    res.status(500).json({ error: 'Kunde inte uppdatera roll' });
+  }
+});
+
+// Hämta lagspelare för coach (filtrerat på coachens lag)
+app.get('/api/reviews/team-players', authenticateToken, requireCoach, async (req, res) => {
+  try {
+    const { default: prisma } = await import('./config/database.js');
+    // Hämta coachens lag
+    const coachTeams = await prisma.userTeam.findMany({
+      where: { userId: req.user.id },
+      select: { teamId: true }
+    });
+    const teamIds = coachTeams.map(t => t.teamId);
+    if (teamIds.length === 0) return res.json({ players: [] });
+
+    // Hämta alla spelare i samma lag
+    const userTeams = await prisma.userTeam.findMany({
+      where: { teamId: { in: teamIds }, userId: { not: req.user.id } },
+      include: {
+        user: { select: { id: true, name: true, username: true, role: true, jerseyNumber: true } },
+        team: { select: { id: true, name: true } }
+      }
+    });
+
+    // Gruppera per lag
+    const grouped = {};
+    for (const ut of userTeams) {
+      if (!grouped[ut.teamId]) {
+        grouped[ut.teamId] = { team: ut.team, players: [] };
+      }
+      const exists = grouped[ut.teamId].players.find(p => p.id === ut.user.id);
+      if (!exists) grouped[ut.teamId].players.push(ut.user);
+    }
+
+    res.json({ teams: Object.values(grouped) });
+  } catch (err) {
+    res.status(500).json({ error: 'Kunde inte hämta spelare' });
   }
 });
 

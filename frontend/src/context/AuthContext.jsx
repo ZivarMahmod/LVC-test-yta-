@@ -60,7 +60,8 @@ export function AuthProvider({ children }) {
     login,
     logout,
     isAdmin: user?.role === 'admin',
-    isUploader: user?.role === 'admin' || user?.role === 'uploader',
+    isUploader: user?.role === 'admin' || user?.role === 'uploader' || user?.role === 'coach',
+    isCoach: user?.role === 'admin' || user?.role === 'coach',
     isAuthenticated: !!user
   };
 

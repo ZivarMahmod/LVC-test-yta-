@@ -9,16 +9,18 @@ import { useAuth } from '../context/AuthContext.jsx';
 import { inviteApi } from '../utils/api.js';
 import './AdminPage.css';
 
-const ROLE_LABELS = { admin: 'Admin', uploader: 'Uppladdare', viewer: 'Tittare' };
+const ROLE_LABELS = {
+  coach: 'Coach', admin: 'Admin', uploader: 'Uppladdare', viewer: 'Tittare' };
 
-function UserModal({ user, onClose, onSave }) {
+function UserModal({ user, onClose, onSave, teams = [], onAddTeam, onRemoveTeam }) {
   const isEdit = !!user;
   const [form, setForm] = useState({
     email: user?.email || '',
     name: user?.name || '',
     password: '',
     role: user?.role || 'viewer',
-    isActive: user?.isActive ?? true
+    isActive: user?.isActive ?? true,
+    jerseyNumber: user?.jerseyNumber || ''
   });
   const [error, setError] = useState('');
   const [saving, setSaving] = useState(false);
@@ -164,8 +166,20 @@ function UserModal({ user, onClose, onSave }) {
             >
               <option value="viewer">Tittare</option>
               <option value="uploader">Uppladdare</option>
+              <option value="coach">Coach</option>
               <option value="admin">Admin</option>
             </select>
+          </div>
+          <div className="form-group">
+            <label>Tröjnummer (valfritt)</label>
+            <input
+              type="number"
+              min="1"
+              max="99"
+              value={form.jerseyNumber}
+              onChange={(e) => setForm(f => ({ ...f, jerseyNumber: e.target.value }))}
+              placeholder="t.ex. 6"
+            />
           </div>
           {isEdit && (
             <div className="form-group">
@@ -177,6 +191,42 @@ function UserModal({ user, onClose, onSave }) {
                 />
                 <span>Konto aktivt</span>
               </label>
+            </div>
+          )}
+          {isEdit && onAddTeam && (
+            <div className="form-group">
+              <label>Lag</label>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.4rem', marginBottom: '0.5rem' }}>
+                {(user.teams || []).map(ut => (
+                  <span key={ut.team.id} style={{
+                    display: 'inline-flex', alignItems: 'center', gap: '0.3rem',
+                    background: 'var(--accent-subtle, rgba(99,102,241,0.15))',
+                    border: '1px solid var(--accent)', borderRadius: 6,
+                    padding: '2px 8px', fontSize: '0.82rem'
+                  }}>
+                    {ut.team.name}
+                    <button
+                      type="button"
+                      onClick={() => onRemoveTeam(user.id, ut.team.id)}
+                      style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)', fontSize: '0.9rem', padding: 0 }}
+                    >×</button>
+                  </span>
+                ))}
+                {(user.teams || []).length === 0 && (
+                  <span style={{ fontSize: '0.82rem', color: 'var(--text-muted)' }}>Inget lag kopplat</span>
+                )}
+              </div>
+              <select
+                onChange={e => { if (e.target.value) { onAddTeam(user.id, e.target.value); e.target.value = ''; } }}
+                defaultValue=""
+                style={{ fontSize: '0.85rem' }}
+              >
+                <option value="" disabled>+ Lägg till lag...</option>
+                {teams
+                  .filter(t => !(user.teams || []).find(ut => ut.team.id === t.id))
+                  .map(t => <option key={t.id} value={t.id}>{t.name}</option>)
+                }
+              </select>
             </div>
           )}
           <div className="form-actions">
@@ -353,7 +403,7 @@ export default function AdminPage() {
   }, []);
 
   useEffect(() => {
-    if (tab === 'users') { fetchUsers(); fetchInvites(); }
+    if (tab === 'users') { fetchUsers(); fetchInvites(); fetchTeamsAdmin(); }
     else if (tab === 'uploads') fetchUploads();
     else if (tab === 'teams') fetchTeamsAdmin();
     else if (tab === 'deleted') fetchDeletedVideos();
@@ -513,6 +563,9 @@ export default function AdminPage() {
               </button>
               <button className="btn-primary btn-sm" onClick={() => handleCreateInvite('uploader')}>
                 + Uploader-länk
+              </button>
+              <button className="btn-primary btn-sm" onClick={() => handleCreateInvite('coach')}>
+                + Coach-länk
               </button>
             </div>
           </div>
@@ -980,6 +1033,31 @@ export default function AdminPage() {
           user={modal === 'create' ? null : modal}
           onClose={() => setModal(null)}
           onSave={modal === 'create' ? handleCreateUser : handleUpdateUser}
+          teams={teams}
+          onAddTeam={async (userId, teamId) => {
+            try {
+              await fetch(`/api/admin/users/${userId}/teams`, {
+                method: 'POST', credentials: 'include',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ teamId: parseInt(teamId) })
+              });
+              const data = await fetch('/api/admin/users', { credentials: 'include' }).then(r => r.json());
+              setUsers(data.users || []);
+              const updated = (data.users || []).find(u => u.id === userId);
+              if (updated) setModal(updated);
+            } catch {}
+          }}
+          onRemoveTeam={async (userId, teamId) => {
+            try {
+              await fetch(`/api/admin/users/${userId}/teams/${teamId}`, {
+                method: 'DELETE', credentials: 'include'
+              });
+              const data = await fetch('/api/admin/users', { credentials: 'include' }).then(r => r.json());
+              setUsers(data.users || []);
+              const updated = (data.users || []).find(u => u.id === userId);
+              if (updated) setModal(updated);
+            } catch {}
+          }}
         />
       )}
     </div>

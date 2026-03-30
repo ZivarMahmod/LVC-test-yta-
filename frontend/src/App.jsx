@@ -13,6 +13,7 @@ import VideoPlayerPage from './pages/VideoPlayerPage.jsx';
 import UploadPage from './pages/UploadPage.jsx';
 import AdminPage from './pages/AdminPage.jsx';
 import ChangelogPage from './pages/ChangelogPage.jsx';
+import InboxPage from './pages/InboxPage.jsx';
 
 function ProtectedRoute({ children, requiredRole }) {
   const { user, loading } = useAuth();
@@ -66,10 +67,11 @@ export default function App() {
         <Route path="videos" element={<VideosPage />} />
         <Route path="video/:id" element={<VideoPlayerPage />} />
         <Route path="changelog" element={<ChangelogPage />} />
+        <Route path="inbox" element={<InboxPage />} />
         <Route
           path="upload"
           element={
-            <ProtectedRoute requiredRole={['admin', 'uploader']}>
+            <ProtectedRoute requiredRole={['admin', 'uploader', 'coach']}>
               <UploadPage />
             </ProtectedRoute>
           }

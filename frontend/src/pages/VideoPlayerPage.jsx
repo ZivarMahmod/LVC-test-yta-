@@ -2,7 +2,7 @@
 // LVC Media Hub — Videospelare med Scout-panel
 // ===========================================
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { useParams, Link, useNavigate } from 'react-router-dom';
+import { useParams, Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { videoApi } from '../utils/api.js';
 import { scoutApi } from '../utils/api.js';
 import { useAuth } from '../context/AuthContext.jsx';
@@ -47,8 +47,11 @@ const GRADE_SYMBOLS = {
 export default function VideoPlayerPage() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { isAdmin, isUploader } = useAuth();
+  const [searchParams] = useSearchParams();
+  const { isAdmin, isUploader, isCoach } = useAuth();
   const [video, setVideo] = useState(null);
+  const [showSecondary, setShowSecondary] = useState(false);
+  const secondaryVideoRef = useRef(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const videoRef = useRef(null);
@@ -68,6 +71,40 @@ export default function VideoPlayerPage() {
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [autoAction, setAutoAction] = useState(false);
   const [scoutTab, setScoutTab] = useState('actions');
+  // Draggbar review-panel state
+  const [panelPos, setPanelPos] = useState({ x: 20, y: 80 });
+  const [panelMinimized, setPanelMinimized] = useState(false);
+  const dragRef = useRef(null);
+  const dragging = useRef(false);
+  const dragOffset = useRef({ x: 0, y: 0 });
+
+  const onDragStart = (e) => {
+    dragging.current = true;
+    dragOffset.current = { x: e.clientX - panelPos.x, y: e.clientY - panelPos.y };
+    e.preventDefault();
+  };
+
+  useEffect(() => {
+    const onMove = (e) => {
+      if (!dragging.current) return;
+      setPanelPos({ x: e.clientX - dragOffset.current.x, y: e.clientY - dragOffset.current.y });
+    };
+    const onUp = () => { dragging.current = false; };
+    window.addEventListener('mousemove', onMove);
+    window.addEventListener('mouseup', onUp);
+    return () => { window.removeEventListener('mousemove', onMove); window.removeEventListener('mouseup', onUp); };
+  }, []);
+
+  // Review state
+  const [reviewModal, setReviewModal] = useState(null); // { action, actionIndex }
+  const [reviewPlayers, setReviewPlayers] = useState([]);
+  const [reviewSelectedPlayers, setReviewSelectedPlayers] = useState([]);
+  const [reviewComment, setReviewComment] = useState('');
+  const [reviewLoading, setReviewLoading] = useState(false);
+  const [reviewError, setReviewError] = useState('');
+  const [reviewSuccess, setReviewSuccess] = useState('');
+  const [reviewPlayerSearch, setReviewPlayerSearch] = useState('');
+
   const [selectedPlayer, setSelectedPlayer] = useState(null);
 
   const pendingJump = useRef(false);
@@ -114,6 +151,15 @@ export default function VideoPlayerPage() {
       try {
         const data = await scoutApi.getScout(id);
         setScout(data);
+        // Hoppa till action från inbox-länk
+        const jumpIdx = searchParams.get('actionIndex');
+        if (jumpIdx !== null && data?.actions) {
+          const idx = parseInt(jumpIdx);
+          const action = data.actions[idx];
+          if (action) {
+            setTimeout(() => jumpToAction(action), 500);
+          }
+        }
       } catch {
         setScout(null);
       } finally {
@@ -126,6 +172,8 @@ export default function VideoPlayerPage() {
   // Keyboard shortcuts
   useEffect(() => {
     const handleKeyDown = (e) => {
+      const tag = document.activeElement?.tagName;
+      if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return;
       const vid = videoRef.current;
       if (!vid) return;
       if (e.key === 'ArrowRight') { e.preventDefault(); vid.currentTime = Math.min(vid.currentTime + skipSeconds, vid.duration); }
@@ -220,6 +268,59 @@ export default function VideoPlayerPage() {
     } catch {}
   };
 
+  // Hämta lagspelare för coach
+  useEffect(() => {
+    if (!isCoach) return;
+    fetch('/api/reviews/team-players', { credentials: 'include' })
+      .then(r => r.json())
+      .then(d => setReviewPlayers(d.teams || []))
+      .catch(() => {});
+  }, [isCoach]);
+
+  async function sendReview() {
+    setReviewError('');
+    setReviewSuccess('');
+    if (!reviewSelectedPlayers.length) return setReviewError('Välj minst en spelare');
+    if (!reviewComment.trim()) return setReviewError('Skriv en kommentar');
+    setReviewLoading(true);
+    try {
+      const res = await fetch('/api/reviews', {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          videoId: id,
+          actionIndex: reviewModal.actionIndex,
+          playerIds: reviewSelectedPlayers,
+          comment: reviewComment.trim()
+        })
+      });
+      const data = await res.json();
+      if (!res.ok) return setReviewError(data.error || 'Fel uppstod');
+      setReviewSuccess('Skickat!');
+      setTimeout(() => {
+        setReviewModal(null);
+        setReviewSelectedPlayers([]);
+        setReviewComment('');
+        setReviewSuccess('');
+      }, 1500);
+    } catch {
+      setReviewError('Serverfel');
+    } finally {
+      setReviewLoading(false);
+    }
+  }
+
+  // Hämta lagspelare för coach
+  useEffect(() => {
+    if (!isCoach) return;
+    fetch('/api/reviews/team-players', { credentials: 'include' })
+      .then(r => r.json())
+      .then(d => setReviewPlayers(d.teams || []))
+      .catch(() => {});
+  }, [isCoach]);
+
+
   const getFilteredActions = () => {
     if (!scout) return [];
     return scout.actions.filter(a => {
@@ -304,6 +405,14 @@ export default function VideoPlayerPage() {
         <div className="player-main">
           <div className="video-title-bar">
             <h1>{video.title}</h1>
+            {video.secondaryStreamUrl && (
+              <button
+                className={showSecondary ? 'btn-primary btn-sm' : 'btn-secondary btn-sm'}
+                onClick={() => setShowSecondary(v => !v)}
+              >
+                {showSecondary ? '📷 Vinkel 2 PÅ' : '📷 Vinkel 2'}
+              </button>
+            )}
             {(isAdmin || isUploader) && (
               <button className="btn-danger btn-sm" onClick={handleDelete}>Ta bort</button>
             )}
@@ -318,12 +427,37 @@ export default function VideoPlayerPage() {
               preload="metadata"
               className="video-player"
               onLoadedMetadata={(e) => { e.target.volume = 0.15; }}
+              onTimeUpdate={(e) => {
+                if (showSecondary && secondaryVideoRef.current) {
+                  const diff = Math.abs(secondaryVideoRef.current.currentTime - e.target.currentTime);
+                  if (diff > 0.3) secondaryVideoRef.current.currentTime = e.target.currentTime;
+                }
+              }}
+              onPlay={() => { if (showSecondary && secondaryVideoRef.current) secondaryVideoRef.current.play(); }}
+              onPause={() => { if (showSecondary && secondaryVideoRef.current) secondaryVideoRef.current.pause(); }}
+              onSeeked={(e) => { if (showSecondary && secondaryVideoRef.current) secondaryVideoRef.current.currentTime = e.target.currentTime; }}
               key={video.streamUrl}
             >
               <source src={video.streamUrl} type={video.mimeType} />
               Din webbläsare stöder inte videouppspelning.
             </video>
           </div>
+          {showSecondary && video.secondaryStreamUrl && (
+            <div className="player-wrapper" style={{ marginTop: '8px' }}>
+              <video
+                ref={secondaryVideoRef}
+                controls
+                muted={false}
+                playsInline
+                preload="metadata"
+                className="video-player"
+                onLoadedMetadata={(e) => { e.target.volume = 0.15; }}
+                key={video.secondaryStreamUrl}
+              >
+                <source src={video.secondaryStreamUrl} type={video.mimeType} />
+              </video>
+            </div>
+          )}
         </div>
 
         {/* SCOUT PANEL */}
@@ -519,6 +653,33 @@ export default function VideoPlayerPage() {
                     <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)', flexShrink: 0 }}>
                       {formatVideoTime(action.videoTime)}
                     </span>
+                    {/* Review-knapp för coach */}
+                    {isCoach && (
+                      <span
+                        onClick={e => {
+                          e.stopPropagation();
+                          setReviewModal({ action, actionIndex: scout?.actions?.indexOf(action) ?? filteredActions.indexOf(action) });
+                          setReviewComment('');
+                          setReviewError('');
+                          setReviewSuccess('');
+                          setReviewPlayerSearch('');
+                          // Auto-markera spelaren om de finns i laget
+                          const allPlayers = reviewPlayers.flatMap(t => t.players);
+                          const match = allPlayers.find(p =>
+                            (action.playerNumber && p.jerseyNumber === action.playerNumber) ||
+                            p.name.toLowerCase().includes(action.playerName?.toLowerCase() || '')
+                          );
+                          setReviewSelectedPlayers(match ? [match.id] : []);
+                        }}
+                        title="Skicka till spelare"
+                        style={{
+                          fontSize: '0.85rem', cursor: 'pointer', flexShrink: 0,
+                          opacity: 0.6, transition: 'opacity 0.15s'
+                        }}
+                        onMouseEnter={e => e.target.style.opacity = 1}
+                        onMouseLeave={e => e.target.style.opacity = 0.6}
+                      >📤</span>
+                    )}
                   </div>
                 ))
               )}
@@ -727,6 +888,185 @@ export default function VideoPlayerPage() {
           </div>
         )}
       </div>
+
+      {/* Review Panel — draggbar */}
+      {reviewModal && (
+        <div style={{
+          position: 'fixed', left: panelPos.x, top: panelPos.y,
+          zIndex: 9999, width: 320, userSelect: 'none'
+        }} ref={dragRef}>
+          <div style={{
+            background: 'rgba(15, 15, 30, 0.95)', borderRadius: 12,
+            boxShadow: '0 8px 32px rgba(0,0,0,0.7)',
+            border: '1px solid var(--border)',
+            backdropFilter: 'blur(8px)', overflow: 'hidden'
+          }}>
+            {/* Drag-bar */}
+            <div
+              onMouseDown={onDragStart}
+              style={{
+                display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                padding: '10px 14px', cursor: 'grab', background: 'rgba(99,102,241,0.2)',
+                borderBottom: panelMinimized ? 'none' : '1px solid var(--border)'
+              }}
+            >
+              <span style={{ fontWeight: 700, fontSize: 14 }}>📤 Skicka till spelare</span>
+              <div style={{ display: 'flex', gap: 6 }}>
+                <button
+                  onMouseDown={e => e.stopPropagation()}
+                  onClick={() => setPanelMinimized(m => !m)}
+                  style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-secondary)', fontSize: 16, padding: '0 4px' }}
+                >{panelMinimized ? '▲' : '▼'}</button>
+                <button
+                  onMouseDown={e => e.stopPropagation()}
+                  onClick={() => setReviewModal(null)}
+                  style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-secondary)', fontSize: 16, padding: '0 4px' }}
+                >×</button>
+              </div>
+            </div>
+            {/* Panel-innehåll */}
+            {!panelMinimized && <div style={{ padding: 16, maxHeight: '70vh', overflowY: 'auto' }}>
+            <p style={{ margin: '0 0 16px', fontSize: 13, color: 'var(--text-muted)' }}>
+              Action #{reviewModal.actionIndex + 1} · {reviewModal.action.skill} · #{reviewModal.action.playerNumber} {reviewModal.action.playerName}
+            </p>
+
+            {reviewPlayers.length === 0 ? (
+              <p style={{ color: 'var(--text-muted)', fontSize: 14 }}>Inga spelare kopplade till ditt lag ännu.</p>
+            ) : (() => {
+              const allPlayers = reviewPlayers.flatMap(t => t.players.map(p => ({ ...p, teamName: t.team.name })));
+              const autoMatched = allPlayers.filter(p => reviewSelectedPlayers.includes(p.id));
+              const hasAutoMatch = autoMatched.length > 0;
+              const searchResults = reviewPlayerSearch
+                ? allPlayers.filter(p =>
+                    !reviewSelectedPlayers.includes(p.id) && (
+                      p.name.toLowerCase().includes(reviewPlayerSearch.toLowerCase()) ||
+                      (p.jerseyNumber && String(p.jerseyNumber).includes(reviewPlayerSearch))
+                    )
+                  ).sort((a, b) => a.name.localeCompare(b.name))
+                : [];
+
+              return (
+                <>
+                  <label style={{ fontSize: 13, fontWeight: 600, display: 'block', marginBottom: 8 }}>Välj spelare</label>
+                  {/* Auto-matchad spelare */}
+                  {autoMatched.map(player => (
+                    <div key={player.id} style={{
+                      display: 'flex', alignItems: 'center', gap: 8,
+                      padding: '5px 8px', borderRadius: 6,
+                      background: 'var(--accent-subtle, rgba(99,102,241,0.15))',
+                      border: '1px solid var(--accent)',
+                      marginBottom: 3
+                    }}>
+                      <div style={{
+                        width: 24, height: 24, borderRadius: '50%',
+                        background: 'var(--accent)', display: 'flex',
+                        alignItems: 'center', justifyContent: 'center',
+                        fontSize: 11, fontWeight: 700, color: '#fff', flexShrink: 0
+                      }}>
+                        {player.jerseyNumber ? `${player.jerseyNumber}` : player.name[0].toUpperCase()}
+                      </div>
+                      <span style={{ fontSize: 13, fontWeight: 600, flex: 1 }}>
+                        {player.jerseyNumber ? `#${player.jerseyNumber} · ` : ''}{player.name}
+                      </span>
+                      <button
+                        onClick={() => setReviewSelectedPlayers(p => p.filter(id => id !== player.id))}
+                        style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 13, padding: '0 2px', lineHeight: 1 }}
+                      >❌</button>
+                    </div>
+                  ))}
+                  {/* Sökfält — alltid synligt för att lägga till fler */}
+                  <input
+                    type="text"
+                    placeholder={hasAutoMatch ? "Lägg till fler spelare..." : "Sök på namn eller nummer..."}
+                    value={reviewPlayerSearch}
+                    onChange={e => setReviewPlayerSearch(e.target.value)}
+                    onKeyDown={e => e.stopPropagation()}
+                    style={{
+                      width: '100%', padding: '7px 10px', borderRadius: 8,
+                      border: '1px solid var(--border)', background: 'var(--bg-secondary)',
+                      color: 'var(--text-primary)', fontSize: 13, marginTop: 8, marginBottom: 4,
+                      boxSizing: 'border-box'
+                    }}
+                  />
+                  {/* Sökresultat */}
+                  {searchResults.map(player => (
+                    <div key={player.id}
+                      onClick={() => { setReviewSelectedPlayers(p => [...p, player.id]); setReviewPlayerSearch(''); }}
+                      style={{
+                        display: 'flex', alignItems: 'center', gap: 10,
+                        padding: '8px 10px', borderRadius: 8, cursor: 'pointer',
+                        background: 'var(--bg-secondary)',
+                        border: '1px solid var(--border)',
+                        marginBottom: 4
+                      }}
+                    >
+                      <div style={{
+                        width: 32, height: 32, borderRadius: '50%',
+                        background: 'var(--accent)', display: 'flex',
+                        alignItems: 'center', justifyContent: 'center',
+                        fontSize: 13, fontWeight: 700, color: '#fff', flexShrink: 0
+                      }}>
+                        {player.jerseyNumber ? `#${player.jerseyNumber}` : player.name[0].toUpperCase()}
+                      </div>
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ fontSize: 14, fontWeight: 600 }}>{player.jerseyNumber ? `#${player.jerseyNumber} · ` : ''}{player.name}</div>
+                        <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>{player.teamName}</div>
+                      </div>
+                      <span style={{ fontSize: 11, color: 'var(--accent)', fontWeight: 600 }}>+ Lägg till</span>
+                    </div>
+                  ))}
+                  {reviewPlayerSearch && searchResults.length === 0 && (
+                    <p style={{ fontSize: 13, color: 'var(--text-muted)', padding: '4px 8px' }}>Inga spelare hittades</p>
+                  )}
+                </>
+              );
+            })()}
+
+            <label style={{ fontSize: 13, fontWeight: 600, display: 'block', margin: '12px 0 6px' }}>Kommentar</label>
+            <textarea
+              value={reviewComment}
+              onChange={e => setReviewComment(e.target.value)}
+              onKeyDown={e => e.stopPropagation()}
+              placeholder="Skriv din feedback till spelaren..."
+              rows={4}
+              style={{
+                width: '100%', borderRadius: 8, border: '1px solid var(--border)',
+                background: 'var(--bg-primary)', color: 'var(--text-primary)',
+                padding: '8px 12px', fontSize: 14, resize: 'vertical',
+                boxSizing: 'border-box'
+              }}
+            />
+
+            {reviewError && <p style={{ color: 'var(--error, #f44336)', fontSize: 13, marginTop: 8 }}>{reviewError}</p>}
+            {reviewSuccess && <p style={{ color: 'var(--success, #4caf50)', fontSize: 13, marginTop: 8 }}>{reviewSuccess}</p>}
+
+            <div style={{ display: 'flex', gap: 8, marginTop: 16 }}>
+              <button
+                onClick={sendReview}
+                disabled={reviewLoading}
+                style={{
+                  flex: 1, padding: '10px 16px', borderRadius: 8, border: 'none',
+                  background: 'var(--accent)', color: '#fff', fontWeight: 600,
+                  cursor: reviewLoading ? 'not-allowed' : 'pointer', fontSize: 14
+                }}
+              >
+                {reviewLoading ? 'Skickar...' : 'Skicka'}
+              </button>
+              <button
+                onClick={() => setReviewModal(null)}
+                style={{
+                  padding: '10px 16px', borderRadius: 8,
+                  border: '1px solid var(--border)', background: 'transparent',
+                  color: 'var(--text-secondary)', cursor: 'pointer', fontSize: 14
+                }}
+              >
+                Avbryt
+              </button>
+            </div>
+            </div>}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

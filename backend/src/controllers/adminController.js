@@ -22,11 +22,14 @@ export const adminController = {
           id: true,
           email: true,
           name: true,
+          username: true,
           role: true,
+          jerseyNumber: true,
           isActive: true,
           createdAt: true,
           updatedAt: true,
-          _count: { select: { videos: { where: { deletedAt: null } } } }
+          _count: { select: { videos: { where: { deletedAt: null } } } },
+          teams: { include: { team: { select: { id: true, name: true } } } }
         }
       });
 
@@ -89,7 +92,7 @@ export const adminController = {
   async updateUser(req, res) {
     try {
       const { id } = req.params;
-      const { email, name, password, role, isActive } = req.body;
+      const { email, name, password, role, isActive, jerseyNumber } = req.body;
 
       const user = await prisma.user.findUnique({ where: { id } });
       if (!user) {
@@ -106,6 +109,7 @@ export const adminController = {
       if (name) updateData.name = name;
       if (role) updateData.role = role;
       if (typeof isActive === 'boolean') updateData.isActive = isActive;
+      if (jerseyNumber !== undefined) updateData.jerseyNumber = jerseyNumber ? parseInt(jerseyNumber) : null;
 
       if (password) {
         updateData.passwordHash = await bcrypt.hash(password, BCRYPT_ROUNDS);
@@ -406,7 +410,7 @@ export const adminController = {
   async createInvite(req, res) {
     try {
       const { role, maxUses } = req.body;
-      const validRoles = ['viewer', 'uploader'];
+      const validRoles = ['viewer', 'uploader', 'coach'];
       if (role && !validRoles.includes(role)) {
         return res.status(400).json({ error: 'Ogiltig roll.' });
       }
@@ -469,6 +473,51 @@ export const adminController = {
     } catch (error) {
       logger.error('Ta bort inbjudan misslyckades:', error);
       res.status(500).json({ error: 'Kunde inte ta bort inbjudan.' });
+    }
+  },
+
+
+
+  async uploadSecondaryVideo(req, res) {
+    try {
+      const { id } = req.params;
+      if (!req.file) return res.status(400).json({ error: 'Ingen fil uppladdad.' });
+      const video = await prisma.video.findUnique({ where: { id } });
+      if (!video) return res.status(404).json({ error: 'Videon kunde inte hittas.' });
+
+      const filePath = fileStorageService.buildFilePath(video.matchDate, video.opponent, req.file.originalname.replace(/[^a-zA-Z0-9._-]/g, '_') + '_vinkel2' + require('path').extname(req.file.originalname));
+      const absPath = fileStorageService.getAbsolutePath(filePath);
+
+      const fs = await import('fs/promises');
+      const path = await import('path');
+      await fs.mkdir(path.dirname(absPath), { recursive: true });
+      await fs.copyFile(req.file.path, absPath);
+      await fs.unlink(req.file.path).catch(() => {});
+
+      await prisma.video.update({ where: { id }, data: { secondaryFilePath: filePath } });
+      logger.info('Sekundär video uppladdad', { videoId: id, filePath });
+      res.json({ message: 'Vinkel 2 uppladdad.', secondaryFilePath: filePath });
+    } catch (error) {
+      logger.error('uploadSecondaryVideo misslyckades:', error);
+      res.status(500).json({ error: 'Kunde inte ladda upp vinkel 2.' });
+    }
+  },
+
+  async setSecondaryVideo(req, res) {
+    try {
+      const { id } = req.params;
+      const { secondaryFilePath } = req.body;
+      const video = await prisma.video.findUnique({ where: { id } });
+      if (!video) return res.status(404).json({ error: 'Videon kunde inte hittas.' });
+      const updated = await prisma.video.update({
+        where: { id },
+        data: { secondaryFilePath: secondaryFilePath || null }
+      });
+      logger.info('Sekundär videovinkel satt', { videoId: id, secondaryFilePath });
+      res.json({ message: 'Sekundär vinkel sparad.', secondaryFilePath: updated.secondaryFilePath });
+    } catch (error) {
+      logger.error('setSecondaryVideo misslyckades:', error);
+      res.status(500).json({ error: 'Kunde inte spara sekundär vinkel.' });
     }
   },
 

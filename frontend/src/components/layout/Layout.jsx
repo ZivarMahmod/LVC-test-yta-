@@ -8,9 +8,10 @@ import { authApi } from '../../utils/api.js';
 import './Layout.css';
 
 export default function Layout() {
-  const { user, logout, isAdmin, isUploader } = useAuth();
+  const { user, logout, isAdmin, isUploader, isCoach } = useAuth();
   const navigate = useNavigate();
   const [menuOpen, setMenuOpen] = useState(false);
+  const [unreadCount, setUnreadCount] = useState(0);
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [oldPassword, setOldPassword] = useState('');
@@ -20,6 +21,22 @@ export default function Layout() {
   const [pwSuccess, setPwSuccess] = useState('');
   const [pwLoading, setPwLoading] = useState(false);
   const dropdownRef = useRef(null);
+
+  useEffect(() => {
+    fetchUnreadCount();
+    const interval = setInterval(fetchUnreadCount, 60000);
+    return () => clearInterval(interval);
+  }, []);
+
+  async function fetchUnreadCount() {
+    try {
+      const res = await fetch('/api/reviews/inbox', { credentials: 'include' });
+      if (!res.ok) return;
+      const data = await res.json();
+      const unread = (data.reviews || []).filter(r => !r.acknowledgedAt).length;
+      setUnreadCount(unread);
+    } catch {}
+  }
 
   const handleLogout = async () => {
     setMenuOpen(false);
@@ -108,6 +125,18 @@ export default function Layout() {
                 Admin
               </NavLink>
             )}
+            <NavLink to="/inbox" className="nav-link" style={{ position: 'relative' }}>
+              Inbox
+              {unreadCount > 0 && (
+                <span style={{
+                  position: 'absolute', top: -6, right: -10,
+                  background: 'var(--lvc-blue)', color: '#fff',
+                  borderRadius: '50%', width: 18, height: 18,
+                  fontSize: 11, fontWeight: 700,
+                  display: 'flex', alignItems: 'center', justifyContent: 'center'
+                }}>{unreadCount}</span>
+              )}
+            </NavLink>
             <NavLink to="/changelog" className="nav-link">
               Logg
             </NavLink>
@@ -212,6 +241,13 @@ export default function Layout() {
                 Admin
               </NavLink>
             )}
+            <NavLink to="/inbox" className="mobile-nav-link" onClick={closeMenu} style={{ position: 'relative' }}>
+              Inbox {unreadCount > 0 && <span style={{
+                background: 'var(--lvc-blue)', color: '#fff',
+                borderRadius: 10, padding: '1px 7px',
+                fontSize: 11, fontWeight: 700, marginLeft: 4
+              }}>{unreadCount}</span>}
+            </NavLink>
             <NavLink to="/changelog" className="mobile-nav-link" onClick={closeMenu}>
               Logg
             </NavLink>

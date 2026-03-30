@@ -62,8 +62,8 @@ export const createUserValidation = [
     .isLength({ min: 8, max: 128 })
     .withMessage('Lösenord måste vara minst 8 tecken.'),
   body('role')
-    .isIn(['admin', 'uploader', 'viewer'])
-    .withMessage('Ogiltig roll. Välj admin, uploader eller viewer.')
+    .isIn(['admin', 'uploader', 'viewer', 'coach'])
+    .withMessage('Ogiltig roll. Välj admin, uploader, coach eller viewer.')
 ];
 
 // -------------------------------------------
@@ -91,7 +91,7 @@ export const updateUserValidation = [
     .withMessage('Lösenord måste vara minst 8 tecken.'),
   body('role')
     .optional()
-    .isIn(['admin', 'uploader', 'viewer'])
+    .isIn(['admin', 'uploader', 'viewer', 'coach'])
     .withMessage('Ogiltig roll.'),
   body('isActive')
     .optional()
