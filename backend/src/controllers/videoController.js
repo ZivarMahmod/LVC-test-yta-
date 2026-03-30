@@ -293,6 +293,27 @@ export const videoController = {
     }
   },
 
+  async updateTitle(req, res) {
+    try {
+      const { id } = req.params;
+      const { title } = req.body;
+      if (!title || !title.trim()) return res.status(400).json({ error: 'Titel krävs.' });
+
+      const video = await prisma.video.findUnique({ where: { id } });
+      if (!video) return res.status(404).json({ error: 'Videon hittades inte.' });
+
+      const updated = await prisma.video.update({
+        where: { id },
+        data: { title: title.trim() }
+      });
+      logger.info('Videotitel uppdaterad', { videoId: id, title: updated.title });
+      res.json({ title: updated.title });
+    } catch (error) {
+      logger.error('Titel update-fel:', error);
+      res.status(500).json({ error: 'Kunde inte uppdatera titeln.' });
+    }
+  },
+
   async list(req, res) {
     try {
       const page = parseInt(req.query.page) || 1;

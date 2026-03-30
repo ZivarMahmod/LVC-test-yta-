@@ -72,6 +72,14 @@ router.get('/:id/dvw/download',
   scoutController.downloadDvw
 );
 
+// Uppdatera videotitel (admin)
+router.patch('/:id/title',
+  authenticateToken,
+  requireAdmin,
+  csrfProtection,
+  videoController.updateTitle
+);
+
 // Uppdatera offset (admin)
 router.patch('/:id/offset',
   authenticateToken,

@@ -73,6 +73,9 @@ export default function VideoPlayerPage() {
   const [dvwUploading, setDvwUploading] = useState(false);
   const [dvwMsg, setDvwMsg] = useState('');
   const dvwInputRef = useRef(null);
+  const [editingTitle, setEditingTitle] = useState(false);
+  const [titleInput, setTitleInput] = useState('');
+  const [titleSaving, setTitleSaving] = useState(false);
   const [scoutTab, setScoutTab] = useState('actions');
   // Draggbar review-panel state
   const [panelPos, setPanelPos] = useState({ x: 20, y: 80 });
@@ -353,6 +356,30 @@ export default function VideoPlayerPage() {
     }
   };
 
+  const handleSaveTitle = async () => {
+    if (!titleInput.trim() || titleInput.trim() === video.title) {
+      setEditingTitle(false);
+      return;
+    }
+    setTitleSaving(true);
+    try {
+      const csrfRes = await fetch('/api/auth/csrf-token', { credentials: 'include' });
+      const { csrfToken } = await csrfRes.json();
+      const res = await fetch(`/api/videos/${id}/title`, {
+        method: 'PATCH',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': csrfToken },
+        body: JSON.stringify({ title: titleInput.trim() })
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setVideo(prev => ({ ...prev, title: data.title }));
+      }
+    } catch {}
+    setTitleSaving(false);
+    setEditingTitle(false);
+  };
+
   // Hämta lagspelare för coach
   useEffect(() => {
     if (!isCoach) return;
@@ -489,7 +516,49 @@ export default function VideoPlayerPage() {
         {/* VIDEO + INFO */}
         <div className="player-main">
           <div className="video-title-bar">
-            <h1>{video.title}</h1>
+            {editingTitle ? (
+              <div style={{ display: 'flex', gap: '0.4rem', alignItems: 'center', flex: 1 }}>
+                <input
+                  autoFocus
+                  value={titleInput}
+                  onChange={e => setTitleInput(e.target.value)}
+                  onKeyDown={e => {
+                    e.stopPropagation();
+                    if (e.key === 'Enter') handleSaveTitle();
+                    if (e.key === 'Escape') setEditingTitle(false);
+                  }}
+                  style={{
+                    flex: 1, padding: '0.3rem 0.6rem', fontSize: '1.1rem', fontWeight: 600,
+                    borderRadius: '6px', border: '1px solid var(--lvc-blue, #1a5fb4)',
+                    background: 'var(--surface-raised)', color: 'var(--text-primary)',
+                    outline: 'none'
+                  }}
+                />
+                <button
+                  onClick={handleSaveTitle}
+                  disabled={titleSaving}
+                  style={{
+                    padding: '0.3rem 0.8rem', borderRadius: '6px', border: 'none',
+                    background: 'var(--lvc-blue, #1a5fb4)', color: '#fff',
+                    fontSize: '0.82rem', fontWeight: 600, cursor: 'pointer'
+                  }}
+                >{titleSaving ? '...' : 'Spara'}</button>
+                <button
+                  onClick={() => setEditingTitle(false)}
+                  style={{
+                    padding: '0.3rem 0.6rem', borderRadius: '6px',
+                    border: '1px solid var(--border-default)', background: 'transparent',
+                    color: 'var(--text-muted)', fontSize: '0.82rem', cursor: 'pointer'
+                  }}
+                >Avbryt</button>
+              </div>
+            ) : (
+              <h1
+                onClick={() => { if (isAdmin) { setTitleInput(video.title); setEditingTitle(true); } }}
+                style={isAdmin ? { cursor: 'pointer', borderBottom: '1px dashed var(--border-default)' } : {}}
+                title={isAdmin ? 'Klicka för att ändra titel' : undefined}
+              >{video.title}</h1>
+            )}
             {video.secondaryStreamUrl && (
               <button
                 className={showSecondary ? 'btn-primary btn-sm' : 'btn-secondary btn-sm'}
