@@ -134,7 +134,7 @@ export async function getVideoReviews(req, res) {
     const { videoId } = req.params;
 
     const reviews = await prisma.coachReview.findMany({
-      where: { playerId, videoId, acknowledgedAt: null },
+      where: { playerId, videoId },
       orderBy: { createdAt: 'desc' },
       include: {
         coach: { select: { id: true, name: true, username: true } }

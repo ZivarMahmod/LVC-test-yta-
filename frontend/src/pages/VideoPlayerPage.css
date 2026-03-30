@@ -298,6 +298,20 @@
   margin-top: 0.25rem;
 }
 
+.review-bubble-acked {
+  background: rgba(76, 175, 80, 0.08) !important;
+  border-left: 2px solid rgba(76, 175, 80, 0.4);
+}
+
+.review-bubble-acked .review-bubble-coach {
+  color: #4CAF50;
+}
+
+.review-bubble-acked .review-bubble-date {
+  color: #4CAF50;
+  font-size: 0.63rem;
+}
+
 /* Scout filter toggle — dold på desktop */
 .scout-filter-toggle {
   display: none;

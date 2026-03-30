@@ -111,6 +111,7 @@ export default function VideoPlayerPage() {
   const [ackPassword, setAckPassword] = useState('');
   const [ackLoading, setAckLoading] = useState(false);
   const [ackError, setAckError] = useState('');
+  const [showAcknowledged, setShowAcknowledged] = useState(true); // toggle for acknowledged reviews
 
   const [selectedPlayer, setSelectedPlayer] = useState(null);
 
@@ -185,9 +186,10 @@ export default function VideoPlayerPage() {
       .catch(() => {});
   }, [user, id]);
 
-  // Bygg map: actionIndex → reviews
+  // Bygg map: actionIndex → reviews (filtrera bort bekräftade om toggle är av)
   const reviewsByAction = {};
   for (const r of myReviews) {
+    if (r.acknowledgedAt && !showAcknowledged) continue;
     if (!reviewsByAction[r.actionIndex]) reviewsByAction[r.actionIndex] = [];
     reviewsByAction[r.actionIndex].push(r);
   }
@@ -205,13 +207,10 @@ export default function VideoPlayerPage() {
       });
       const data = await res.json();
       if (!res.ok) return setAckError(data.error || 'Fel uppstod');
-      // Ta bort från lokal state
-      setMyReviews(prev => prev.filter(r => r.id !== reviewId));
+      // Markera som bekräftad i lokal state (behåll)
+      setMyReviews(prev => prev.map(r => r.id === reviewId ? { ...r, acknowledgedAt: new Date().toISOString() } : r));
       setAckPassword('');
       setAckError('');
-      // Stäng om inga fler reviews på denna action
-      const remaining = myReviews.filter(r => r.id !== reviewId && r.actionIndex === expandedReviewAction);
-      if (remaining.length === 0) setExpandedReviewAction(null);
     } catch {
       setAckError('Serverfel');
     } finally {
@@ -711,7 +710,10 @@ export default function VideoPlayerPage() {
                       {formatVideoTime(action.videoTime)}
                     </span>
                     {/* Review-bubbla för spelare */}
-                    {hasReview && (
+                    {hasReview && (() => {
+                      const unread = actionReviews.filter(r => !r.acknowledgedAt);
+                      const allAcked = unread.length === 0;
+                      return (
                       <span
                         onClick={e => {
                           e.stopPropagation();
@@ -719,26 +721,28 @@ export default function VideoPlayerPage() {
                           setAckPassword('');
                           setAckError('');
                         }}
-                        title="Coach-kommentar"
+                        title={allAcked ? 'Bekräftad kommentar' : 'Ny coach-kommentar'}
                         className="review-bubble-icon"
                         style={{
                           fontSize: '0.85rem', cursor: 'pointer', flexShrink: 0,
                           position: 'relative',
-                          animation: !isExpanded ? 'reviewPulse 2s ease-in-out infinite' : 'none'
+                          opacity: allAcked ? 0.6 : 1,
+                          animation: !allAcked && !isExpanded ? 'reviewPulse 2s ease-in-out infinite' : 'none'
                         }}
                       >
-                        💬
-                        {actionReviews.length > 1 && (
+                        {allAcked ? '✅' : '💬'}
+                        {unread.length > 1 && (
                           <span style={{
                             position: 'absolute', top: '-4px', right: '-6px',
                             background: '#F44336', color: '#fff', borderRadius: '50%',
                             width: '14px', height: '14px', fontSize: '0.6rem',
                             display: 'flex', alignItems: 'center', justifyContent: 'center',
                             fontWeight: 700
-                          }}>{actionReviews.length}</span>
+                          }}>{unread.length}</span>
                         )}
                       </span>
-                    )}
+                      );
+                    })()}
                     {/* Review-knapp för coach */}
                     {isCoach && (
                       <span
@@ -772,35 +776,42 @@ export default function VideoPlayerPage() {
                   {isExpanded && (
                     <div className="review-bubble-container">
                       {actionReviews.map(review => (
-                        <div key={review.id} className="review-bubble">
+                        <div key={review.id} className={review.acknowledgedAt ? 'review-bubble review-bubble-acked' : 'review-bubble'}>
                           <div className="review-bubble-header">
                             <span className="review-bubble-coach">{review.coach?.name || 'Coach'}</span>
                             <span className="review-bubble-date">
-                              {new Date(review.createdAt).toLocaleDateString('sv-SE')}
+                              {review.acknowledgedAt
+                                ? `✓ Bekräftad ${new Date(review.acknowledgedAt).toLocaleDateString('sv-SE')}`
+                                : new Date(review.createdAt).toLocaleDateString('sv-SE')
+                              }
                             </span>
                           </div>
                           <div className="review-bubble-comment">{review.comment}</div>
-                          <div className="review-bubble-actions">
-                            <input
-                              type="password"
-                              placeholder="Ditt lösenord..."
-                              value={ackPassword}
-                              onChange={e => { setAckPassword(e.target.value); setAckError(''); }}
-                              onKeyDown={e => {
-                                e.stopPropagation();
-                                if (e.key === 'Enter') handleAcknowledge(review.id);
-                              }}
-                              className="review-bubble-pw"
-                            />
-                            <button
-                              onClick={(e) => { e.stopPropagation(); handleAcknowledge(review.id); }}
-                              disabled={ackLoading}
-                              className="review-bubble-confirm"
-                            >
-                              {ackLoading ? '...' : 'Bekräfta'}
-                            </button>
-                          </div>
-                          {ackError && <div className="review-bubble-error">{ackError}</div>}
+                          {!review.acknowledgedAt && (
+                            <>
+                              <div className="review-bubble-actions">
+                                <input
+                                  type="password"
+                                  placeholder="Ditt lösenord..."
+                                  value={ackPassword}
+                                  onChange={e => { setAckPassword(e.target.value); setAckError(''); }}
+                                  onKeyDown={e => {
+                                    e.stopPropagation();
+                                    if (e.key === 'Enter') handleAcknowledge(review.id);
+                                  }}
+                                  className="review-bubble-pw"
+                                />
+                                <button
+                                  onClick={(e) => { e.stopPropagation(); handleAcknowledge(review.id); }}
+                                  disabled={ackLoading}
+                                  className="review-bubble-confirm"
+                                >
+                                  {ackLoading ? '...' : 'Bekräfta'}
+                                </button>
+                              </div>
+                              {ackError && <div className="review-bubble-error">{ackError}</div>}
+                            </>
+                          )}
                         </div>
                       ))}
                     </div>
@@ -814,8 +825,22 @@ export default function VideoPlayerPage() {
 
             {/* Footer */}
             {hasScout && scoutTab === 'actions' && (
-              <div style={{ padding: '0.5rem 1rem', borderTop: '1px solid var(--border)', fontSize: '0.78rem', color: 'var(--text-muted)' }}>
-                {filteredActions.length} actions
+              <div style={{ padding: '0.5rem 1rem', borderTop: '1px solid var(--border)', fontSize: '0.78rem', color: 'var(--text-muted)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <span>{filteredActions.length} actions</span>
+                {myReviews.some(r => r.acknowledgedAt) && (
+                  <button
+                    onClick={() => setShowAcknowledged(v => !v)}
+                    style={{
+                      padding: '0.15rem 0.4rem', borderRadius: '4px', fontSize: '0.7rem',
+                      border: showAcknowledged ? '1px solid rgba(76, 175, 80, 0.4)' : '1px solid var(--border-default)',
+                      background: showAcknowledged ? 'rgba(76, 175, 80, 0.1)' : 'transparent',
+                      color: showAcknowledged ? '#4CAF50' : 'var(--text-muted)',
+                      cursor: 'pointer'
+                    }}
+                  >
+                    {showAcknowledged ? '✅ Bekräftade' : '○ Bekräftade'}
+                  </button>
+                )}
               </div>
             )}
 
