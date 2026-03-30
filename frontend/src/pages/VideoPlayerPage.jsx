@@ -48,7 +48,7 @@ export default function VideoPlayerPage() {
   const { id } = useParams();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const { isAdmin, isUploader, isCoach } = useAuth();
+  const { user, isAdmin, isUploader, isCoach } = useAuth();
   const [video, setVideo] = useState(null);
   const [showSecondary, setShowSecondary] = useState(false);
   const secondaryVideoRef = useRef(null);
@@ -104,6 +104,13 @@ export default function VideoPlayerPage() {
   const [reviewError, setReviewError] = useState('');
   const [reviewSuccess, setReviewSuccess] = useState('');
   const [reviewPlayerSearch, setReviewPlayerSearch] = useState('');
+
+  // Viewer review bubbles
+  const [myReviews, setMyReviews] = useState([]); // reviews for this video for current user
+  const [expandedReviewAction, setExpandedReviewAction] = useState(null); // actionIndex currently expanded
+  const [ackPassword, setAckPassword] = useState('');
+  const [ackLoading, setAckLoading] = useState(false);
+  const [ackError, setAckError] = useState('');
 
   const [selectedPlayer, setSelectedPlayer] = useState(null);
 
@@ -168,6 +175,49 @@ export default function VideoPlayerPage() {
     }
     loadScout();
   }, [video, id]);
+
+  // Hämta spelarens reviews för denna video
+  useEffect(() => {
+    if (!user || !id) return;
+    fetch(`/api/reviews/video/${id}`, { credentials: 'include' })
+      .then(r => r.ok ? r.json() : { reviews: [] })
+      .then(d => setMyReviews(d.reviews || []))
+      .catch(() => {});
+  }, [user, id]);
+
+  // Bygg map: actionIndex → reviews
+  const reviewsByAction = {};
+  for (const r of myReviews) {
+    if (!reviewsByAction[r.actionIndex]) reviewsByAction[r.actionIndex] = [];
+    reviewsByAction[r.actionIndex].push(r);
+  }
+
+  const handleAcknowledge = async (reviewId) => {
+    if (!ackPassword.trim()) return setAckError('Ange ditt lösenord');
+    setAckLoading(true);
+    setAckError('');
+    try {
+      const res = await fetch(`/api/reviews/${reviewId}/acknowledge`, {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ password: ackPassword })
+      });
+      const data = await res.json();
+      if (!res.ok) return setAckError(data.error || 'Fel uppstod');
+      // Ta bort från lokal state
+      setMyReviews(prev => prev.filter(r => r.id !== reviewId));
+      setAckPassword('');
+      setAckError('');
+      // Stäng om inga fler reviews på denna action
+      const remaining = myReviews.filter(r => r.id !== reviewId && r.actionIndex === expandedReviewAction);
+      if (remaining.length === 0) setExpandedReviewAction(null);
+    } catch {
+      setAckError('Serverfel');
+    } finally {
+      setAckLoading(false);
+    }
+  };
 
   // Keyboard shortcuts
   useEffect(() => {
@@ -613,16 +663,23 @@ export default function VideoPlayerPage() {
               ) : filteredActions.length === 0 ? (
                 <div style={{ textAlign: 'center', padding: '2rem', color: 'var(--text-muted)' }}>Inga actions</div>
               ) : (
-                filteredActions.map(action => (
+                filteredActions.map(action => {
+                  const actionIdx = scout?.actions?.indexOf(action) ?? filteredActions.indexOf(action);
+                  const actionReviews = reviewsByAction[actionIdx] || [];
+                  const hasReview = actionReviews.length > 0;
+                  const isExpanded = expandedReviewAction === actionIdx;
+
+                  return (
+                  <div key={action.id}>
                   <div
-                    key={action.id}
                     onClick={() => jumpToAction(action)}
                     style={{
                       display: 'flex', alignItems: 'center', gap: '0.5rem',
-                      padding: '0.4rem 0.6rem', borderRadius: '6px', cursor: 'pointer',
-                      marginBottom: '2px',
-                      background: activeActionId === action.id ? 'var(--accent-subtle, rgba(99,102,241,0.15))' : 'transparent',
-                      border: activeActionId === action.id ? '1px solid var(--accent)' : '1px solid transparent',
+                      padding: '0.4rem 0.6rem', borderRadius: isExpanded ? '6px 6px 0 0' : '6px', cursor: 'pointer',
+                      marginBottom: isExpanded ? '0' : '2px',
+                      background: activeActionId === action.id ? 'var(--accent-subtle, rgba(99,102,241,0.15))' : hasReview ? 'rgba(255, 183, 77, 0.08)' : 'transparent',
+                      border: activeActionId === action.id ? '1px solid var(--accent)' : hasReview ? '1px solid rgba(255, 183, 77, 0.3)' : '1px solid transparent',
+                      borderBottom: isExpanded ? '1px solid rgba(255, 183, 77, 0.15)' : undefined,
                       transition: 'background 0.15s'
                     }}
                   >
@@ -653,12 +710,41 @@ export default function VideoPlayerPage() {
                     <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)', flexShrink: 0 }}>
                       {formatVideoTime(action.videoTime)}
                     </span>
+                    {/* Review-bubbla för spelare */}
+                    {hasReview && (
+                      <span
+                        onClick={e => {
+                          e.stopPropagation();
+                          setExpandedReviewAction(isExpanded ? null : actionIdx);
+                          setAckPassword('');
+                          setAckError('');
+                        }}
+                        title="Coach-kommentar"
+                        className="review-bubble-icon"
+                        style={{
+                          fontSize: '0.85rem', cursor: 'pointer', flexShrink: 0,
+                          position: 'relative',
+                          animation: !isExpanded ? 'reviewPulse 2s ease-in-out infinite' : 'none'
+                        }}
+                      >
+                        💬
+                        {actionReviews.length > 1 && (
+                          <span style={{
+                            position: 'absolute', top: '-4px', right: '-6px',
+                            background: '#F44336', color: '#fff', borderRadius: '50%',
+                            width: '14px', height: '14px', fontSize: '0.6rem',
+                            display: 'flex', alignItems: 'center', justifyContent: 'center',
+                            fontWeight: 700
+                          }}>{actionReviews.length}</span>
+                        )}
+                      </span>
+                    )}
                     {/* Review-knapp för coach */}
                     {isCoach && (
                       <span
                         onClick={e => {
                           e.stopPropagation();
-                          setReviewModal({ action, actionIndex: scout?.actions?.indexOf(action) ?? filteredActions.indexOf(action) });
+                          setReviewModal({ action, actionIndex: actionIdx });
                           setReviewComment('');
                           setReviewError('');
                           setReviewSuccess('');
@@ -681,7 +767,47 @@ export default function VideoPlayerPage() {
                       >📤</span>
                     )}
                   </div>
-                ))
+
+                  {/* Expanderad kommentarsbubbla */}
+                  {isExpanded && (
+                    <div className="review-bubble-container">
+                      {actionReviews.map(review => (
+                        <div key={review.id} className="review-bubble">
+                          <div className="review-bubble-header">
+                            <span className="review-bubble-coach">{review.coach?.name || 'Coach'}</span>
+                            <span className="review-bubble-date">
+                              {new Date(review.createdAt).toLocaleDateString('sv-SE')}
+                            </span>
+                          </div>
+                          <div className="review-bubble-comment">{review.comment}</div>
+                          <div className="review-bubble-actions">
+                            <input
+                              type="password"
+                              placeholder="Ditt lösenord..."
+                              value={ackPassword}
+                              onChange={e => { setAckPassword(e.target.value); setAckError(''); }}
+                              onKeyDown={e => {
+                                e.stopPropagation();
+                                if (e.key === 'Enter') handleAcknowledge(review.id);
+                              }}
+                              className="review-bubble-pw"
+                            />
+                            <button
+                              onClick={(e) => { e.stopPropagation(); handleAcknowledge(review.id); }}
+                              disabled={ackLoading}
+                              className="review-bubble-confirm"
+                            >
+                              {ackLoading ? '...' : 'Bekräfta'}
+                            </button>
+                          </div>
+                          {ackError && <div className="review-bubble-error">{ackError}</div>}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                  </div>
+                  );
+                }))
               )}
             </div>
             )}

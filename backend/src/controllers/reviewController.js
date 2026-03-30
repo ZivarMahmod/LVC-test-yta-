@@ -127,6 +127,27 @@ export async function acknowledgeReview(req, res) {
   }
 }
 
+// Spelare hämtar sina reviews för en specifik video (obekräftade)
+export async function getVideoReviews(req, res) {
+  try {
+    const playerId = req.user.id;
+    const { videoId } = req.params;
+
+    const reviews = await prisma.coachReview.findMany({
+      where: { playerId, videoId, acknowledgedAt: null },
+      orderBy: { createdAt: 'desc' },
+      include: {
+        coach: { select: { id: true, name: true, username: true } }
+      }
+    });
+
+    res.json({ reviews });
+  } catch (err) {
+    console.error('getVideoReviews error:', err);
+    res.status(500).json({ error: 'Serverfel' });
+  }
+}
+
 // Coach hämtar lagöversikt med spelare och deras reviews
 export async function getCoachOverview(req, res) {
   try {

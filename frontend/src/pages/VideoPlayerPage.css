@@ -197,6 +197,107 @@
   }
 }
 
+/* === Review comment bubbles === */
+@keyframes reviewPulse {
+  0%, 100% { opacity: 0.7; transform: scale(1); }
+  50% { opacity: 1; transform: scale(1.15); }
+}
+
+.review-bubble-container {
+  background: rgba(255, 183, 77, 0.06);
+  border: 1px solid rgba(255, 183, 77, 0.3);
+  border-top: none;
+  border-radius: 0 0 6px 6px;
+  padding: 0.5rem;
+  margin-bottom: 4px;
+}
+
+.review-bubble {
+  background: rgba(255, 183, 77, 0.1);
+  border-radius: 8px;
+  padding: 0.5rem 0.6rem;
+  margin-bottom: 0.3rem;
+}
+
+.review-bubble:last-child {
+  margin-bottom: 0;
+}
+
+.review-bubble-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.3rem;
+}
+
+.review-bubble-coach {
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--lvc-gold, #e8a825);
+}
+
+.review-bubble-date {
+  font-size: 0.65rem;
+  color: var(--text-muted);
+}
+
+.review-bubble-comment {
+  font-size: 0.8rem;
+  color: var(--text-primary);
+  line-height: 1.4;
+  margin-bottom: 0.5rem;
+  white-space: pre-wrap;
+}
+
+.review-bubble-actions {
+  display: flex;
+  gap: 0.3rem;
+  align-items: center;
+}
+
+.review-bubble-pw {
+  flex: 1;
+  padding: 0.3rem 0.5rem;
+  border-radius: 6px;
+  border: 1px solid var(--border-default);
+  background: var(--surface-raised, #1a2035);
+  color: var(--text-primary);
+  font-size: 0.75rem;
+}
+
+.review-bubble-pw:focus {
+  outline: none;
+  border-color: var(--lvc-gold, #e8a825);
+}
+
+.review-bubble-confirm {
+  padding: 0.3rem 0.6rem;
+  border-radius: 6px;
+  border: none;
+  background: var(--lvc-gold, #e8a825);
+  color: #000;
+  font-size: 0.72rem;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: opacity 0.15s;
+}
+
+.review-bubble-confirm:hover {
+  opacity: 0.85;
+}
+
+.review-bubble-confirm:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.review-bubble-error {
+  font-size: 0.7rem;
+  color: var(--lvc-red, #f44336);
+  margin-top: 0.25rem;
+}
+
 /* Scout filter toggle — dold på desktop */
 .scout-filter-toggle {
   display: none;
