@@ -59,10 +59,13 @@ export default function Layout() {
 
   const handleImpersonate = async (userId) => {
     try {
+      const csrfRes = await fetch('/api/auth/csrf-token', { credentials: 'include' });
+      const { csrfToken } = await csrfRes.json();
       const url = impersonating ? `/api/admin/switch-user/${userId}` : `/api/admin/impersonate/${userId}`;
       const res = await fetch(url, {
         method: 'POST',
-        credentials: 'include'
+        credentials: 'include',
+        headers: { 'X-CSRF-Token': csrfToken }
       });
       if (res.ok) {
         const data = await res.json();
