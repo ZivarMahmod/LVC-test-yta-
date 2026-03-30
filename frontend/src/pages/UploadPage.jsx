@@ -354,10 +354,18 @@ export default function UploadPage() {
           <div className="form-row" style={{marginBottom: '1rem'}}>
             <div className="form-group">
               <label htmlFor="opponent">Motståndare</label>
-              <select id="opponent" value={opponent} onChange={(e) => setOpponent(e.target.value)} required disabled={uploading || !selectedTeam}>
-                <option value="">Välj motståndare</option>
-                {opponents.map(o => <option key={o} value={o}>{o}</option>)}
-              </select>
+              <input
+                id="opponent"
+                list="opponent-list"
+                value={opponent}
+                onChange={(e) => setOpponent(e.target.value)}
+                placeholder="Skriv eller välj motståndare"
+                required
+                disabled={uploading || !selectedTeam}
+              />
+              <datalist id="opponent-list">
+                {opponents.map(o => <option key={o} value={o} />)}
+              </datalist>
             </div>
             <div className="form-group">
               <label htmlFor="matchDate">Datum</label>

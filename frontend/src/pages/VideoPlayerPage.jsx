@@ -50,8 +50,6 @@ export default function VideoPlayerPage() {
   const [searchParams] = useSearchParams();
   const { user, isAdmin, isUploader, isCoach } = useAuth();
   const [video, setVideo] = useState(null);
-  const [showSecondary, setShowSecondary] = useState(false);
-  const secondaryVideoRef = useRef(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const videoRef = useRef(null);
@@ -559,14 +557,6 @@ export default function VideoPlayerPage() {
                 title={isAdmin ? 'Klicka för att ändra titel' : undefined}
               >{video.title}</h1>
             )}
-            {video.secondaryStreamUrl && (
-              <button
-                className={showSecondary ? 'btn-primary btn-sm' : 'btn-secondary btn-sm'}
-                onClick={() => setShowSecondary(v => !v)}
-              >
-                {showSecondary ? '📷 Vinkel 2 PÅ' : '📷 Vinkel 2'}
-              </button>
-            )}
             {(isAdmin || isUploader) && (
               <button className="btn-danger btn-sm" onClick={handleDelete}>Ta bort</button>
             )}
@@ -581,37 +571,12 @@ export default function VideoPlayerPage() {
               preload="metadata"
               className="video-player"
               onLoadedMetadata={(e) => { e.target.volume = 0.15; }}
-              onTimeUpdate={(e) => {
-                if (showSecondary && secondaryVideoRef.current) {
-                  const diff = Math.abs(secondaryVideoRef.current.currentTime - e.target.currentTime);
-                  if (diff > 0.3) secondaryVideoRef.current.currentTime = e.target.currentTime;
-                }
-              }}
-              onPlay={() => { if (showSecondary && secondaryVideoRef.current) secondaryVideoRef.current.play(); }}
-              onPause={() => { if (showSecondary && secondaryVideoRef.current) secondaryVideoRef.current.pause(); }}
-              onSeeked={(e) => { if (showSecondary && secondaryVideoRef.current) secondaryVideoRef.current.currentTime = e.target.currentTime; }}
               key={video.streamUrl}
             >
               <source src={video.streamUrl} type={video.mimeType} />
               Din webbläsare stöder inte videouppspelning.
             </video>
           </div>
-          {showSecondary && video.secondaryStreamUrl && (
-            <div className="player-wrapper" style={{ marginTop: '8px' }}>
-              <video
-                ref={secondaryVideoRef}
-                controls
-                muted={false}
-                playsInline
-                preload="metadata"
-                className="video-player"
-                onLoadedMetadata={(e) => { e.target.volume = 0.15; }}
-                key={video.secondaryStreamUrl}
-              >
-                <source src={video.secondaryStreamUrl} type={video.mimeType} />
-              </video>
-            </div>
-          )}
         </div>
 
         {/* SCOUT PANEL */}
