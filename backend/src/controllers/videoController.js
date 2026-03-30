@@ -562,9 +562,21 @@ export const videoController = {
     try {
       const video = await prisma.video.findUnique({ where: { id: req.params.id } });
       if (!video) return res.status(404).json({ error: 'Videon kunde inte hittas.' });
-      await fileStorageService.deleteFile(video.filePath);
-      if (video.dvwPath) await fileStorageService.deleteFile(video.dvwPath);
-      if (video.thumbnailPath) await fileStorageService.deleteFile(video.thumbnailPath);
+
+      // Kolla om en annan video använder samma fil (undvik att radera aktiv fil)
+      const otherVideo = await prisma.video.findFirst({
+        where: { filePath: video.filePath, id: { not: video.id } }
+      });
+
+      if (!otherVideo) {
+        // Ingen annan video använder filen — säkert att radera
+        await fileStorageService.deleteFile(video.filePath);
+        if (video.dvwPath) await fileStorageService.deleteFile(video.dvwPath);
+        if (video.thumbnailPath) await fileStorageService.deleteFile(video.thumbnailPath);
+      } else {
+        logger.info('Hoppar över filradering — annan video använder samma fil', { videoId: video.id, otherVideoId: otherVideo.id });
+      }
+
       await prisma.video.delete({ where: { id: video.id } });
       logger.info('Video permanent raderad', { videoId: video.id, title: video.title, deletedBy: req.user.email });
       res.json({ message: 'Videon har raderats permanent.' });
