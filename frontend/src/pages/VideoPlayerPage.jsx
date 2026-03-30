@@ -332,8 +332,15 @@ export default function VideoPlayerPage() {
   // Scrolla till aktiv action i listan
   useEffect(() => {
     if (!activeActionId || !actionListRef.current) return;
-    const el = actionListRef.current.querySelector(`[data-action-id="${activeActionId}"]`);
-    if (el) el.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+    const container = actionListRef.current;
+    const el = container.querySelector(`[data-action-id="${activeActionId}"]`);
+    if (!el) return;
+    const containerRect = container.getBoundingClientRect();
+    const elRect = el.getBoundingClientRect();
+    // Kolla om elementet är utanför synfältet
+    if (elRect.top < containerRect.top || elRect.bottom > containerRect.bottom) {
+      container.scrollTop += elRect.top - containerRect.top - containerRect.height / 3;
+    }
   }, [activeActionId]);
 
   // Uppdatera aktiv action baserat på videons position (utan auto-hopp)
