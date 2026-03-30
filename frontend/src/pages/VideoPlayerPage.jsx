@@ -807,7 +807,7 @@ export default function VideoPlayerPage() {
                   )}
                   </div>
                   );
-                }))
+                })
               )}
             </div>
             )}
