@@ -765,7 +765,7 @@ export default function VideoPlayerPage() {
                     onChange={e => setSkipSeconds(Number(e.target.value))}
                     style={{ padding: '0.15rem 0.35rem', borderRadius: '4px', border: '1px solid var(--border)', background: 'var(--surface-2)', color: 'var(--text)', fontSize: '0.78rem' }}
                   >
-                    {[1,5,10,30].map(s => <option key={s} value={s}>{s}s</option>)}
+                    {[1,2,5,10,30].map(s => <option key={s} value={s}>{s}s</option>)}
                   </select>
                 </div>
               </div>
