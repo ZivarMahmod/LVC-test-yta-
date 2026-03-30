@@ -76,5 +76,5 @@ export const requireRole = (...allowedRoles) => {
 // Bekvämlighetsexporter
 export const requireAdmin = requireRole('admin');
 export const requireCoach = requireRole('admin', 'coach');
-export const requireUploader = requireRole('admin', 'uploader');
+export const requireUploader = requireRole('admin', 'uploader', 'coach');
 export const requireViewer = requireRole('admin', 'uploader', 'coach', 'viewer');
