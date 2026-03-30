@@ -333,7 +333,7 @@ export default function VideoPlayerPage() {
       const res = await fetch(`/api/videos/${id}/dvw`, {
         method: 'POST',
         credentials: 'include',
-        headers: { 'X-CSRF-Token': csrfData.token },
+        headers: { 'X-CSRF-Token': csrfData.csrfToken },
         body: formData
       });
       if (!res.ok) {
