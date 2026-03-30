@@ -128,6 +128,33 @@ app.post('/api/admin/stop-impersonate', authenticateToken, async (req, res) => {
   return ac.stopImpersonate(req, res);
 });
 
+// Byt användare direkt (fungerar via adminId-cookie under pågående impersonering)
+app.post('/api/admin/switch-user/:id', authenticateToken, async (req, res) => {
+  const { default: prisma } = await import('./config/database.js');
+  const adminId = req.cookies?.adminId || (req.user.role === 'admin' ? req.user.id : null);
+  if (!adminId) return res.status(403).json({ error: 'Ej behörig.' });
+  const admin = await prisma.user.findUnique({ where: { id: adminId } });
+  if (!admin || admin.role !== 'admin') return res.status(403).json({ error: 'Ej behörig.' });
+  req.user = admin;
+  const { adminController: ac } = await import('./controllers/adminController.js');
+  return ac.impersonate(req, res);
+});
+
+// Hämta användarlista (fungerar via adminId-cookie under impersonering)
+app.get('/api/admin/switch-users', authenticateToken, async (req, res) => {
+  const { default: prisma } = await import('./config/database.js');
+  const adminId = req.cookies?.adminId || (req.user.role === 'admin' ? req.user.id : null);
+  if (!adminId) return res.status(403).json({ error: 'Ej behörig.' });
+  const admin = await prisma.user.findUnique({ where: { id: adminId } });
+  if (!admin || admin.role !== 'admin') return res.status(403).json({ error: 'Ej behörig.' });
+  const users = await prisma.user.findMany({
+    where: { isActive: true },
+    select: { id: true, name: true, role: true, username: true },
+    orderBy: { name: 'asc' }
+  });
+  res.json({ users });
+});
+
 // Borttagna videor (admin)
 app.get('/api/admin/deleted-videos', authenticateToken, requireAdmin, async (req, res) => {
   try {

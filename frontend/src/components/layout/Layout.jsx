@@ -47,10 +47,11 @@ export default function Layout() {
     setImpersonating(hasAdminCookie);
   }, [user]);
 
-  // Hämta alla användare för admin user-switch
+  // Hämta alla användare för user-switch (fungerar även under impersonering)
   useEffect(() => {
-    if (!isAdmin || impersonating) return;
-    fetch('/api/admin/users', { credentials: 'include' })
+    if (!isAdmin && !impersonating) return;
+    const url = impersonating ? '/api/admin/switch-users' : '/api/admin/users';
+    fetch(url, { credentials: 'include' })
       .then(r => r.ok ? r.json() : { users: [] })
       .then(d => setAllUsers(d.users || []))
       .catch(() => {});
@@ -58,12 +59,10 @@ export default function Layout() {
 
   const handleImpersonate = async (userId) => {
     try {
-      const csrfRes = await fetch('/api/auth/csrf-token', { credentials: 'include' });
-      const { csrfToken } = await csrfRes.json();
-      const res = await fetch(`/api/admin/impersonate/${userId}`, {
+      const url = impersonating ? `/api/admin/switch-user/${userId}` : `/api/admin/impersonate/${userId}`;
+      const res = await fetch(url, {
         method: 'POST',
-        credentials: 'include',
-        headers: { 'X-CSRF-Token': csrfToken }
+        credentials: 'include'
       });
       if (res.ok) {
         const data = await res.json();
@@ -246,7 +245,7 @@ export default function Layout() {
 
                 {!showPassword && !showUserSwitch ? (
                   <>
-                    {isAdmin && !impersonating && (
+                    {(isAdmin || impersonating) && (
                       <button className="dropdown-item" onClick={() => setShowUserSwitch(true)}>
                         Byt användare
                       </button>
