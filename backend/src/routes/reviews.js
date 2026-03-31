@@ -1,5 +1,6 @@
 import express from 'express';
 import { authenticateToken, requireRole } from '../middleware/auth.js';
+import { csrfProtection } from '../middleware/csrf.js';
 import {
   createReview,
   getInbox,
@@ -12,7 +13,7 @@ import {
 const router = express.Router();
 
 // Coach skapar en review
-router.post('/', authenticateToken, requireRole('coach', 'admin'), createReview);
+router.post('/', authenticateToken, requireRole('coach', 'admin'), csrfProtection, createReview);
 
 // Spelare hämtar sin inbox
 router.get('/inbox', authenticateToken, getInbox);
@@ -27,6 +28,6 @@ router.get('/coach-overview', authenticateToken, requireRole('coach', 'admin'), 
 router.get('/video/:videoId', authenticateToken, getVideoReviews);
 
 // Spelare bekräftar en review med lösenord
-router.post('/:id/acknowledge', authenticateToken, acknowledgeReview);
+router.post('/:id/acknowledge', authenticateToken, csrfProtection, acknowledgeReview);
 
 export default router;

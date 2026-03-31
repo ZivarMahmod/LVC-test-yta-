@@ -36,9 +36,11 @@ function PlayerInbox() {
     setError(""); setSuccess("");
     if (!password) return setError("Ange ditt lösenord");
     try {
+      const csrfRes = await fetch('/api/auth/csrf-token', { credentials: 'include' });
+      const { csrfToken } = await csrfRes.json();
       const res = await fetch(`/api/reviews/${reviewId}/acknowledge`, {
         method: "POST", credentials: "include",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", "X-CSRF-Token": csrfToken },
         body: JSON.stringify({ password })
       });
       const data = await res.json();

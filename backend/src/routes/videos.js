@@ -127,6 +127,7 @@ router.post('/:id/dvw',
 router.post('/:id/secondary/chunk',
   authenticateToken,
   requireAdmin,
+  csrfProtection,
   videoUpload.single('chunk'),
   videoController.uploadSecondaryChunk
 );
@@ -134,6 +135,7 @@ router.post('/:id/secondary/chunk',
 router.post('/:id/secondary/complete',
   authenticateToken,
   requireAdmin,
+  csrfProtection,
   videoController.finalizeSecondaryUpload
 );
 

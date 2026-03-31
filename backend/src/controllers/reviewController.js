@@ -8,8 +8,8 @@ export async function createReview(req, res) {
     const { videoId, actionIndex, playerIds, comment } = req.body;
     const coachId = req.user.id;
 
-    if (!videoId || actionIndex === undefined || !playerIds || !playerIds.length || !comment) {
-      return res.status(400).json({ error: 'Saknade fält' });
+    if (!videoId || actionIndex === undefined || !playerIds || !playerIds.length || !comment || comment.length > 5000) {
+      return res.status(400).json({ error: 'Saknade fält eller kommentar för lång (max 5000 tecken)' });
     }
 
     // Verifiera att videon finns
@@ -114,12 +114,17 @@ export async function acknowledgeReview(req, res) {
     // Verifiera lösenord
     const user = await prisma.user.findUnique({ where: { id: userId } });
     const valid = await bcrypt.compare(password, user.passwordHash);
-    if (!valid) return res.status(401).json({ error: 'Fel lösenord' });
+    if (!valid) {
+      logger.warn('Misslyckat lösenordsförsök vid review-bekräftelse', { userId, reviewId: id, ip: req.ip });
+      return res.status(401).json({ error: 'Fel lösenord' });
+    }
 
     const updated = await prisma.coachReview.update({
       where: { id },
       data: { acknowledgedAt: new Date() }
     });
+
+    logger.info('Review bekräftad', { userId, reviewId: id });
 
     res.json({ review: updated });
   } catch (err) {

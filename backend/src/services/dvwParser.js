@@ -150,7 +150,15 @@ const parseScout = (lines, players, teams, matchStartSeconds, videoOffset) => {
 
 export const dvwParserService = {
   async parseFile(dvwPath, videoOffset = 0) {
-    const absPath = path.join(STORAGE_PATH, dvwPath);
+    const normalized = path.normalize(dvwPath);
+    if (normalized.startsWith('..') || path.isAbsolute(normalized)) {
+      throw new Error('Invalid DVW path');
+    }
+    const absPath = path.join(STORAGE_PATH, normalized);
+    const resolved = path.resolve(absPath);
+    if (!resolved.startsWith(path.resolve(STORAGE_PATH))) {
+      throw new Error('Path traversal attempt detected');
+    }
     const content = await readFile(absPath, 'latin1');
     const lines = content.split('\n').map(l => l.trim()).filter(Boolean);
 

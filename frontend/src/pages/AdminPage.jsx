@@ -1036,9 +1036,11 @@ export default function AdminPage() {
           teams={teams}
           onAddTeam={async (userId, teamId) => {
             try {
+              const csrfRes = await fetch('/api/auth/csrf-token', { credentials: 'include' });
+              const { csrfToken } = await csrfRes.json();
               await fetch(`/api/admin/users/${userId}/teams`, {
                 method: 'POST', credentials: 'include',
-                headers: { 'Content-Type': 'application/json' },
+                headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': csrfToken },
                 body: JSON.stringify({ teamId: parseInt(teamId) })
               });
               const data = await fetch('/api/admin/users', { credentials: 'include' }).then(r => r.json());
@@ -1049,8 +1051,11 @@ export default function AdminPage() {
           }}
           onRemoveTeam={async (userId, teamId) => {
             try {
+              const csrfRes = await fetch('/api/auth/csrf-token', { credentials: 'include' });
+              const { csrfToken } = await csrfRes.json();
               await fetch(`/api/admin/users/${userId}/teams/${teamId}`, {
-                method: 'DELETE', credentials: 'include'
+                method: 'DELETE', credentials: 'include',
+                headers: { 'X-CSRF-Token': csrfToken }
               });
               const data = await fetch('/api/admin/users', { credentials: 'include' }).then(r => r.json());
               setUsers(data.users || []);

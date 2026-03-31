@@ -74,7 +74,7 @@ export const videoController = {
       if (req.files && req.files.video && req.files.video[0]) await unlink(req.files.video[0].path).catch(() => {});
       if (req.files && req.files.dvw && req.files.dvw[0]) await unlink(req.files.dvw[0].path).catch(() => {});
       logger.error('Upload-fel:', error);
-      res.status(500).json({ error: error.message || 'Uppladdningen misslyckades.' });
+      res.status(500).json({ error: 'Uppladdningen misslyckades.' });
     }
   },
 
@@ -590,7 +590,7 @@ export const scoutController = {
       const data = await dvwParserService.parseFile(video.dvwPath, video.videoOffset || 0);
       res.json(data);
     } catch (error) {
-      console.error('Scout-fel:', error);
+      logger.error('Scout-fel:', error);
       res.status(500).json({ error: 'Kunde inte läsa scout-filen.' });
     }
   },

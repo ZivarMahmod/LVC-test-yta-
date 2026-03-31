@@ -99,13 +99,13 @@ app.use('/api/admin', adminRoutes);
 app.use('/api/reviews', reviewRoutes);
 
 // Avsluta impersonering (tillgänglig för alla inloggade)
-app.post('/api/admin/stop-impersonate', authenticateToken, async (req, res) => {
+app.post('/api/admin/stop-impersonate', authenticateToken, csrfProtection, async (req, res) => {
   const { adminController: ac } = await import('./controllers/adminController.js');
   return ac.stopImpersonate(req, res);
 });
 
 // Byt användare direkt (fungerar via adminId-cookie under pågående impersonering)
-app.post('/api/admin/switch-user/:id', authenticateToken, async (req, res) => {
+app.post('/api/admin/switch-user/:id', authenticateToken, csrfProtection, async (req, res) => {
   const { default: prisma } = await import('./config/database.js');
   const adminId = req.cookies?.adminId || (req.user.role === 'admin' ? req.user.id : null);
   if (!adminId) return res.status(403).json({ error: 'Ej behörig.' });
@@ -230,7 +230,7 @@ app.get('/api/thumbnail-library/image/:file', authenticateToken, async (req, res
 // ===========================================
 // UserTeam — Lag-kopplingar för användare
 // ===========================================
-app.post('/api/admin/users/:id/teams', authenticateToken, requireAdmin, async (req, res) => {
+app.post('/api/admin/users/:id/teams', authenticateToken, requireAdmin, csrfProtection, async (req, res) => {
   try {
     const { default: prisma } = await import('./config/database.js');
     const { teamId } = req.body;
@@ -245,7 +245,7 @@ app.post('/api/admin/users/:id/teams', authenticateToken, requireAdmin, async (r
   }
 });
 
-app.delete('/api/admin/users/:id/teams/:teamId', authenticateToken, requireAdmin, async (req, res) => {
+app.delete('/api/admin/users/:id/teams/:teamId', authenticateToken, requireAdmin, csrfProtection, async (req, res) => {
   try {
     const { default: prisma } = await import('./config/database.js');
     await prisma.userTeam.delete({
@@ -262,7 +262,7 @@ app.delete('/api/admin/users/:id/teams/:teamId', authenticateToken, requireAdmin
   }
 });
 
-app.put('/api/admin/users/:id/role', authenticateToken, requireAdmin, async (req, res) => {
+app.put('/api/admin/users/:id/role', authenticateToken, requireAdmin, csrfProtection, async (req, res) => {
   try {
     const { default: prisma } = await import('./config/database.js');
     const { role } = req.body;
@@ -340,7 +340,7 @@ app.get('/api/changelog', async (req, res) => {
   }
 });
 
-app.post('/api/changelog', authenticateToken, requireAdmin, async (req, res) => {
+app.post('/api/changelog', authenticateToken, requireAdmin, csrfProtection, async (req, res) => {
   try {
     const { default: prisma } = await import('./config/database.js');
     const { version, title, content: body } = req.body;
@@ -352,7 +352,7 @@ app.post('/api/changelog', authenticateToken, requireAdmin, async (req, res) => 
   }
 });
 
-app.put('/api/changelog/:id', authenticateToken, requireAdmin, async (req, res) => {
+app.put('/api/changelog/:id', authenticateToken, requireAdmin, csrfProtection, async (req, res) => {
   try {
     const { default: prisma } = await import('./config/database.js');
     const { version, title, content: body } = req.body;
@@ -363,7 +363,7 @@ app.put('/api/changelog/:id', authenticateToken, requireAdmin, async (req, res) 
   }
 });
 
-app.delete('/api/changelog/:id', authenticateToken, requireAdmin, async (req, res) => {
+app.delete('/api/changelog/:id', authenticateToken, requireAdmin, csrfProtection, async (req, res) => {
   try {
     const { default: prisma } = await import('./config/database.js');
     await prisma.changelogEntry.delete({ where: { id: req.params.id } });

@@ -192,10 +192,12 @@ export default function VideoPlayerPage() {
     setAckLoading(true);
     setAckError('');
     try {
+      const csrfRes = await fetch('/api/auth/csrf-token', { credentials: 'include' });
+      const { csrfToken } = await csrfRes.json();
       const res = await fetch(`/api/reviews/${reviewId}/acknowledge`, {
         method: 'POST',
         credentials: 'include',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': csrfToken },
         body: JSON.stringify({ password: ackPassword })
       });
       const data = await res.json();
@@ -429,10 +431,12 @@ export default function VideoPlayerPage() {
     if (!reviewComment.trim()) return setReviewError('Skriv en kommentar');
     setReviewLoading(true);
     try {
+      const csrfRes = await fetch('/api/auth/csrf-token', { credentials: 'include' });
+      const { csrfToken } = await csrfRes.json();
       const res = await fetch('/api/reviews', {
         method: 'POST',
         credentials: 'include',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': csrfToken },
         body: JSON.stringify({
           videoId: id,
           actionIndex: reviewModal.actionIndex,
