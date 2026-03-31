@@ -695,34 +695,38 @@ export default function AdminPage() {
                               >×</button>
                             </span>
                           ))}
-                          <select
-                            value=""
-                            onChange={async (e) => {
-                              if (!e.target.value) return;
-                              try {
-                                const csrfRes = await fetch('/api/auth/csrf-token', { credentials: 'include' });
-                                const { csrfToken } = await csrfRes.json();
-                                await fetch(`/api/admin/users/${u.id}/teams`, {
-                                  method: 'POST', credentials: 'include',
-                                  headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': csrfToken },
-                                  body: JSON.stringify({ teamId: parseInt(e.target.value) })
-                                });
-                                fetchUsers();
-                              } catch {}
-                              e.target.value = '';
-                            }}
-                            style={{
-                              padding: '0.15rem 0.3rem', borderRadius: '4px', fontSize: '0.68rem',
-                              border: '1px solid var(--border-default)', background: 'var(--surface-raised)',
-                              color: 'var(--text-muted)', cursor: 'pointer', width: '24px'
-                            }}
-                            title="Lägg till lag"
-                          >
-                            <option value="">+</option>
-                            {teams.filter(t => !(u.teams || []).some(ut => (ut.team?.id || ut.teamId) === t.id)).map(t => (
-                              <option key={t.id} value={t.id}>{t.name}</option>
-                            ))}
-                          </select>
+                          {teams.filter(t => !(u.teams || []).some(ut => (ut.team?.id || ut.teamId) === t.id)).length > 0 && (
+                            <select
+                              value=""
+                              onChange={async (e) => {
+                                if (!e.target.value) return;
+                                try {
+                                  const csrfRes = await fetch('/api/auth/csrf-token', { credentials: 'include' });
+                                  const { csrfToken } = await csrfRes.json();
+                                  await fetch(`/api/admin/users/${u.id}/teams`, {
+                                    method: 'POST', credentials: 'include',
+                                    headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': csrfToken },
+                                    body: JSON.stringify({ teamId: parseInt(e.target.value) })
+                                  });
+                                  fetchUsers();
+                                } catch {}
+                                e.target.value = '';
+                              }}
+                              style={{
+                                padding: '0.1rem', borderRadius: '50%', fontSize: '0.7rem',
+                                border: '1px solid transparent', background: 'transparent',
+                                color: 'var(--text-muted)', cursor: 'pointer',
+                                width: '20px', height: '20px', textAlign: 'center',
+                                appearance: 'none', WebkitAppearance: 'none', MozAppearance: 'none'
+                              }}
+                              title="Lägg till lag"
+                            >
+                              <option value="">+</option>
+                              {teams.filter(t => !(u.teams || []).some(ut => (ut.team?.id || ut.teamId) === t.id)).map(t => (
+                                <option key={t.id} value={t.id}>{t.name}</option>
+                              ))}
+                            </select>
+                          )}
                         </div>
                       </td>
                       <td>
