@@ -301,6 +301,7 @@ export default function AdminPage() {
   const [thumbLibrary, setThumbLibrary] = useState([]);
   const [thumbTeamId, setThumbTeamId] = useState('');
   const [thumbFilterTeam, setThumbFilterTeam] = useState('');
+  const [userTeamFilter, setUserTeamFilter] = useState('ALL');
   const thumbInputRef = useRef(null);
 
   const fetchUsers = useCallback(async () => {
@@ -629,12 +630,33 @@ export default function AdminPage() {
           {loading ? (
             <div className="loading-container"><div className="spinner" /></div>
           ) : (
+            <>
+            {/* Lag-filter */}
+            <div style={{ marginBottom: '0.75rem', display: 'flex', gap: '0.4rem', flexWrap: 'wrap', alignItems: 'center' }}>
+              <span style={{ fontSize: '0.82rem', color: 'var(--text-muted)' }}>Filtrera lag:</span>
+              <select
+                value={userTeamFilter}
+                onChange={e => setUserTeamFilter(e.target.value)}
+                style={{
+                  padding: '0.3rem 0.6rem', borderRadius: '6px', fontSize: '0.82rem',
+                  border: '1px solid var(--border-default)', background: 'var(--surface-raised)',
+                  color: 'var(--text-primary)'
+                }}
+              >
+                <option value="ALL">Alla ({users.length})</option>
+                {teams.map(t => {
+                  const count = users.filter(u => (u.teams || []).some(ut => ut.team?.id === t.id || ut.teamId === t.id)).length;
+                  return <option key={t.id} value={t.id}>{t.name} ({count})</option>;
+                })}
+                <option value="NONE">Utan lag ({users.filter(u => !u.teams || u.teams.length === 0).length})</option>
+              </select>
+            </div>
             <div className="table-container">
               <table>
                 <thead>
                   <tr>
                     <th>Namn</th>
-                    <th>E-post</th>
+                    <th>Lag</th>
                     <th>Roll</th>
                     <th>Status</th>
                     <th>Videor</th>
@@ -643,10 +665,25 @@ export default function AdminPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {users.map(u => (
+                  {users
+                    .filter(u => {
+                      if (userTeamFilter === 'ALL') return true;
+                      if (userTeamFilter === 'NONE') return !u.teams || u.teams.length === 0;
+                      return (u.teams || []).some(ut => String(ut.team?.id || ut.teamId) === userTeamFilter);
+                    })
+                    .map(u => (
                     <tr key={u.id} className={!u.isActive ? 'row-inactive' : ''}>
                       <td className="td-name">{u.name}</td>
-                      <td className="text-muted">{u.email}</td>
+                      <td>
+                        {(u.teams || []).length > 0
+                          ? (u.teams || []).map(ut => (
+                              <span key={ut.team?.id || ut.teamId} className="badge" style={{ fontSize: '0.68rem', background: 'rgba(99,102,241,0.15)', color: 'var(--lvc-blue-light, #3584e4)', marginRight: '0.2rem' }}>
+                                {ut.team?.name || 'Lag'}
+                              </span>
+                            ))
+                          : <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>—</span>
+                        }
+                      </td>
                       <td>
                         <span className={`badge badge-${u.role}`}>
                           {ROLE_LABELS[u.role]}
@@ -681,6 +718,7 @@ export default function AdminPage() {
                 </tbody>
               </table>
             </div>
+            </>
           )}
         </div>
       )}
