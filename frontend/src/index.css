@@ -243,6 +243,11 @@ button:disabled {
   color: var(--lvc-gray-200);
 }
 
+.badge-coach {
+  background: rgba(76, 175, 80, 0.15);
+  color: #4CAF50;
+}
+
 /* --- Layout helpers --- */
 .container {
   max-width: 1600px;
