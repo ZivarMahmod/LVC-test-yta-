@@ -656,6 +656,7 @@ export default function AdminPage() {
                 <thead>
                   <tr>
                     <th>Namn</th>
+                    <th>#</th>
                     <th>Lag</th>
                     <th>Roll</th>
                     <th>Status</th>
@@ -674,6 +675,29 @@ export default function AdminPage() {
                     .map(u => (
                     <tr key={u.id} className={!u.isActive ? 'row-inactive' : ''}>
                       <td className="td-name">{u.name}</td>
+                      <td>
+                        <input
+                          type="number"
+                          defaultValue={u.jerseyNumber || ''}
+                          placeholder="—"
+                          onBlur={async (e) => {
+                            const val = e.target.value ? parseInt(e.target.value) : null;
+                            if (val === (u.jerseyNumber || null)) return;
+                            try {
+                              await adminApi.updateUser(u.id, { jerseyNumber: val });
+                              fetchUsers();
+                            } catch {}
+                          }}
+                          onKeyDown={(e) => { if (e.key === 'Enter') e.target.blur(); }}
+                          style={{
+                            width: '36px', padding: '0.15rem 0.3rem', borderRadius: '4px',
+                            border: '1px solid transparent', background: 'transparent',
+                            color: 'var(--text-primary)', fontSize: '0.82rem', textAlign: 'center'
+                          }}
+                          onFocus={(e) => { e.target.style.border = '1px solid var(--lvc-blue, #1a5fb4)'; e.target.style.background = 'var(--surface-raised)'; }}
+                          onBlurCapture={(e) => { e.target.style.border = '1px solid transparent'; e.target.style.background = 'transparent'; }}
+                        />
+                      </td>
                       <td>
                         <div style={{ display: 'flex', gap: '0.2rem', flexWrap: 'wrap', alignItems: 'center' }}>
                           {(u.teams || []).map(ut => (
