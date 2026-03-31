@@ -699,18 +699,18 @@ export default function AdminPage() {
                             <select
                               value=""
                               onChange={async (e) => {
-                                if (!e.target.value) return;
+                                const selectedTeamId = e.target.value;
+                                if (!selectedTeamId) return;
                                 try {
                                   const csrfRes = await fetch('/api/auth/csrf-token', { credentials: 'include' });
                                   const { csrfToken } = await csrfRes.json();
-                                  await fetch(`/api/admin/users/${u.id}/teams`, {
+                                  const res = await fetch(`/api/admin/users/${u.id}/teams`, {
                                     method: 'POST', credentials: 'include',
                                     headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': csrfToken },
-                                    body: JSON.stringify({ teamId: parseInt(e.target.value) })
+                                    body: JSON.stringify({ teamId: parseInt(selectedTeamId) })
                                   });
-                                  fetchUsers();
+                                  if (res.ok) fetchUsers();
                                 } catch {}
-                                e.target.value = '';
                               }}
                               style={{
                                 padding: '0.1rem', borderRadius: '50%', fontSize: '0.7rem',
