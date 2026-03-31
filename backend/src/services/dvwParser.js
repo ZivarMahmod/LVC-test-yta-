@@ -150,8 +150,10 @@ const parseScout = (lines, players, teams, matchStartSeconds, videoOffset) => {
 
 export const dvwParserService = {
   async parseFile(dvwPath, videoOffset = 0) {
-    const normalized = path.normalize(dvwPath);
-    if (normalized.startsWith('..') || path.isAbsolute(normalized)) {
+    // Strippa leading slash om det finns (lagras så i DB)
+    const cleaned = dvwPath.startsWith('/') ? dvwPath.slice(1) : dvwPath;
+    const normalized = path.normalize(cleaned);
+    if (normalized.startsWith('..')) {
       throw new Error('Invalid DVW path');
     }
     const absPath = path.join(STORAGE_PATH, normalized);
