@@ -7,6 +7,7 @@ import { readdir, stat } from 'fs/promises';
 import path from 'path';
 import prisma from '../config/database.js';
 import logger from '../utils/logger.js';
+import { formatVideoTitle } from '../utils/formatTitle.js';
 
 const STORAGE_PATH = process.env.STORAGE_PATH || '/storage';
 const VALID_EXTENSIONS = ['.mp4', '.mov', '.mkv'];
@@ -46,10 +47,15 @@ const scanDirectory = async (dirPath, relativePath = '') => {
   return files;
 };
 
+let scanning = false;
+
 export const startFolderScanner = async () => {
   const scan = async () => {
-    logger.info('Mappskannar /storage efter nya videofiler...');
+    if (scanning) return;
+    scanning = true;
     try {
+      logger.info('Mappskannar /storage efter nya videofiler...');
+      try {
       const files = await scanDirectory(STORAGE_PATH);
 
       for (const file of files) {
@@ -61,10 +67,7 @@ export const startFolderScanner = async () => {
 
         const fileStat = await stat(file.fullPath);
         const { matchDate, opponent, ext } = parsed;
-        const year = matchDate.getFullYear();
-        const month = String(matchDate.getMonth() + 1).padStart(2, '0');
-        const day = String(matchDate.getDate()).padStart(2, '0');
-        const title = `LVC vs ${opponent} — ${day}/${month}/${year}`;
+        const title = formatVideoTitle(opponent, matchDate);
 
         // Kolla om det finns en .dvw scout-fil med samma namn
         const dvwRelPath = file.relativePath.replace(/.[^.]+$/, '.dvw');
@@ -126,6 +129,9 @@ export const startFolderScanner = async () => {
       }
     } catch (error) {
       logger.error('Mappskanning misslyckades:', { error: error.message });
+    }
+    } finally {
+      scanning = false;
     }
   };
 

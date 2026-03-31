@@ -7,6 +7,7 @@ import { fileValidator } from '../utils/fileValidator.js';
 import path from 'path';
 import { mkdir, unlink, rename, copyFile, stat as fsStat } from 'fs/promises';
 import logger from '../utils/logger.js';
+import { formatVideoTitle } from '../utils/formatTitle.js';
 
 export const videoController = {
 
@@ -45,10 +46,7 @@ export const videoController = {
       const fileStat = await fsStat(absPath);
 
       const date = new Date(matchDate);
-      const year = date.getFullYear();
-      const month = String(date.getMonth() + 1).padStart(2, '0');
-      const day = String(date.getDate()).padStart(2, '0');
-      const title = 'LVC vs ' + opponent + ' \u2014 ' + day + '/' + month + '/' + year;
+      const title = formatVideoTitle(opponent, matchDate);
 
       const ext = path.extname(videoFile.originalname).toLowerCase();
       const mimeType = ext === '.mp4' ? 'video/mp4' : ext === '.mov' ? 'video/quicktime' : 'video/x-matroska';
@@ -233,10 +231,7 @@ export const videoController = {
 
       // Skapa datum och titel
       const date = new Date(matchDate);
-      const year = date.getFullYear();
-      const month = String(date.getMonth() + 1).padStart(2, '0');
-      const day = String(date.getDate()).padStart(2, '0');
-      const title = 'LVC vs ' + opponent + ' \u2014 ' + day + '/' + month + '/' + year;
+      const title = formatVideoTitle(opponent, matchDate);
 
       const ext = path.extname(fileName).toLowerCase();
       const mimeType = ext === '.mp4' ? 'video/mp4' : ext === '.mov' ? 'video/quicktime' : 'video/x-matroska';
@@ -303,11 +298,7 @@ export const videoController = {
       if (!video) return res.status(404).json({ error: 'Videon hittades inte.' });
 
       const newOpponent = opponent.trim();
-      const date = new Date(video.matchDate);
-      const day = String(date.getDate()).padStart(2, '0');
-      const month = String(date.getMonth() + 1).padStart(2, '0');
-      const year = date.getFullYear();
-      const newTitle = 'LVC vs ' + newOpponent + ' \u2014 ' + day + '/' + month + '/' + year;
+      const newTitle = formatVideoTitle(newOpponent, video.matchDate);
 
       const updated = await prisma.video.update({
         where: { id },

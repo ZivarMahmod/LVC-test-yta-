@@ -363,19 +363,18 @@ export const adminController = {
       if (!req.file) return res.status(400).json({ error: 'Ingen bild bifogad.' });
 
       const fs = await import('fs/promises');
-      const path = await import('path');
 
       // Radera gamla thumbnails (alla extensions)
       const exts = ['.jpg', '.jpeg', '.png', '.webp'];
       for (const e of exts) {
-        await fs.unlink(path.default.join('/app/data/thumbnails/teams', 'team-' + id + e)).catch(() => {});
+        await fs.unlink(path.join('/app/data/thumbnails/teams', 'team-' + id + e)).catch(() => {});
       }
 
-      const ext = path.default.extname(req.file.originalname).toLowerCase() || '.jpg';
+      const ext = path.extname(req.file.originalname).toLowerCase() || '.jpg';
       const thumbDir = '/app/data/thumbnails/teams';
       await fs.mkdir(thumbDir, { recursive: true });
       const thumbFile = 'team-' + id + ext;
-      const destPath = path.default.join(thumbDir, thumbFile);
+      const destPath = path.join(thumbDir, thumbFile);
       await fs.copyFile(req.file.path, destPath);
       await fs.unlink(req.file.path).catch(() => {});
 
@@ -557,7 +556,6 @@ export const adminController = {
       const absPath = fileStorageService.getAbsolutePath(filePath);
 
       const fs = await import('fs/promises');
-      const path = await import('path');
       await fs.mkdir(path.dirname(absPath), { recursive: true });
       await fs.copyFile(req.file.path, absPath);
       await fs.unlink(req.file.path).catch(() => {});

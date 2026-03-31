@@ -5,13 +5,8 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { videoApi, teamApi } from '../utils/api.js';
 import { useAuth } from '../context/AuthContext.jsx';
+import { formatFileSize } from '../utils/format.js';
 import './VideosPage.css';
-
-function formatFileSize(bytes) {
-  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(0)} KB`;
-  if (bytes < 1024 * 1024 * 1024) return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
-  return `${(bytes / (1024 * 1024 * 1024)).toFixed(2)} GB`;
-}
 
 function formatDate(dateStr) {
   return new Date(dateStr).toLocaleDateString('sv-SE', {

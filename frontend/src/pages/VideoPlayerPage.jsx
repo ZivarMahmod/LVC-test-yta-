@@ -6,27 +6,8 @@ import { useParams, Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { videoApi } from '../utils/api.js';
 import { scoutApi } from '../utils/api.js';
 import { useAuth } from '../context/AuthContext.jsx';
+import { formatFileSize, formatDate, formatVideoTime } from '../utils/format.js';
 import './VideoPlayerPage.css';
-
-function formatDate(dateStr) {
-  return new Date(dateStr).toLocaleDateString('sv-SE', {
-    weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'
-  });
-}
-
-function formatFileSize(bytes) {
-  if (bytes < 1024 * 1024 * 1024) return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
-  return `${(bytes / (1024 * 1024 * 1024)).toFixed(2)} GB`;
-}
-
-function formatVideoTime(seconds) {
-  if (seconds === null || seconds === undefined) return '--:--';
-  const h = Math.floor(seconds / 3600);
-  const m = Math.floor((seconds % 3600) / 60);
-  const s = Math.floor(seconds % 60);
-  if (h > 0) return `${h}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
-  return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
-}
 
 const SKILL_COLORS = {
   S: '#4CAF50', R: '#2196F3', E: '#FF9800',

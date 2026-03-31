@@ -4,6 +4,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { videoApi, teamApi } from '../utils/api.js';
+import { formatFileSize } from '../utils/format.js';
 import './UploadPage.css';
 
 const ALLOWED_TYPES = ['video/mp4', 'video/quicktime', 'video/x-matroska'];
@@ -222,12 +223,6 @@ export default function UploadPage() {
     }
   };
 
-  const formatSize = (bytes) => {
-    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(0)} KB`;
-    if (bytes < 1024 * 1024 * 1024) return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
-    return `${(bytes / (1024 * 1024 * 1024)).toFixed(2)} GB`;
-  };
-
   return (
     <div className="upload-page">
       <div className="upload-card card">
@@ -250,7 +245,7 @@ export default function UploadPage() {
                 </svg>
                 <div className="drop-zone-file-info">
                   <span className="file-name">{file.name}</span>
-                  <span className="file-size">{formatSize(file.size)}</span>
+                  <span className="file-size">{formatFileSize(file.size)}</span>
                 </div>
                 {!uploading && (
                   <button type="button" className="drop-zone-remove" onClick={(e) => { e.stopPropagation(); setFile(null); }}>×</button>
