@@ -475,16 +475,6 @@ export default function VideoPlayerPage() {
     }
   }
 
-  // Hämta lagspelare för coach
-  useEffect(() => {
-    if (!isCoach) return;
-    fetch('/api/reviews/team-players', { credentials: 'include' })
-      .then(r => r.json())
-      .then(d => setReviewPlayers(d.teams || []))
-      .catch(() => {});
-  }, [isCoach]);
-
-
   const getFilteredActions = () => {
     if (!scout) return [];
     return scout.actions.filter(a => {

@@ -22,6 +22,7 @@ import videoRoutes from './routes/videos.js';
 import adminRoutes from './routes/admin.js';
 import reviewRoutes from './routes/reviews.js';
 import { authenticateToken, requireAdmin, requireCoach } from './middleware/auth.js';
+import { csrfProtection } from './middleware/csrf.js';
 import { startFolderScanner } from './services/folderScanner.js';
 
 // Periodisk rensning
@@ -50,31 +51,6 @@ app.use(helmet({
       scriptSrc: ["'self'"],
       styleSrc: ["'self'", "'unsafe-inline'", 'https://fonts.googleapis.com'],
       imgSrc: ["'self'", 'data:', 'blob:'],
-      mediaSrc: ["'self'", 'blob:', 'https://stream.lvcmediahub.com'],
-      connectSrc: ["'self'", 'https://stream.lvcmediahub.com'],
-      fontSrc: ["'self'", 'https://fonts.gstatic.com'],
-      objectSrc: ["'none'"],
-      frameSrc: ["'none'"],
-      baseUri: ["'self'"],
-      formAction: ["'self'"]
-    }
-  },
-  hsts: {
-    maxAge: 31536000,
-    includeSubDomains: true,
-    preload: true
-  },
-  referrerPolicy: { policy: 'strict-origin-when-cross-origin' },
-  crossOriginEmbedderPolicy: false, // Behövs för videostreaming
-  crossOriginResourcePolicy: { policy: 'same-site' } // Tillåt stream.lvcmediahub.com → lvcmediahub.com
-}));// Helmet — säkra HTTP-headers
-app.use(helmet({
-  contentSecurityPolicy: {
-    directives: {
-      defaultSrc: ["'self'"],
-      scriptSrc: ["'self'"],
-      styleSrc: ["'self'", "'unsafe-inline'", 'https://fonts.googleapis.com'],
-      imgSrc: ["'self'", 'data:', 'blob:'],
       mediaSrc: ["'self'", 'blob:', isProduction ? 'https://stream.lvcmediahub.com' : "'self'"],
       connectSrc: ["'self'", isProduction ? 'https://stream.lvcmediahub.com' : "'self'"],
       fontSrc: ["'self'", 'https://fonts.gstatic.com'],
@@ -87,7 +63,7 @@ app.use(helmet({
   },
   hsts: isProduction ? { maxAge: 31536000, includeSubDomains: true, preload: true } : false,
   referrerPolicy: { policy: 'strict-origin-when-cross-origin' },
-  crossOriginEmbedderPolicy: false,
+  crossOriginEmbedderPolicy: false, // Behövs för videostreaming
   crossOriginResourcePolicy: { policy: isProduction ? 'same-site' : 'cross-origin' }
 }));
 
@@ -171,7 +147,7 @@ app.get('/api/admin/deleted-videos', authenticateToken, requireAdmin, async (req
 });
 
 // Thumbnail Library
-app.get('/api/thumbnail-library', authenticateToken, async (req, res) => {
+app.get('/api/thumbnail-library', authenticateToken, requireAdmin, async (req, res) => {
   try {
     const { default: prisma } = await import('./config/database.js');
     const teamId = req.query.teamId ? parseInt(req.query.teamId) : null;
@@ -183,7 +159,7 @@ app.get('/api/thumbnail-library', authenticateToken, async (req, res) => {
   }
 });
 
-app.post('/api/admin/thumbnail-library', authenticateToken, requireAdmin, async (req, res) => {
+app.post('/api/admin/thumbnail-library', authenticateToken, requireAdmin, csrfProtection, async (req, res) => {
   try {
     const multer = (await import('multer')).default;
     const upload = multer({ dest: '/tmp/uploads/', limits: { fileSize: 5 * 1024 * 1024 } });
@@ -218,7 +194,7 @@ app.post('/api/admin/thumbnail-library', authenticateToken, requireAdmin, async 
   }
 });
 
-app.delete('/api/admin/thumbnail-library/:id', authenticateToken, requireAdmin, async (req, res) => {
+app.delete('/api/admin/thumbnail-library/:id', authenticateToken, requireAdmin, csrfProtection, async (req, res) => {
   try {
     const { default: prisma } = await import('./config/database.js');
     const fsp = await import('fs/promises');
@@ -235,7 +211,7 @@ app.delete('/api/admin/thumbnail-library/:id', authenticateToken, requireAdmin, 
 
 app.get('/api/thumbnail-library/image/:file', authenticateToken, async (req, res) => {
   try {
-    const file = req.params.file.replace(/\.\./g, '');
+    const file = path.basename(req.params.file);
     const thumbPath = '/app/data/thumbnails/library/' + file;
     const fs = await import('fs');
     const p = await import('path');
@@ -405,7 +381,7 @@ app.use(express.static(frontendPath));
 
 // Team thumbnails
 app.get('/api/team-thumbnail/:file', (req, res) => {
-  const file = req.params.file.replace(/\.\./, '');
+  const file = path.basename(req.params.file);
   const thumbPath = '/app/data/thumbnails/teams/' + file;
   import('fs').then(fs => {
     if (!fs.existsSync(thumbPath)) return res.status(404).json({ error: 'Bild hittades inte.' });

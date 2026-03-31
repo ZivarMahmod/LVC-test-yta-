@@ -1,5 +1,6 @@
 import bcrypt from 'bcrypt';
 import prisma from '../config/database.js';
+import logger from '../utils/logger.js';
 
 // Coach skapar en review (en eller flera spelare)
 export async function createReview(req, res) {
@@ -26,7 +27,7 @@ export async function createReview(req, res) {
 
     res.status(201).json({ reviews });
   } catch (err) {
-    console.error('createReview error:', err);
+    logger.error('createReview error:', err);
     res.status(500).json({ error: 'Serverfel' });
   }
 }
@@ -59,7 +60,7 @@ export async function getInbox(req, res) {
 
     res.json({ reviews: result });
   } catch (err) {
-    console.error('getInbox error:', err);
+    logger.error('getInbox error:', err);
     res.status(500).json({ error: 'Serverfel' });
   }
 }
@@ -91,7 +92,7 @@ export async function getSent(req, res) {
 
     res.json({ reviews: result });
   } catch (err) {
-    console.error('getSent error:', err);
+    logger.error('getSent error:', err);
     res.status(500).json({ error: 'Serverfel' });
   }
 }
@@ -122,7 +123,7 @@ export async function acknowledgeReview(req, res) {
 
     res.json({ review: updated });
   } catch (err) {
-    console.error('acknowledgeReview error:', err);
+    logger.error('acknowledgeReview error:', err);
     res.status(500).json({ error: 'Serverfel' });
   }
 }
@@ -143,7 +144,7 @@ export async function getVideoReviews(req, res) {
 
     res.json({ reviews });
   } catch (err) {
-    console.error('getVideoReviews error:', err);
+    logger.error('getVideoReviews error:', err);
     res.status(500).json({ error: 'Serverfel' });
   }
 }
@@ -206,7 +207,7 @@ export async function getCoachOverview(req, res) {
 
     res.json({ teams });
   } catch (err) {
-    console.error('getCoachOverview error:', err);
+    logger.error('getCoachOverview error:', err);
     res.status(500).json({ error: 'Serverfel' });
   }
 }

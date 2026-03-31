@@ -1,7 +1,7 @@
 // ===========================================
 // LVC Media Hub — Auth Context
 // ===========================================
-import { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import { createContext, useContext, useState, useEffect, useCallback, useMemo } from 'react';
 import { authApi } from '../utils/api.js';
 
 const AuthContext = createContext(null);
@@ -54,7 +54,7 @@ export function AuthProvider({ children }) {
     return () => clearInterval(interval);
   }, [user]);
 
-  const value = {
+  const value = useMemo(() => ({
     user,
     setUser,
     checkAuth,
@@ -65,7 +65,7 @@ export function AuthProvider({ children }) {
     isUploader: user?.role === 'admin' || user?.role === 'uploader' || user?.role === 'coach',
     isCoach: user?.role === 'admin' || user?.role === 'coach',
     isAuthenticated: !!user
-  };
+  }), [user, loading]);
 
   return (
     <AuthContext.Provider value={value}>

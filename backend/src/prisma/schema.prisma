@@ -112,6 +112,7 @@ model Video {
   @@index([opponent])
   @@index([teamId])
   @@index([seasonId])
+  @@index([filePath])
 }
 
 model LoginAttempt {

@@ -7,6 +7,7 @@ import prisma from '../config/database.js';
 import { tokenService } from '../services/tokenService.js';
 import logger from '../utils/logger.js';
 import crypto from 'crypto';
+import path from 'path';
 
 const BCRYPT_ROUNDS = parseInt(process.env.BCRYPT_ROUNDS || '12');
 
@@ -552,7 +553,7 @@ export const adminController = {
       const video = await prisma.video.findUnique({ where: { id } });
       if (!video) return res.status(404).json({ error: 'Videon kunde inte hittas.' });
 
-      const filePath = fileStorageService.buildFilePath(video.matchDate, video.opponent, req.file.originalname.replace(/[^a-zA-Z0-9._-]/g, '_') + '_vinkel2' + require('path').extname(req.file.originalname));
+      const filePath = fileStorageService.buildFilePath(video.matchDate, video.opponent, req.file.originalname.replace(/[^a-zA-Z0-9._-]/g, '_') + '_vinkel2' + path.extname(req.file.originalname));
       const absPath = fileStorageService.getAbsolutePath(filePath);
 
       const fs = await import('fs/promises');
