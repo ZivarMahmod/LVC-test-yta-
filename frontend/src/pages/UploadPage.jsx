@@ -26,6 +26,7 @@ export default function UploadPage() {
   const [status, setStatus] = useState('');
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+  const abortRef = useRef(null);
   const [teams, setTeams] = useState([]);
   const [seasons, setSeasons] = useState([]);
   const [selectedTeam, setSelectedTeam] = useState('');
@@ -112,11 +113,14 @@ export default function UploadPage() {
     }
     setUploading(true);
     setProgress(0);
+    const controller = new AbortController();
+    abortRef.current = controller;
     try {
       const csrfToken = await getCsrfToken();
       const uploadId = generateId();
       const totalChunks = Math.ceil(file.size / CHUNK_SIZE);
       for (let i = 0; i < totalChunks; i++) {
+        if (controller.signal.aborted) throw new Error('Uppladdningen avbröts.');
         const start = i * CHUNK_SIZE;
         const end = Math.min(start + CHUNK_SIZE, file.size);
         const chunk = file.slice(start, end);
@@ -137,7 +141,8 @@ export default function UploadPage() {
         const res = await fetch('/api/videos/upload/chunk', {
           method: 'POST', credentials: 'include',
           headers: { 'X-CSRF-Token': csrfToken },
-          body: formData
+          body: formData,
+          signal: controller.signal
         });
         if (!res.ok) {
           const data = await res.json();
@@ -172,10 +177,21 @@ export default function UploadPage() {
       setSuccess('Videon har laddats upp!');
       setTimeout(() => navigate('/'), 1500);
     } catch (err) {
-      setError(err.message || 'Uppladdningen misslyckades.');
+      if (err.name === 'AbortError' || controller.signal.aborted) {
+        setError('Uppladdningen avbröts.');
+      } else {
+        setError(err.message || 'Uppladdningen misslyckades.');
+      }
       setStatus('');
     } finally {
       setUploading(false);
+      abortRef.current = null;
+    }
+  };
+
+  const handleCancelUpload = () => {
+    if (abortRef.current) {
+      abortRef.current.abort();
     }
   };
 
@@ -252,9 +268,18 @@ export default function UploadPage() {
               <div className="progress-bar-track">
                 <div className="progress-bar-fill" style={{ width: `${progress}%` }} />
               </div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.82rem', marginBottom: '0.75rem' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.82rem', marginBottom: '0.75rem' }}>
                 <span className="progress-text">{progress}%</span>
-                {status && <span style={{ color: 'var(--text-muted)' }}>{status}</span>}
+                {status && <span style={{ color: 'var(--text-muted)', flex: 1, textAlign: 'right', marginRight: '0.5rem' }}>{status}</span>}
+                <button
+                  type="button"
+                  onClick={handleCancelUpload}
+                  style={{
+                    padding: '0.2rem 0.6rem', borderRadius: '4px', fontSize: '0.75rem',
+                    border: '1px solid var(--lvc-red, #f44336)', background: 'rgba(244,67,54,0.1)',
+                    color: 'var(--lvc-red, #f44336)', cursor: 'pointer', fontWeight: 600, flexShrink: 0
+                  }}
+                >Avbryt</button>
               </div>
             </div>
           )}
