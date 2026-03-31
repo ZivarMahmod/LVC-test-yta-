@@ -8,14 +8,12 @@ import { authApi } from '../../utils/api.js';
 import './Layout.css';
 
 export default function Layout() {
-  const { user, logout, isAdmin, isUploader, isCoach, setUser, checkAuth } = useAuth();
+  const { user, logout, isAdmin, isUploader, isCoach } = useAuth();
   const navigate = useNavigate();
   const [menuOpen, setMenuOpen] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
   const [dropdownOpen, setDropdownOpen] = useState(false);
-  const [impersonating, setImpersonating] = useState(false);
-  const [allUsers, setAllUsers] = useState([]);
-  const [showUserSwitch, setShowUserSwitch] = useState(false);
+  const [viewAsRole, setViewAsRole] = useState(null); // null = normal, 'coach'/'uploader'/'viewer' = preview
   const [showPassword, setShowPassword] = useState(false);
   const [oldPassword, setOldPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
@@ -41,60 +39,11 @@ export default function Layout() {
     } catch {}
   }
 
-  // Kolla om vi impersonerar (adminId cookie finns)
-  useEffect(() => {
-    const hasAdminCookie = document.cookie.includes('adminId=');
-    setImpersonating(hasAdminCookie);
-  }, [user]);
-
-  // Hämta alla användare för user-switch (fungerar även under impersonering)
-  useEffect(() => {
-    if (!isAdmin && !impersonating) return;
-    const url = impersonating ? '/api/admin/switch-users' : '/api/admin/users';
-    fetch(url, { credentials: 'include' })
-      .then(r => r.ok ? r.json() : { users: [] })
-      .then(d => setAllUsers(d.users || []))
-      .catch(() => {});
-  }, [isAdmin, impersonating]);
-
-  const handleImpersonate = async (userId) => {
-    try {
-      const csrfRes = await fetch('/api/auth/csrf-token', { credentials: 'include' });
-      const { csrfToken } = await csrfRes.json();
-      const url = impersonating ? `/api/admin/switch-user/${userId}` : `/api/admin/impersonate/${userId}`;
-      const res = await fetch(url, {
-        method: 'POST',
-        credentials: 'include',
-        headers: { 'X-CSRF-Token': csrfToken }
-      });
-      if (res.ok) {
-        const data = await res.json();
-        setUser(data.user);
-        setImpersonating(true);
-        setShowUserSwitch(false);
-        setDropdownOpen(false);
-        navigate('/');
-      }
-    } catch {}
-  };
-
-  const handleStopImpersonate = async () => {
-    try {
-      const csrfRes = await fetch('/api/auth/csrf-token', { credentials: 'include' });
-      const { csrfToken } = await csrfRes.json();
-      const res = await fetch('/api/admin/stop-impersonate', {
-        method: 'POST',
-        credentials: 'include',
-        headers: { 'X-CSRF-Token': csrfToken }
-      });
-      if (res.ok) {
-        const data = await res.json();
-        setUser(data.user);
-        setImpersonating(false);
-        navigate('/');
-      }
-    } catch {}
-  };
+  // Beräkna effektiv roll baserat på viewAsRole
+  const effectiveRole = viewAsRole || user?.role;
+  const effectiveIsAdmin = !viewAsRole && isAdmin;
+  const effectiveIsUploader = !viewAsRole ? isUploader : ['admin', 'uploader', 'coach'].includes(viewAsRole);
+  const effectiveIsCoach = !viewAsRole ? isCoach : ['admin', 'coach'].includes(viewAsRole);
 
   const handleLogout = async () => {
     setMenuOpen(false);
@@ -160,15 +109,15 @@ export default function Layout() {
 
   return (
     <div className="layout">
-      {impersonating && (
+      {viewAsRole && (
         <div style={{
           background: 'var(--lvc-gold)', color: '#000', textAlign: 'center',
           padding: '4px 12px', fontSize: '0.78rem', fontWeight: 600,
           display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '0.5rem'
         }}>
-          <span>Visar som: {user?.name} ({user?.role})</span>
+          <span>Förhandsgranskar som: {viewAsRole}</span>
           <button
-            onClick={handleStopImpersonate}
+            onClick={() => setViewAsRole(null)}
             style={{
               padding: '2px 8px', borderRadius: 4, border: '1px solid rgba(0,0,0,0.3)',
               background: 'rgba(0,0,0,0.1)', color: '#000', cursor: 'pointer',
@@ -190,12 +139,12 @@ export default function Layout() {
             <NavLink to="/" end className="nav-link">
               Videor
             </NavLink>
-            {isUploader && (
+            {effectiveIsUploader && (
               <NavLink to="/upload" className="nav-link">
                 Ladda upp
               </NavLink>
             )}
-            {isAdmin && (
+            {effectiveIsAdmin && (
               <NavLink to="/admin" className="nav-link">
                 Admin
               </NavLink>
@@ -246,17 +195,26 @@ export default function Layout() {
                   </div>
                 </div>
 
-                {!showPassword && !showUserSwitch ? (
+                {!showPassword ? (
                   <>
-                    {(isAdmin || impersonating) && (
-                      <button className="dropdown-item" onClick={() => setShowUserSwitch(true)}>
-                        Byt användare
-                      </button>
-                    )}
-                    {impersonating && (
-                      <button className="dropdown-item" onClick={handleStopImpersonate} style={{ color: 'var(--lvc-gold)' }}>
-                        ← Tillbaka till admin
-                      </button>
+                    {isAdmin && (
+                      <div style={{ padding: '0.4rem 0.6rem', borderBottom: '1px solid var(--border-default)' }}>
+                        <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginBottom: '0.3rem' }}>Visa som roll:</div>
+                        <div style={{ display: 'flex', gap: '0.3rem', flexWrap: 'wrap' }}>
+                          {['admin', 'coach', 'uploader', 'viewer'].map(role => (
+                            <button
+                              key={role}
+                              onClick={() => { setViewAsRole(viewAsRole === role || role === 'admin' ? null : role); setDropdownOpen(false); }}
+                              style={{
+                                padding: '0.2rem 0.5rem', borderRadius: 4, fontSize: '0.72rem', cursor: 'pointer',
+                                border: (viewAsRole === role || (!viewAsRole && role === 'admin')) ? '1px solid var(--lvc-gold)' : '1px solid var(--border-default)',
+                                background: (viewAsRole === role || (!viewAsRole && role === 'admin')) ? 'rgba(232,168,37,0.15)' : 'transparent',
+                                color: (viewAsRole === role || (!viewAsRole && role === 'admin')) ? 'var(--lvc-gold)' : 'var(--text-muted)'
+                              }}
+                            >{role}</button>
+                          ))}
+                        </div>
+                      </div>
                     )}
                     <button className="dropdown-item" onClick={() => setShowPassword(true)}>
                       Ändra lösenord
@@ -265,32 +223,6 @@ export default function Layout() {
                       Logga ut
                     </button>
                   </>
-                ) : showUserSwitch ? (
-                  <div style={{ padding: '0.5rem' }}>
-                    <div style={{ fontSize: '0.78rem', fontWeight: 600, marginBottom: '0.4rem', color: 'var(--text-muted)' }}>Byt till användare:</div>
-                    <div style={{ maxHeight: 200, overflowY: 'auto' }}>
-                      {allUsers.filter(u => u.id !== user?.id).map(u => (
-                        <div
-                          key={u.id}
-                          onClick={() => handleImpersonate(u.id)}
-                          style={{
-                            display: 'flex', alignItems: 'center', gap: '0.5rem',
-                            padding: '0.4rem 0.5rem', borderRadius: 6, cursor: 'pointer',
-                            marginBottom: 2, fontSize: '0.82rem',
-                            transition: 'background 0.1s'
-                          }}
-                          onMouseOver={e => e.currentTarget.style.background = 'rgba(255,255,255,0.06)'}
-                          onMouseOut={e => e.currentTarget.style.background = 'transparent'}
-                        >
-                          <span className={`badge badge-${u.role}`} style={{ fontSize: '0.65rem' }}>{u.role}</span>
-                          <span style={{ flex: 1 }}>{u.name}</span>
-                        </div>
-                      ))}
-                    </div>
-                    <button className="btn-secondary btn-sm" onClick={() => setShowUserSwitch(false)} style={{ marginTop: '0.4rem', width: '100%' }}>
-                      Avbryt
-                    </button>
-                  </div>
                 ) : (
                   <div className="dropdown-password">
                     {pwError && <div className="alert alert-error" style={{ padding: '0.4rem 0.6rem', fontSize: '0.8rem', marginBottom: '0.5rem' }}>{pwError}</div>}
@@ -342,12 +274,12 @@ export default function Layout() {
             <NavLink to="/" end className="mobile-nav-link" onClick={closeMenu}>
               Videor
             </NavLink>
-            {isUploader && (
+            {effectiveIsUploader && (
               <NavLink to="/upload" className="mobile-nav-link" onClick={closeMenu}>
                 Ladda upp
               </NavLink>
             )}
-            {isAdmin && (
+            {effectiveIsAdmin && (
               <NavLink to="/admin" className="mobile-nav-link" onClick={closeMenu}>
                 Admin
               </NavLink>
