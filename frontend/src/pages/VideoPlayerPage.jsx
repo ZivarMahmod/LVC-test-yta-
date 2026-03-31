@@ -71,6 +71,8 @@ export default function VideoPlayerPage() {
   const dragging = useRef(false);
   const dragOffset = useRef({ x: 0, y: 0 });
 
+  const [autoHintDismissed, setAutoHintDismissed] = useState(false);
+
   const onDragStart = (e) => {
     dragging.current = true;
     dragOffset.current = { x: e.clientX - panelPos.x, y: e.clientY - panelPos.y };
@@ -625,7 +627,7 @@ export default function VideoPlayerPage() {
 
             {/* Header */}
             <div style={{ padding: '1rem', borderBottom: '1px solid var(--border)' }}>
-              <div style={{ display: 'flex', gap: '0.3rem', flexWrap: 'wrap', alignItems: 'center', marginBottom: '0.5rem' }}>
+              <div style={{ display: 'flex', gap: '0.3rem', flexWrap: 'wrap', alignItems: 'center', marginBottom: '0.5rem', position: 'relative' }}>
                   <button onClick={() => setScoutTab('actions')} style={{ padding: '0.25rem 0.6rem', fontSize: '0.78rem', borderRadius: '4px', border: scoutTab === 'actions' ? '1px solid var(--lvc-blue, #1a5fb4)' : '1px solid var(--border-default, #333)', background: scoutTab === 'actions' ? 'rgba(26,95,180,0.15)' : 'transparent', color: scoutTab === 'actions' ? 'var(--lvc-blue-light, #3584e4)' : 'var(--text-muted)', cursor: 'pointer' }}>Actions</button>
                   <button onClick={() => setScoutTab('rapport')} style={{ padding: '0.25rem 0.6rem', fontSize: '0.78rem', borderRadius: '4px', border: scoutTab === 'rapport' ? '1px solid var(--lvc-blue, #1a5fb4)' : '1px solid var(--border-default, #333)', background: scoutTab === 'rapport' ? 'rgba(26,95,180,0.15)' : 'transparent', color: scoutTab === 'rapport' ? 'var(--lvc-blue-light, #3584e4)' : 'var(--text-muted)', cursor: 'pointer' }}>Rapport</button>
                   {hasScout && isAdmin && (
@@ -644,7 +646,7 @@ export default function VideoPlayerPage() {
                     >{dvwUploading ? '...' : '↻'}</button>
                   )}
                   <button
-                    onClick={() => setAutoAction(!autoAction)}
+                    onClick={() => { setAutoAction(!autoAction); setAutoHintDismissed(false); }}
                     style={{
                       padding: '0.25rem 0.6rem', fontSize: '0.78rem', borderRadius: '4px',
                       border: autoAction ? '1px solid var(--lvc-green, #3fb950)' : '1px solid var(--border-default)',
@@ -655,6 +657,21 @@ export default function VideoPlayerPage() {
                   >
                     {autoAction ? '▶ Auto' : '■ Auto'}
                   </button>
+                  {autoAction && !autoHintDismissed && filterSkill === 'ALL' && filterPlayer === 'ALL' && filterSet === 'ALL' && filterTeam === 'ALL' && (
+                    <div style={{
+                      position: 'absolute', top: '100%', right: 0, marginTop: '0.3rem',
+                      background: 'rgba(232,168,37,0.15)', border: '1px solid rgba(232,168,37,0.3)',
+                      borderRadius: '6px', padding: '0.35rem 0.5rem', fontSize: '0.7rem',
+                      color: 'var(--lvc-gold)', whiteSpace: 'nowrap', zIndex: 10,
+                      display: 'flex', alignItems: 'center', gap: '0.3rem'
+                    }}>
+                      <span>Välj filter för auto-uppspelning</span>
+                      <button
+                        onClick={(e) => { e.stopPropagation(); setAutoHintDismissed(true); }}
+                        style={{ background: 'none', border: 'none', color: 'var(--lvc-gold)', cursor: 'pointer', fontSize: '0.8rem', padding: 0, lineHeight: 1 }}
+                      >×</button>
+                    </div>
+                  )}
                 <button
                   className="scout-filter-toggle"
                   onClick={() => setFiltersOpen(!filtersOpen)}
