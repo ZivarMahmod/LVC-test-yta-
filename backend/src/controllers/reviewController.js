@@ -154,6 +154,43 @@ export async function getVideoReviews(req, res) {
   }
 }
 
+// Hämta lagspelare för coach (filtrerat på coachens lag)
+export async function getTeamPlayers(req, res) {
+  try {
+    // Hämta coachens lag
+    const coachTeams = await prisma.userTeam.findMany({
+      where: { userId: req.user.id },
+      select: { teamId: true }
+    });
+    const teamIds = coachTeams.map(t => t.teamId);
+    if (teamIds.length === 0) return res.json({ players: [] });
+
+    // Hämta alla spelare i samma lag
+    const userTeams = await prisma.userTeam.findMany({
+      where: { teamId: { in: teamIds }, userId: { not: req.user.id } },
+      include: {
+        user: { select: { id: true, name: true, username: true, role: true, jerseyNumber: true } },
+        team: { select: { id: true, name: true } }
+      }
+    });
+
+    // Gruppera per lag
+    const grouped = {};
+    for (const ut of userTeams) {
+      if (!grouped[ut.teamId]) {
+        grouped[ut.teamId] = { team: ut.team, players: [] };
+      }
+      const exists = grouped[ut.teamId].players.find(p => p.id === ut.user.id);
+      if (!exists) grouped[ut.teamId].players.push(ut.user);
+    }
+
+    res.json({ teams: Object.values(grouped) });
+  } catch (err) {
+    logger.error('getTeamPlayers error:', err);
+    res.status(500).json({ error: 'Kunde inte hämta spelare' });
+  }
+}
+
 // Coach hämtar lagöversikt med spelare och deras reviews
 export async function getCoachOverview(req, res) {
   try {

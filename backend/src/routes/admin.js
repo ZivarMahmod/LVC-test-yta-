@@ -48,6 +48,16 @@ router.delete('/users/:id',
 // Impersonera användare (byt vy)
 router.post('/impersonate/:id', csrfProtection, adminController.impersonate);
 
+// Borttagna videor
+router.get('/deleted-videos', adminController.listDeletedVideos);
+
+// UserTeam — Lag-kopplingar för användare
+router.post('/users/:id/teams', csrfProtection, adminController.addUserTeam);
+router.delete('/users/:id/teams/:teamId', csrfProtection, adminController.removeUserTeam);
+
+// Uppdatera användarroll
+router.put('/users/:id/role', csrfProtection, adminController.updateUserRole);
+
 // Uppladdningshistorik
 router.get('/uploads',
   searchValidation,
