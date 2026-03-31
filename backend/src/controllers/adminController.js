@@ -587,6 +587,114 @@ export const adminController = {
     }
   },
 
+  // -------------------------------------------
+  // GET /api/admin/switch-users
+  // -------------------------------------------
+  async listUsersForSwitch(req, res) {
+    try {
+      const adminId = req.cookies?.adminId || (req.user.role === 'admin' ? req.user.id : null);
+      if (!adminId) return res.status(403).json({ error: 'Ej behörig.' });
+      const admin = await prisma.user.findUnique({ where: { id: adminId } });
+      if (!admin || admin.role !== 'admin') return res.status(403).json({ error: 'Ej behörig.' });
+      const users = await prisma.user.findMany({
+        where: { isActive: true },
+        select: { id: true, name: true, role: true, username: true },
+        orderBy: { name: 'asc' }
+      });
+      res.json({ users });
+    } catch (err) {
+      logger.error('listUsersForSwitch error:', err);
+      res.status(500).json({ error: 'Serverfel' });
+    }
+  },
+
+  // -------------------------------------------
+  // POST /api/admin/switch-user/:id
+  // -------------------------------------------
+  async switchUser(req, res) {
+    try {
+      const adminId = req.cookies?.adminId || (req.user.role === 'admin' ? req.user.id : null);
+      if (!adminId) return res.status(403).json({ error: 'Ej behörig.' });
+      const admin = await prisma.user.findUnique({ where: { id: adminId } });
+      if (!admin || admin.role !== 'admin') return res.status(403).json({ error: 'Ej behörig.' });
+      req.user = admin;
+      return this.impersonate(req, res);
+    } catch (err) {
+      logger.error('switchUser error:', err);
+      res.status(500).json({ error: 'Serverfel' });
+    }
+  },
+
+  // -------------------------------------------
+  // GET /api/admin/deleted-videos
+  // -------------------------------------------
+  async listDeletedVideos(req, res) {
+    try {
+      const videos = await prisma.video.findMany({
+        where: { deletedAt: { not: null } },
+        orderBy: { deletedAt: 'desc' },
+        include: { uploadedBy: { select: { id: true, name: true } } }
+      });
+      res.json({ videos: videos.map(v => ({ ...v, fileSize: Number(v.fileSize) })) });
+    } catch (err) {
+      res.status(500).json({ error: 'Kunde inte hamta borttagna videor' });
+    }
+  },
+
+  // -------------------------------------------
+  // POST /api/admin/users/:id/teams
+  // -------------------------------------------
+  async addUserTeam(req, res) {
+    try {
+      const { teamId } = req.body;
+      if (!teamId) return res.status(400).json({ error: 'teamId krävs' });
+      const entry = await prisma.userTeam.create({
+        data: { userId: req.params.id, teamId: parseInt(teamId) }
+      });
+      res.status(201).json({ entry });
+    } catch (err) {
+      if (err.code === 'P2002') return res.status(400).json({ error: 'Användaren är redan i detta lag' });
+      res.status(500).json({ error: 'Kunde inte lägga till lag' });
+    }
+  },
+
+  // -------------------------------------------
+  // DELETE /api/admin/users/:id/teams/:teamId
+  // -------------------------------------------
+  async removeUserTeam(req, res) {
+    try {
+      await prisma.userTeam.delete({
+        where: {
+          userId_teamId: {
+            userId: req.params.id,
+            teamId: parseInt(req.params.teamId)
+          }
+        }
+      });
+      res.json({ message: 'Lag borttaget från användare' });
+    } catch (err) {
+      res.status(500).json({ error: 'Kunde inte ta bort lag' });
+    }
+  },
+
+  // -------------------------------------------
+  // PUT /api/admin/users/:id/role
+  // -------------------------------------------
+  async updateUserRole(req, res) {
+    try {
+      const { role } = req.body;
+      const validRoles = ['viewer', 'uploader', 'coach', 'admin'];
+      if (!validRoles.includes(role)) return res.status(400).json({ error: 'Ogiltig roll' });
+      const user = await prisma.user.update({
+        where: { id: req.params.id },
+        data: { role }
+      });
+      res.json({ user });
+    } catch (err) {
+      res.status(500).json({ error: 'Kunde inte uppdatera roll' });
+    }
+  },
+
   async assignVideo(req, res) {
     try {
       const { id } = req.params;

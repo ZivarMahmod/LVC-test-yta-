@@ -7,7 +7,8 @@ import {
   getSent,
   acknowledgeReview,
   getCoachOverview,
-  getVideoReviews
+  getVideoReviews,
+  getTeamPlayers
 } from '../controllers/reviewController.js';
 
 const router = express.Router();
@@ -23,6 +24,9 @@ router.get('/sent', authenticateToken, requireRole('coach', 'admin'), getSent);
 
 // Coach hämtar lagöversikt
 router.get('/coach-overview', authenticateToken, requireRole('coach', 'admin'), getCoachOverview);
+
+// Coach hämtar lagspelare
+router.get('/team-players', authenticateToken, requireRole('coach', 'admin'), getTeamPlayers);
 
 // Spelare hämtar reviews för en specifik video
 router.get('/video/:videoId', authenticateToken, getVideoReviews);
