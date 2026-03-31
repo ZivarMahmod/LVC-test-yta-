@@ -675,14 +675,55 @@ export default function AdminPage() {
                     <tr key={u.id} className={!u.isActive ? 'row-inactive' : ''}>
                       <td className="td-name">{u.name}</td>
                       <td>
-                        {(u.teams || []).length > 0
-                          ? (u.teams || []).map(ut => (
-                              <span key={ut.team?.id || ut.teamId} className="badge" style={{ fontSize: '0.68rem', background: 'rgba(99,102,241,0.15)', color: 'var(--lvc-blue-light, #3584e4)', marginRight: '0.2rem' }}>
-                                {ut.team?.name || 'Lag'}
-                              </span>
-                            ))
-                          : <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>—</span>
-                        }
+                        <div style={{ display: 'flex', gap: '0.2rem', flexWrap: 'wrap', alignItems: 'center' }}>
+                          {(u.teams || []).map(ut => (
+                            <span key={ut.team?.id || ut.teamId} className="badge" style={{ fontSize: '0.68rem', background: 'rgba(99,102,241,0.15)', color: 'var(--lvc-blue-light, #3584e4)', display: 'inline-flex', alignItems: 'center', gap: '0.2rem' }}>
+                              {ut.team?.name || 'Lag'}
+                              <button
+                                onClick={async () => {
+                                  try {
+                                    const csrfRes = await fetch('/api/auth/csrf-token', { credentials: 'include' });
+                                    const { csrfToken } = await csrfRes.json();
+                                    await fetch(`/api/admin/users/${u.id}/teams/${ut.team?.id || ut.teamId}`, {
+                                      method: 'DELETE', credentials: 'include',
+                                      headers: { 'X-CSRF-Token': csrfToken }
+                                    });
+                                    fetchUsers();
+                                  } catch {}
+                                }}
+                                style={{ background: 'none', border: 'none', color: 'inherit', cursor: 'pointer', fontSize: '0.6rem', padding: 0, lineHeight: 1, opacity: 0.7 }}
+                              >×</button>
+                            </span>
+                          ))}
+                          <select
+                            value=""
+                            onChange={async (e) => {
+                              if (!e.target.value) return;
+                              try {
+                                const csrfRes = await fetch('/api/auth/csrf-token', { credentials: 'include' });
+                                const { csrfToken } = await csrfRes.json();
+                                await fetch(`/api/admin/users/${u.id}/teams`, {
+                                  method: 'POST', credentials: 'include',
+                                  headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': csrfToken },
+                                  body: JSON.stringify({ teamId: parseInt(e.target.value) })
+                                });
+                                fetchUsers();
+                              } catch {}
+                              e.target.value = '';
+                            }}
+                            style={{
+                              padding: '0.15rem 0.3rem', borderRadius: '4px', fontSize: '0.68rem',
+                              border: '1px solid var(--border-default)', background: 'var(--surface-raised)',
+                              color: 'var(--text-muted)', cursor: 'pointer', width: '24px'
+                            }}
+                            title="Lägg till lag"
+                          >
+                            <option value="">+</option>
+                            {teams.filter(t => !(u.teams || []).some(ut => (ut.team?.id || ut.teamId) === t.id)).map(t => (
+                              <option key={t.id} value={t.id}>{t.name}</option>
+                            ))}
+                          </select>
+                        </div>
                       </td>
                       <td>
                         <span className={`badge badge-${u.role}`}>
