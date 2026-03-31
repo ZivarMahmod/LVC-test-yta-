@@ -116,8 +116,8 @@ function UserModal({ user, onClose, onSave, teams = [], onAddTeam, onRemoveTeam 
   };
 
   return (
-    <div className="modal-overlay" onClick={onClose}>
-      <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+    <div className="modal-overlay" onMouseDown={(e) => { if (e.target === e.currentTarget) onClose(); }}>
+      <div className="modal-content">
         <div className="modal-header">
           <h2>{isEdit ? 'Redigera användare' : 'Skapa ny användare'}</h2>
           <button className="modal-close" onClick={onClose}>×</button>
