@@ -42,6 +42,7 @@ export default function VideoPlayerPage() {
   const [filterPlayer, setFilterPlayer] = useState('ALL');
   const [filterSet, setFilterSet] = useState('ALL');
   const [filterTeam, setFilterTeam] = useState('ALL');
+  const [filterGrade, setFilterGrade] = useState('ALL');
   const [offset, setOffset] = useState(0);
   const [offsetInput, setOffsetInput] = useState('0');
   const [activeActionId, setActiveActionId] = useState(null);
@@ -305,7 +306,7 @@ export default function VideoPlayerPage() {
         }, 5000);
       }
     }
-  }, [scout, filterSkill, filterPlayer, filterSet, filterTeam, autoAction, preRoll]);
+  }, [scout, filterSkill, filterPlayer, filterSet, filterTeam, filterGrade, autoAction, preRoll]);
 
   // Rensa timer vid unmount
   useEffect(() => {
@@ -346,7 +347,7 @@ export default function VideoPlayerPage() {
       }
     }, 500);
     return () => clearInterval(interval);
-  }, [scout, activeActionId, filterSkill, filterPlayer, filterSet, filterTeam]);
+  }, [scout, activeActionId, filterSkill, filterPlayer, filterSet, filterTeam, filterGrade]);
 
   const handleSaveOffset = async () => {
     const newOffset = parseInt(offsetInput, 10);
@@ -469,6 +470,10 @@ export default function VideoPlayerPage() {
       if (filterPlayer !== 'ALL' && (a.team + '-' + a.playerNumber) !== filterPlayer) return false;
       if (filterSet !== 'ALL' && String(a.set) !== filterSet) return false;
       if (filterTeam !== 'ALL' && a.team !== filterTeam) return false;
+      if (filterGrade !== 'ALL') {
+        if (filterGrade === 'ERR') { if (a.grade !== '/' && a.grade !== '=') return false; }
+        else if (a.grade !== filterGrade) return false;
+      }
       return true;
     });
   };
@@ -657,7 +662,7 @@ export default function VideoPlayerPage() {
                   >
                     {autoAction ? '▶ Auto' : '■ Auto'}
                   </button>
-                  {autoAction && !autoHintDismissed && filterSkill === 'ALL' && filterPlayer === 'ALL' && filterSet === 'ALL' && filterTeam === 'ALL' && (
+                  {autoAction && !autoHintDismissed && filterSkill === 'ALL' && filterPlayer === 'ALL' && filterSet === 'ALL' && filterTeam === 'ALL' && filterGrade === 'ALL' && (
                     <div style={{
                       position: 'absolute', top: '100%', right: 0, marginTop: '0.3rem',
                       background: 'rgba(232,168,37,0.15)', border: '1px solid rgba(232,168,37,0.3)',
@@ -780,6 +785,17 @@ export default function VideoPlayerPage() {
                   return <option key={key} value={key}>#{number} {p ? p.name : ''} ({teamName})</option>;
                 })}
               </select>
+
+              {/* Filter: Grade */}
+              <div style={{ display: 'flex', gap: '0.3rem', flexWrap: 'wrap', marginTop: '0.4rem' }}>
+                <button onClick={() => setFilterGrade('ALL')} style={filterBtnStyle(filterGrade === 'ALL')}>Alla</button>
+                <button onClick={() => setFilterGrade('#')} style={{...filterBtnStyle(filterGrade === '#'), color: filterGrade === '#' ? '#fff' : '#4CAF50'}} title="Perfekt">● Perfekt</button>
+                <button onClick={() => setFilterGrade('+')} style={{...filterBtnStyle(filterGrade === '+'), color: filterGrade === '+' ? '#fff' : '#4CAF50'}} title="Positiv">▲ Positiv</button>
+                <button onClick={() => setFilterGrade('!')} style={{...filterBtnStyle(filterGrade === '!'), color: filterGrade === '!' ? '#fff' : '#FF9800'}} title="OK">■ OK</button>
+                <button onClick={() => setFilterGrade('-')} style={{...filterBtnStyle(filterGrade === '-'), color: filterGrade === '-' ? '#fff' : '#F44336'}} title="Negativ">▼ Negativ</button>
+                <button onClick={() => setFilterGrade('ERR')} style={{...filterBtnStyle(filterGrade === 'ERR'), color: filterGrade === 'ERR' ? '#fff' : '#F44336'}} title="Error">✕ Error</button>
+              </div>
+
               </div>
             )}
             </div>
