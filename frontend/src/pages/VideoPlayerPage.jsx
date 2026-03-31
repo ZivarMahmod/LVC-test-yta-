@@ -292,9 +292,6 @@ export default function VideoPlayerPage() {
       const next = filtered[currentIdx + 1];
 
       if (autoAction && next && next.videoTime !== null) {
-        // Beräkna delay: tiden mellan denna och nästa action, minst 3 sekunder
-        const gap = next.videoTime - action.videoTime;
-        const delay = Math.max(3000, gap > 0 ? gap * 1000 : 5000);
         autoJumpTimer.current = setTimeout(() => {
           if (videoRef.current && !videoRef.current.paused) {
             videoRef.current.currentTime = next.videoTime;
@@ -303,7 +300,7 @@ export default function VideoPlayerPage() {
             // Starta kedjan vidare
             jumpToAction(next);
           }
-        }, delay);
+        }, 5000);
       }
     }
   }, [scout, filterSkill, filterPlayer, filterSet, filterTeam, autoAction, preRoll]);
