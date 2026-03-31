@@ -291,7 +291,10 @@ export default function VideoPlayerPage() {
       const currentIdx = filtered.findIndex(a => a.id === action.id);
       const next = filtered[currentIdx + 1];
 
-      if (autoAction && next && next.videoTime !== null) {
+      // Auto-hopp bara om någon filter är aktiv
+      const hasFilter = filterSkill !== 'ALL' || filterPlayer !== 'ALL' || filterSet !== 'ALL' || filterTeam !== 'ALL';
+
+      if (autoAction && hasFilter && next && next.videoTime !== null) {
         // Beräkna delay: tiden mellan denna och nästa action, minst 3 sekunder
         const gap = next.videoTime - action.videoTime;
         const delay = Math.max(3000, gap > 0 ? gap * 1000 : 5000);
