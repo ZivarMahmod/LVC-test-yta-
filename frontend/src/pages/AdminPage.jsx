@@ -677,7 +677,9 @@ export default function AdminPage() {
                       <td className="td-name">{u.name}</td>
                       <td>
                         <input
-                          type="number"
+                          type="text"
+                          inputMode="numeric"
+                          pattern="[0-9]*"
                           defaultValue={u.jerseyNumber || ''}
                           placeholder="—"
                           onBlur={async (e) => {
