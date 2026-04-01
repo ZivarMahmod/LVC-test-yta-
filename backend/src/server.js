@@ -5,6 +5,7 @@
 import 'dotenv/config';
 import express from 'express';
 import helmet from 'helmet';
+import compression from 'compression';
 import cors from 'cors';
 import cookieParser from 'cookie-parser';
 import path from 'path';
@@ -66,6 +67,14 @@ app.use(helmet({
   referrerPolicy: { policy: 'strict-origin-when-cross-origin' },
   crossOriginEmbedderPolicy: false, // Behövs för videostreaming
   crossOriginResourcePolicy: { policy: isProduction ? 'same-site' : 'cross-origin' }
+}));
+
+// Gzip-kompression — komprimera alla HTTP-svar (utom videostreaming)
+app.use(compression({
+  filter: (req, res) => {
+    if (req.path.includes('/stream')) return false;
+    return compression.filter(req, res);
+  }
 }));
 
 // CORS — låst till vår domän
