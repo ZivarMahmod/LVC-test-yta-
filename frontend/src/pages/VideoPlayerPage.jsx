@@ -573,6 +573,7 @@ export default function VideoPlayerPage() {
               <div style={{ display: 'flex', gap: '0.3rem', flexWrap: 'wrap', alignItems: 'center', marginBottom: '0.5rem', position: 'relative' }}>
                   <button onClick={() => setScoutTab('actions')} style={{ padding: '0.25rem 0.6rem', fontSize: '0.78rem', borderRadius: '4px', border: scoutTab === 'actions' ? '1px solid var(--lvc-blue, #1a5fb4)' : '1px solid var(--border-default, #333)', background: scoutTab === 'actions' ? 'rgba(26,95,180,0.15)' : 'transparent', color: scoutTab === 'actions' ? 'var(--lvc-blue-light, #3584e4)' : 'var(--text-muted)', cursor: 'pointer' }}>Actions</button>
                   <button onClick={() => setScoutTab('rapport')} style={{ padding: '0.25rem 0.6rem', fontSize: '0.78rem', borderRadius: '4px', border: scoutTab === 'rapport' ? '1px solid var(--lvc-blue, #1a5fb4)' : '1px solid var(--border-default, #333)', background: scoutTab === 'rapport' ? 'rgba(26,95,180,0.15)' : 'transparent', color: scoutTab === 'rapport' ? 'var(--lvc-blue-light, #3584e4)' : 'var(--text-muted)', cursor: 'pointer' }}>Rapport</button>
+                  {hasScout && <button onClick={() => setScoutTab('heatmap')} style={{ padding: '0.25rem 0.6rem', fontSize: '0.78rem', borderRadius: '4px', border: scoutTab === 'heatmap' ? '1px solid var(--lvc-blue, #1a5fb4)' : '1px solid var(--border-default, #333)', background: scoutTab === 'heatmap' ? 'rgba(26,95,180,0.15)' : 'transparent', color: scoutTab === 'heatmap' ? 'var(--lvc-blue-light, #3584e4)' : 'var(--text-muted)', cursor: 'pointer' }}>Heatmap</button>}
                   {hasScout && isAdmin && (
                     <a
                       href={`/api/videos/${id}/dvw/download`}
@@ -952,17 +953,16 @@ export default function VideoPlayerPage() {
 
             {/* Rapport-vy */}
             {scoutTab === 'rapport' && (
-              <MatchReport stats={getMatchStats()} onJumpToActions={jumpToPlayerActions} heatmapContent={
-                scout?.actions ? (
-                  <details style={{ marginTop: 8 }}>
-                    <summary style={{ cursor: 'pointer', color: '#94a3b8', fontSize: '0.78rem', padding: '4px 0', userSelect: 'none' }}>Visa planvy / heatmap</summary>
-                    <div style={{ display: 'flex', gap: 8, marginTop: 8, flexDirection: 'column' }}>
-                      <CourtHeatmap actions={scout.actions} team="H" teamName={scout.teams?.H} />
-                      <CourtHeatmap actions={scout.actions} team="V" teamName={scout.teams?.V} />
-                    </div>
-                  </details>
-                ) : null
-              } />
+              <MatchReport stats={getMatchStats()} onJumpToActions={jumpToPlayerActions} />
+            )}
+
+            {/* Heatmap-vy */}
+            {scoutTab === 'heatmap' && scout?.actions && (
+              <div style={{ padding: '0.75rem', overflowY: 'auto', flex: 1 }}>
+                <CourtHeatmap actions={scout.actions} team="H" teamName={scout.teams?.H} />
+                <div style={{ height: 12 }} />
+                <CourtHeatmap actions={scout.actions} team="V" teamName={scout.teams?.V} />
+              </div>
             )}
           </div>
         )}
