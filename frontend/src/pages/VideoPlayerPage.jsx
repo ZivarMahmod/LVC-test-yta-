@@ -7,6 +7,9 @@ import { videoApi } from '../utils/api.js';
 import { scoutApi } from '../utils/api.js';
 import { useAuth } from '../context/AuthContext.jsx';
 import { formatFileSize, formatDate, formatVideoTime } from '../utils/format.js';
+import MatchReport from '../components/player/MatchReport.jsx';
+import ReviewPanel from '../components/player/ReviewPanel.jsx';
+import DvwSearchPanel from '../components/player/DvwSearchPanel.jsx';
 import './VideoPlayerPage.css';
 
 const SKILL_COLORS = {
@@ -59,47 +62,13 @@ export default function VideoPlayerPage() {
   // DVW-kodsökning
   const [dvwSearchOpen, setDvwSearchOpen] = useState(false);
   const [dvwSearchQuery, setDvwSearchQuery] = useState('');
-  const [dvwSearchPos, setDvwSearchPos] = useState({ x: 60, y: 120 });
-  const dvwSearchRef = useRef(null);
-  const dvwDragging = useRef(false);
-  const dvwDragOffset = useRef({ x: 0, y: 0 });
-  const dvwInputRef2 = useRef(null);
   const [scoutTab, setScoutTab] = useState('actions');
-  // Draggbar review-panel state
-  const [panelPos, setPanelPos] = useState({ x: 20, y: 80 });
-  const [panelMinimized, setPanelMinimized] = useState(false);
-  const dragRef = useRef(null);
-  const dragging = useRef(false);
-  const dragOffset = useRef({ x: 0, y: 0 });
-
   const [autoHintDismissed, setAutoHintDismissed] = useState(false);
-
-  const onDragStart = (e) => {
-    dragging.current = true;
-    dragOffset.current = { x: e.clientX - panelPos.x, y: e.clientY - panelPos.y };
-    e.preventDefault();
-  };
-
-  useEffect(() => {
-    const onMove = (e) => {
-      if (!dragging.current) return;
-      setPanelPos({ x: e.clientX - dragOffset.current.x, y: e.clientY - dragOffset.current.y });
-    };
-    const onUp = () => { dragging.current = false; };
-    window.addEventListener('mousemove', onMove);
-    window.addEventListener('mouseup', onUp);
-    return () => { window.removeEventListener('mousemove', onMove); window.removeEventListener('mouseup', onUp); };
-  }, []);
 
   // Review state
   const [reviewModal, setReviewModal] = useState(null); // { action, actionIndex }
   const [reviewPlayers, setReviewPlayers] = useState([]);
-  const [reviewSelectedPlayers, setReviewSelectedPlayers] = useState([]);
-  const [reviewComment, setReviewComment] = useState('');
   const [reviewLoading, setReviewLoading] = useState(false);
-  const [reviewError, setReviewError] = useState('');
-  const [reviewSuccess, setReviewSuccess] = useState('');
-  const [reviewPlayerSearch, setReviewPlayerSearch] = useState('');
 
   // Viewer review bubbles
   const [myReviews, setMyReviews] = useState([]); // reviews for this video for current user
@@ -108,8 +77,6 @@ export default function VideoPlayerPage() {
   const [ackLoading, setAckLoading] = useState(false);
   const [ackError, setAckError] = useState('');
   const [showAcknowledged, setShowAcknowledged] = useState(true); // toggle for acknowledged reviews
-
-  const [selectedPlayer, setSelectedPlayer] = useState(null);
 
   const pendingJump = useRef(false);
 
@@ -222,10 +189,7 @@ export default function VideoPlayerPage() {
       // Ctrl+Q — öppna/stäng DVW-sökning (fungerar alltid)
       if (e.ctrlKey && e.key === 'q') {
         e.preventDefault();
-        setDvwSearchOpen(prev => {
-          if (!prev) setTimeout(() => dvwInputRef2.current?.focus(), 50);
-          return !prev;
-        });
+        setDvwSearchOpen(prev => !prev);
         setDvwSearchQuery('');
         return;
       }
@@ -260,18 +224,6 @@ export default function VideoPlayerPage() {
     window.addEventListener('keydown', handleKeyDown, true);
     return () => window.removeEventListener('keydown', handleKeyDown, true);
   }, [skipSeconds, activeActionId, dvwSearchOpen]);
-
-  // DVW-sökning drag
-  useEffect(() => {
-    const onMove = (e) => {
-      if (!dvwDragging.current) return;
-      setDvwSearchPos({ x: e.clientX - dvwDragOffset.current.x, y: e.clientY - dvwDragOffset.current.y });
-    };
-    const onUp = () => { dvwDragging.current = false; };
-    window.addEventListener('mousemove', onMove);
-    window.addEventListener('mouseup', onUp);
-    return () => { window.removeEventListener('mousemove', onMove); window.removeEventListener('mouseup', onUp); };
-  }, []);
 
   const dvwSearchResults = dvwSearchOpen && dvwSearchQuery.length > 0 && scout
     ? scout.actions.filter(a => a.rawCode.toLowerCase().includes(dvwSearchQuery.toLowerCase()))
@@ -427,11 +379,7 @@ export default function VideoPlayerPage() {
       .catch(() => {});
   }, [isCoach]);
 
-  async function sendReview() {
-    setReviewError('');
-    setReviewSuccess('');
-    if (!reviewSelectedPlayers.length) return setReviewError('Välj minst en spelare');
-    if (!reviewComment.trim()) return setReviewError('Skriv en kommentar');
+  async function sendReview({ actionIndex, playerIds, comment }) {
     setReviewLoading(true);
     try {
       const csrfRes = await fetch('/api/auth/csrf-token', { credentials: 'include' });
@@ -440,24 +388,13 @@ export default function VideoPlayerPage() {
         method: 'POST',
         credentials: 'include',
         headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': csrfToken },
-        body: JSON.stringify({
-          videoId: id,
-          actionIndex: reviewModal.actionIndex,
-          playerIds: reviewSelectedPlayers,
-          comment: reviewComment.trim()
-        })
+        body: JSON.stringify({ videoId: id, actionIndex, playerIds, comment })
       });
       const data = await res.json();
-      if (!res.ok) return setReviewError(data.error || 'Fel uppstod');
-      setReviewSuccess('Skickat!');
-      setTimeout(() => {
-        setReviewModal(null);
-        setReviewSelectedPlayers([]);
-        setReviewComment('');
-        setReviewSuccess('');
-      }, 1500);
+      if (!res.ok) return { error: data.error || 'Fel uppstod' };
+      return { success: true };
     } catch {
-      setReviewError('Serverfel');
+      return { error: 'Serverfel' };
     } finally {
       setReviewLoading(false);
     }
@@ -928,17 +865,6 @@ export default function VideoPlayerPage() {
                         onClick={e => {
                           e.stopPropagation();
                           setReviewModal({ action, actionIndex: actionIdx });
-                          setReviewComment('');
-                          setReviewError('');
-                          setReviewSuccess('');
-                          setReviewPlayerSearch('');
-                          // Auto-markera spelaren om de finns i laget
-                          const allPlayers = reviewPlayers.flatMap(t => t.players);
-                          const match = allPlayers.find(p =>
-                            (action.playerNumber && p.jerseyNumber === action.playerNumber) ||
-                            p.name.toLowerCase().includes(action.playerName?.toLowerCase() || '')
-                          );
-                          setReviewSelectedPlayers(match ? [match.id] : []);
                         }}
                         title="Skicka till spelare"
                         style={{
@@ -1024,492 +950,33 @@ export default function VideoPlayerPage() {
             )}
 
             {/* Rapport-vy */}
-            {scoutTab === 'rapport' && (() => {
-              const stats = getMatchStats();
-              if (!stats) return <div style={{ padding: '1rem', color: 'var(--text-muted)', textAlign: 'center' }}>Ingen data</div>;
-              const pct = (n, d) => d > 0 ? Math.round(n / d * 100) + '%' : '-';
-              const StatBar = ({ label, home, away, higherIsBetter = true }) => {
-                const hVal = parseFloat(home) || 0;
-                const aVal = parseFloat(away) || 0;
-                const hBetter = higherIsBetter ? hVal >= aVal : hVal <= aVal;
-                return (
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', padding: '0.3rem 0', fontSize: '0.8rem' }}>
-                    <span style={{ width: '45px', textAlign: 'right', fontWeight: hBetter ? '700' : '400', color: hBetter ? 'var(--lvc-green, #3fb950)' : 'var(--text-muted)' }}>{home}</span>
-                    <span style={{ flex: 1, textAlign: 'center', fontSize: '0.72rem', color: 'var(--text-muted)' }}>{label}</span>
-                    <span style={{ width: '45px', textAlign: 'left', fontWeight: !hBetter ? '700' : '400', color: !hBetter ? 'var(--lvc-green, #3fb950)' : 'var(--text-muted)' }}>{away}</span>
-                  </div>
-                );
-              };
-
-              const hPlayers = Object.values(stats.H.players).sort((a, b) => b.pts - a.pts);
-              const vPlayers = Object.values(stats.V.players).sort((a, b) => b.pts - a.pts);
-
-              return (
-                <div style={{ overflowY: 'auto', flex: 1, padding: '0.75rem' }}>
-                  {/* Lagnamn */}
-                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.75rem', fontSize: '0.85rem', fontWeight: '600' }}>
-                    <span>{stats.H.name}</span>
-                    <span>{stats.V.name}</span>
-                  </div>
-
-                  {/* Nyckeltal */}
-                  <div style={{ background: 'rgba(255,255,255,0.03)', borderRadius: '8px', padding: '0.5rem', marginBottom: '0.75rem' }}>
-                    <div style={{ textAlign: 'center', fontSize: '0.7rem', color: 'var(--text-muted)', marginBottom: '0.3rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Poäng</div>
-                    <StatBar label="Totalt" home={stats.H.totalPts} away={stats.V.totalPts} />
-                    <StatBar label="Serve ace" home={stats.H.serve.pts} away={stats.V.serve.pts} />
-                    <StatBar label="Attack" home={stats.H.attack.pts} away={stats.V.attack.pts} />
-                    <StatBar label="Block" home={stats.H.block.pts} away={stats.V.block.pts} />
-
-                    <div style={{ textAlign: 'center', fontSize: '0.7rem', color: 'var(--text-muted)', margin: '0.5rem 0 0.3rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Serve</div>
-                    <StatBar label="Totalt" home={stats.H.serve.total} away={stats.V.serve.total} />
-                    <StatBar label="Aces" home={stats.H.serve.pts} away={stats.V.serve.pts} />
-                    <StatBar label="Errors" home={stats.H.serve.err} away={stats.V.serve.err} higherIsBetter={false} />
-                    <StatBar label="Miss %" home={pct(stats.H.serve.err, stats.H.serve.total)} away={pct(stats.V.serve.err, stats.V.serve.total)} higherIsBetter={false} />
-                    <StatBar label="Ace %" home={pct(stats.H.serve.pts, stats.H.serve.total)} away={pct(stats.V.serve.pts, stats.V.serve.total)} />
-
-                    <div style={{ textAlign: 'center', fontSize: '0.7rem', color: 'var(--text-muted)', margin: '0.5rem 0 0.3rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Anfall</div>
-                    <StatBar label="Totalt" home={stats.H.attack.total} away={stats.V.attack.total} />
-                    <StatBar label="Kill" home={stats.H.attack.pts} away={stats.V.attack.pts} />
-                    <StatBar label="Kill %" home={pct(stats.H.attack.pts, stats.H.attack.total)} away={pct(stats.V.attack.pts, stats.V.attack.total)} />
-                    <StatBar label="Errors" home={stats.H.attack.err} away={stats.V.attack.err} higherIsBetter={false} />
-                    <StatBar label="Blocked" home={stats.H.attack.blocked} away={stats.V.attack.blocked} higherIsBetter={false} />
-
-                    <div style={{ textAlign: 'center', fontSize: '0.7rem', color: 'var(--text-muted)', margin: '0.5rem 0 0.3rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Mottagning</div>
-                    <StatBar label="Totalt" home={stats.H.reception.total} away={stats.V.reception.total} />
-                    <StatBar label="Positiv %" home={pct(stats.H.reception.pos, stats.H.reception.total)} away={pct(stats.V.reception.pos, stats.V.reception.total)} />
-                    <StatBar label="Excellent %" home={pct(stats.H.reception.exc, stats.H.reception.total)} away={pct(stats.V.reception.exc, stats.V.reception.total)} />
-                    <StatBar label="Errors" home={stats.H.reception.err} away={stats.V.reception.err} higherIsBetter={false} />
-
-                    <div style={{ textAlign: 'center', fontSize: '0.7rem', color: 'var(--text-muted)', margin: '0.5rem 0 0.3rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Försvar</div>
-                    <StatBar label="Totalt" home={stats.H.dig.total} away={stats.V.dig.total} />
-                    <StatBar label="Positiv %" home={pct(stats.H.dig.pos, stats.H.dig.total)} away={pct(stats.V.dig.pos, stats.V.dig.total)} />
-                  </div>
-
-                  {/* Hemmalag spelare */}
-                  <div style={{ marginBottom: '0.75rem' }}>
-                    <div style={{ fontSize: '0.78rem', fontWeight: '600', marginBottom: '0.3rem', color: 'var(--lvc-blue-light, #3584e4)' }}>{stats.H.name}</div>
-                    <div style={{ display: 'flex', gap: '0.4rem', padding: '0.2rem 0.2rem', fontSize: '0.65rem', color: 'var(--text-muted)', borderBottom: '1px solid rgba(255,255,255,0.08)' }}>
-                      <span style={{ width: '28px' }}></span>
-                      <span style={{ flex: 1 }}>Spelare</span>
-                      <span style={{ width: '35px', textAlign: 'right' }}>Pts</span>
-                      <span style={{ width: '55px', textAlign: 'right' }}>Anfall</span>
-                    </div>
-                    {hPlayers.map(p => (
-                      <React.Fragment key={'H-' + p.number}>
-                        <div onClick={() => setSelectedPlayer(prev => prev && prev.team === 'H' && prev.number === p.number ? null : { ...p, team: 'H', teamName: stats.H.name })} style={{ display: 'flex', gap: '0.4rem', padding: '0.3rem 0.2rem', fontSize: '0.78rem', borderBottom: '1px solid rgba(255,255,255,0.04)', cursor: 'pointer', transition: 'background 0.1s', alignItems: 'center' }} onMouseOver={e => e.currentTarget.style.background='rgba(255,255,255,0.04)'} onMouseOut={e => e.currentTarget.style.background='transparent'}>
-                          <span style={{ width: '28px', color: 'var(--text-muted)', fontSize: '0.72rem' }}>#{p.number}</span>
-                          <span style={{ flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{p.name}</span>
-                          <span style={{ width: '35px', textAlign: 'right', fontWeight: '700' }}>{p.pts}</span>
-                          <span style={{ width: '55px', textAlign: 'right', fontSize: '0.75rem' }}>{p.attack.total > 0 ? pct(p.attack.pts, p.attack.total) : '-'}</span>
-                        </div>
-                        {selectedPlayer && selectedPlayer.team === 'H' && selectedPlayer.number === p.number && (() => {
-                          const sp = selectedPlayer;
-                          const StatRow = ({ label, value }) => (
-                            <div style={{ display: 'flex', justifyContent: 'space-between', padding: '0.2rem 0.5rem', fontSize: '0.75rem' }}>
-                              <span style={{ color: 'var(--text-muted)' }}>{label}</span>
-                              <span style={{ fontWeight: '500' }}>{value}</span>
-                            </div>
-                          );
-                          return (
-                            <div style={{ background: 'rgba(26,95,180,0.08)', borderRadius: '6px', padding: '0.4rem', marginBottom: '0.3rem' }}>
-                              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.3rem' }}>
-                                <div style={{ background: 'rgba(255,255,255,0.03)', borderRadius: '4px', padding: '0.3rem' }}>
-                                  <div onClick={() => jumpToPlayerActions(sp.team, sp.number, 'S')} style={{ fontSize: '0.65rem', color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '0.15rem', cursor: 'pointer' }}>Serve ▶</div>
-                                  <StatRow label="Tot" value={sp.serve.total} />
-                                  <StatRow label="Ace" value={sp.serve.pts} />
-                                  <StatRow label="Err" value={sp.serve.err} />
-                                  <StatRow label="Ace%" value={pct(sp.serve.pts, sp.serve.total)} />
-                                </div>
-                                <div style={{ background: 'rgba(255,255,255,0.03)', borderRadius: '4px', padding: '0.3rem', cursor: 'pointer' }} onClick={() => jumpToPlayerActions(sp.team, sp.number, 'A')}>
-                                  <div style={{ fontSize: '0.65rem', color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '0.15rem' }}>Anfall ▶</div>
-                                  <StatRow label="Tot" value={sp.attack.total} />
-                                  <StatRow label="Kill" value={sp.attack.pts} />
-                                  <StatRow label="Err" value={sp.attack.err} />
-                                  <StatRow label="K%" value={pct(sp.attack.pts, sp.attack.total)} />
-                                </div>
-                                <div style={{ background: 'rgba(255,255,255,0.03)', borderRadius: '4px', padding: '0.3rem', cursor: 'pointer' }} onClick={() => jumpToPlayerActions(sp.team, sp.number, 'R')}>
-                                  <div style={{ fontSize: '0.65rem', color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '0.15rem' }}>Mottagning ▶</div>
-                                  <StatRow label="Tot" value={sp.reception.total} />
-                                  <StatRow label="Pos" value={sp.reception.pos} />
-                                  <StatRow label="Exc" value={sp.reception.exc} />
-                                  <StatRow label="Pos%" value={pct(sp.reception.pos, sp.reception.total)} />
-                                </div>
-                                <div style={{ background: 'rgba(255,255,255,0.03)', borderRadius: '4px', padding: '0.3rem', cursor: 'pointer' }} onClick={() => jumpToPlayerActions(sp.team, sp.number, 'D')}>
-                                  <div style={{ fontSize: '0.65rem', color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '0.15rem' }}>Block & Försvar ▶</div>
-                                  <StatRow label="Block" value={sp.block.pts} />
-                                  <StatRow label="Dig" value={sp.dig.total} />
-                                  <StatRow label="Dig+" value={sp.dig.pos} />
-                                  <StatRow label="D%" value={pct(sp.dig.pos, sp.dig.total)} />
-                                </div>
-                              </div>
-                            </div>
-                          );
-                        })()}
-                      </React.Fragment>
-                    ))}
-                  </div>
-
-                  {/* Bortalag spelare */}
-                  <div>
-                    <div style={{ fontSize: '0.78rem', fontWeight: '600', marginBottom: '0.3rem', color: 'var(--lvc-gold, #e8a825)' }}>{stats.V.name}</div>
-                    <div style={{ display: 'flex', gap: '0.4rem', padding: '0.2rem 0.2rem', fontSize: '0.65rem', color: 'var(--text-muted)', borderBottom: '1px solid rgba(255,255,255,0.08)' }}>
-                      <span style={{ width: '28px' }}></span>
-                      <span style={{ flex: 1 }}>Spelare</span>
-                      <span style={{ width: '35px', textAlign: 'right' }}>Pts</span>
-                      <span style={{ width: '55px', textAlign: 'right' }}>Anfall</span>
-                    </div>
-                    {vPlayers.map(p => (
-                      <React.Fragment key={'V-' + p.number}>
-                        <div onClick={() => setSelectedPlayer(prev => prev && prev.team === 'V' && prev.number === p.number ? null : { ...p, team: 'V', teamName: stats.V.name })} style={{ display: 'flex', gap: '0.4rem', padding: '0.3rem 0.2rem', fontSize: '0.78rem', borderBottom: '1px solid rgba(255,255,255,0.04)', cursor: 'pointer', transition: 'background 0.1s', alignItems: 'center' }} onMouseOver={e => e.currentTarget.style.background='rgba(255,255,255,0.04)'} onMouseOut={e => e.currentTarget.style.background='transparent'}>
-                          <span style={{ width: '28px', color: 'var(--text-muted)', fontSize: '0.72rem' }}>#{p.number}</span>
-                          <span style={{ flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{p.name}</span>
-                          <span style={{ width: '35px', textAlign: 'right', fontWeight: '700' }}>{p.pts}</span>
-                          <span style={{ width: '55px', textAlign: 'right', fontSize: '0.75rem' }}>{p.attack.total > 0 ? pct(p.attack.pts, p.attack.total) : '-'}</span>
-                        </div>
-                        {selectedPlayer && selectedPlayer.team === 'V' && selectedPlayer.number === p.number && (() => {
-                          const sp = selectedPlayer;
-                          const StatRow = ({ label, value }) => (
-                            <div style={{ display: 'flex', justifyContent: 'space-between', padding: '0.2rem 0.5rem', fontSize: '0.75rem' }}>
-                              <span style={{ color: 'var(--text-muted)' }}>{label}</span>
-                              <span style={{ fontWeight: '500' }}>{value}</span>
-                            </div>
-                          );
-                          return (
-                            <div style={{ background: 'rgba(232,168,37,0.08)', borderRadius: '6px', padding: '0.4rem', marginBottom: '0.3rem' }}>
-                              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.3rem' }}>
-                                <div style={{ background: 'rgba(255,255,255,0.03)', borderRadius: '4px', padding: '0.3rem' }}>
-                                  <div onClick={() => jumpToPlayerActions(sp.team, sp.number, 'S')} style={{ fontSize: '0.65rem', color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '0.15rem', cursor: 'pointer' }}>Serve ▶</div>
-                                  <StatRow label="Tot" value={sp.serve.total} />
-                                  <StatRow label="Ace" value={sp.serve.pts} />
-                                  <StatRow label="Err" value={sp.serve.err} />
-                                  <StatRow label="Ace%" value={pct(sp.serve.pts, sp.serve.total)} />
-                                </div>
-                                <div style={{ background: 'rgba(255,255,255,0.03)', borderRadius: '4px', padding: '0.3rem', cursor: 'pointer' }} onClick={() => jumpToPlayerActions(sp.team, sp.number, 'A')}>
-                                  <div style={{ fontSize: '0.65rem', color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '0.15rem' }}>Anfall ▶</div>
-                                  <StatRow label="Tot" value={sp.attack.total} />
-                                  <StatRow label="Kill" value={sp.attack.pts} />
-                                  <StatRow label="Err" value={sp.attack.err} />
-                                  <StatRow label="K%" value={pct(sp.attack.pts, sp.attack.total)} />
-                                </div>
-                                <div style={{ background: 'rgba(255,255,255,0.03)', borderRadius: '4px', padding: '0.3rem', cursor: 'pointer' }} onClick={() => jumpToPlayerActions(sp.team, sp.number, 'R')}>
-                                  <div style={{ fontSize: '0.65rem', color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '0.15rem' }}>Mottagning ▶</div>
-                                  <StatRow label="Tot" value={sp.reception.total} />
-                                  <StatRow label="Pos" value={sp.reception.pos} />
-                                  <StatRow label="Exc" value={sp.reception.exc} />
-                                  <StatRow label="Pos%" value={pct(sp.reception.pos, sp.reception.total)} />
-                                </div>
-                                <div style={{ background: 'rgba(255,255,255,0.03)', borderRadius: '4px', padding: '0.3rem', cursor: 'pointer' }} onClick={() => jumpToPlayerActions(sp.team, sp.number, 'D')}>
-                                  <div style={{ fontSize: '0.65rem', color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '0.15rem' }}>Block & Försvar ▶</div>
-                                  <StatRow label="Block" value={sp.block.pts} />
-                                  <StatRow label="Dig" value={sp.dig.total} />
-                                  <StatRow label="Dig+" value={sp.dig.pos} />
-                                  <StatRow label="D%" value={pct(sp.dig.pos, sp.dig.total)} />
-                                </div>
-                              </div>
-                            </div>
-                          );
-                        })()}
-                      </React.Fragment>
-                    ))}
-                  </div>
-                </div>
-              );
-            })()}
+            {scoutTab === 'rapport' && (
+              <MatchReport stats={getMatchStats()} onJumpToActions={jumpToPlayerActions} />
+            )}
           </div>
         )}
       </div>
 
       {/* DVW-kodsökning — Ctrl+Q */}
       {dvwSearchOpen && scout && (isCoach || isUploader || isAdmin) && (
-        <div
-          ref={dvwSearchRef}
-          style={{
-            position: 'fixed', left: dvwSearchPos.x, top: dvwSearchPos.y,
-            zIndex: 10000, width: 300, userSelect: 'none'
-          }}
-        >
-          <div style={{
-            background: 'rgba(15, 15, 30, 0.95)', borderRadius: 12,
-            boxShadow: '0 8px 32px rgba(0,0,0,0.7)',
-            border: '1px solid var(--border)',
-            backdropFilter: 'blur(8px)', overflow: 'hidden'
-          }}>
-            {/* Drag-bar */}
-            <div
-              onMouseDown={(e) => {
-                dvwDragging.current = true;
-                dvwDragOffset.current = { x: e.clientX - dvwSearchPos.x, y: e.clientY - dvwSearchPos.y };
-                e.preventDefault();
-              }}
-              style={{
-                display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                padding: '8px 14px', cursor: 'grab',
-                background: 'rgba(99,102,241,0.2)',
-                borderBottom: '1px solid var(--border)'
-              }}
-            >
-              <span style={{ fontWeight: 700, fontSize: 13 }}>DVW-sökning</span>
-              <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
-                <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>Ctrl+Q</span>
-                <button
-                  onMouseDown={e => e.stopPropagation()}
-                  onClick={() => { setDvwSearchOpen(false); setDvwSearchQuery(''); }}
-                  style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-secondary)', fontSize: 16, padding: '0 4px' }}
-                >×</button>
-              </div>
-            </div>
-            {/* Sökfält */}
-            <div style={{ padding: '10px 14px' }}>
-              <input
-                ref={dvwInputRef2}
-                value={dvwSearchQuery}
-                onChange={e => setDvwSearchQuery(e.target.value)}
-                onKeyDown={e => {
-                  e.stopPropagation();
-                  if (e.key === 'Escape') { setDvwSearchOpen(false); setDvwSearchQuery(''); }
-                  if (e.key === 'Enter' && dvwSearchResults.length > 0) {
-                    jumpToAction(dvwSearchResults[0]);
-                    setActiveActionId(dvwSearchResults[0].id);
-                  }
-                }}
-                placeholder="Sök DVW-kod, t.ex. *20S#"
-                style={{
-                  width: '100%', padding: '8px 10px', borderRadius: 8,
-                  border: '1px solid var(--border)', background: 'var(--surface-raised)',
-                  color: 'var(--text-primary)', fontSize: 14, fontFamily: 'var(--font-mono)',
-                  boxSizing: 'border-box'
-                }}
-              />
-              {dvwSearchQuery && (
-                <div style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 4 }}>
-                  {dvwSearchResults.length} träff{dvwSearchResults.length !== 1 ? 'ar' : ''}
-                </div>
-              )}
-            </div>
-            {/* Resultat */}
-            {dvwSearchResults.length > 0 && (
-              <div style={{ maxHeight: 250, overflowY: 'auto', padding: '0 8px 8px' }}>
-                {dvwSearchResults.slice(0, 50).map(action => (
-                  <div
-                    key={action.id}
-                    onClick={() => {
-                      jumpToAction(action);
-                      setActiveActionId(action.id);
-                    }}
-                    style={{
-                      display: 'flex', alignItems: 'center', gap: '0.5rem',
-                      padding: '6px 8px', borderRadius: 6, cursor: 'pointer',
-                      marginBottom: 2,
-                      background: activeActionId === action.id ? 'var(--accent-subtle, rgba(99,102,241,0.15))' : 'transparent',
-                      border: activeActionId === action.id ? '1px solid var(--accent)' : '1px solid transparent',
-                      transition: 'background 0.1s'
-                    }}
-                    onMouseOver={e => { if (activeActionId !== action.id) e.currentTarget.style.background = 'rgba(255,255,255,0.04)'; }}
-                    onMouseOut={e => { if (activeActionId !== action.id) e.currentTarget.style.background = 'transparent'; }}
-                  >
-                    <span style={{
-                      width: 22, height: 22, borderRadius: 4, flexShrink: 0,
-                      background: SKILL_COLORS[action.skill] || '#666',
-                      display: 'flex', alignItems: 'center', justifyContent: 'center',
-                      fontSize: '0.7rem', fontWeight: 'bold', color: '#fff'
-                    }}>{action.skill}</span>
-                    <span style={{ fontSize: '0.72rem', fontFamily: 'var(--font-mono)', color: 'var(--lvc-gold)', minWidth: 55 }}>
-                      {action.rawCode}
-                    </span>
-                    <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ fontSize: '0.75rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                        #{action.playerNumber} {action.playerName}
-                      </div>
-                    </div>
-                    <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)', flexShrink: 0 }}>
-                      S{action.set} {formatVideoTime(action.videoTime)}
-                    </span>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-        </div>
+        <DvwSearchPanel
+          searchQuery={dvwSearchQuery}
+          onSearchChange={setDvwSearchQuery}
+          onClose={() => { setDvwSearchOpen(false); setDvwSearchQuery(''); }}
+          searchResults={dvwSearchResults}
+          activeActionId={activeActionId}
+          onJumpToAction={(action) => { jumpToAction(action); setActiveActionId(action.id); }}
+        />
       )}
 
       {/* Review Panel — draggbar */}
-      {reviewModal && (
-        <div style={{
-          position: 'fixed', left: panelPos.x, top: panelPos.y,
-          zIndex: 9999, width: 320, userSelect: 'none'
-        }} ref={dragRef}>
-          <div style={{
-            background: 'rgba(15, 15, 30, 0.95)', borderRadius: 12,
-            boxShadow: '0 8px 32px rgba(0,0,0,0.7)',
-            border: '1px solid var(--border)',
-            backdropFilter: 'blur(8px)', overflow: 'hidden'
-          }}>
-            {/* Drag-bar */}
-            <div
-              onMouseDown={onDragStart}
-              style={{
-                display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                padding: '10px 14px', cursor: 'grab', background: 'rgba(99,102,241,0.2)',
-                borderBottom: panelMinimized ? 'none' : '1px solid var(--border)'
-              }}
-            >
-              <span style={{ fontWeight: 700, fontSize: 14 }}>📤 Skicka till spelare</span>
-              <div style={{ display: 'flex', gap: 6 }}>
-                <button
-                  onMouseDown={e => e.stopPropagation()}
-                  onClick={() => setPanelMinimized(m => !m)}
-                  style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-secondary)', fontSize: 16, padding: '0 4px' }}
-                >{panelMinimized ? '▲' : '▼'}</button>
-                <button
-                  onMouseDown={e => e.stopPropagation()}
-                  onClick={() => setReviewModal(null)}
-                  style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-secondary)', fontSize: 16, padding: '0 4px' }}
-                >×</button>
-              </div>
-            </div>
-            {/* Panel-innehåll */}
-            {!panelMinimized && <div style={{ padding: 16, maxHeight: '70vh', overflowY: 'auto' }}>
-            <p style={{ margin: '0 0 16px', fontSize: 13, color: 'var(--text-muted)' }}>
-              Action #{reviewModal.actionIndex + 1} · {reviewModal.action.skill} · #{reviewModal.action.playerNumber} {reviewModal.action.playerName}
-            </p>
-
-            {reviewPlayers.length === 0 ? (
-              <p style={{ color: 'var(--text-muted)', fontSize: 14 }}>Inga spelare kopplade till ditt lag ännu.</p>
-            ) : (() => {
-              const allPlayers = reviewPlayers.flatMap(t => t.players.map(p => ({ ...p, teamName: t.team.name })));
-              const autoMatched = allPlayers.filter(p => reviewSelectedPlayers.includes(p.id));
-              const hasAutoMatch = autoMatched.length > 0;
-              const searchResults = reviewPlayerSearch
-                ? allPlayers.filter(p =>
-                    !reviewSelectedPlayers.includes(p.id) && (
-                      p.name.toLowerCase().includes(reviewPlayerSearch.toLowerCase()) ||
-                      (p.jerseyNumber && String(p.jerseyNumber).includes(reviewPlayerSearch))
-                    )
-                  ).sort((a, b) => a.name.localeCompare(b.name))
-                : [];
-
-              return (
-                <>
-                  <label style={{ fontSize: 13, fontWeight: 600, display: 'block', marginBottom: 8 }}>Välj spelare</label>
-                  {/* Auto-matchad spelare */}
-                  {autoMatched.map(player => (
-                    <div key={player.id} style={{
-                      display: 'flex', alignItems: 'center', gap: 8,
-                      padding: '5px 8px', borderRadius: 6,
-                      background: 'var(--accent-subtle, rgba(99,102,241,0.15))',
-                      border: '1px solid var(--accent)',
-                      marginBottom: 3
-                    }}>
-                      <div style={{
-                        width: 24, height: 24, borderRadius: '50%',
-                        background: 'var(--accent)', display: 'flex',
-                        alignItems: 'center', justifyContent: 'center',
-                        fontSize: 11, fontWeight: 700, color: '#fff', flexShrink: 0
-                      }}>
-                        {player.jerseyNumber ? `${player.jerseyNumber}` : player.name[0].toUpperCase()}
-                      </div>
-                      <span style={{ fontSize: 13, fontWeight: 600, flex: 1 }}>
-                        {player.jerseyNumber ? `#${player.jerseyNumber} · ` : ''}{player.name}
-                      </span>
-                      <button
-                        onClick={() => setReviewSelectedPlayers(p => p.filter(id => id !== player.id))}
-                        style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 13, padding: '0 2px', lineHeight: 1 }}
-                      >❌</button>
-                    </div>
-                  ))}
-                  {/* Sökfält — alltid synligt för att lägga till fler */}
-                  <input
-                    type="text"
-                    placeholder={hasAutoMatch ? "Lägg till fler spelare..." : "Sök på namn eller nummer..."}
-                    value={reviewPlayerSearch}
-                    onChange={e => setReviewPlayerSearch(e.target.value)}
-                    onKeyDown={e => e.stopPropagation()}
-                    style={{
-                      width: '100%', padding: '7px 10px', borderRadius: 8,
-                      border: '1px solid var(--border)', background: 'var(--bg-secondary)',
-                      color: 'var(--text-primary)', fontSize: 13, marginTop: 8, marginBottom: 4,
-                      boxSizing: 'border-box'
-                    }}
-                  />
-                  {/* Sökresultat */}
-                  {searchResults.map(player => (
-                    <div key={player.id}
-                      onClick={() => { setReviewSelectedPlayers(p => [...p, player.id]); setReviewPlayerSearch(''); }}
-                      style={{
-                        display: 'flex', alignItems: 'center', gap: 10,
-                        padding: '8px 10px', borderRadius: 8, cursor: 'pointer',
-                        background: 'var(--bg-secondary)',
-                        border: '1px solid var(--border)',
-                        marginBottom: 4
-                      }}
-                    >
-                      <div style={{
-                        width: 32, height: 32, borderRadius: '50%',
-                        background: 'var(--accent)', display: 'flex',
-                        alignItems: 'center', justifyContent: 'center',
-                        fontSize: 13, fontWeight: 700, color: '#fff', flexShrink: 0
-                      }}>
-                        {player.jerseyNumber ? `#${player.jerseyNumber}` : player.name[0].toUpperCase()}
-                      </div>
-                      <div style={{ flex: 1, minWidth: 0 }}>
-                        <div style={{ fontSize: 14, fontWeight: 600 }}>{player.jerseyNumber ? `#${player.jerseyNumber} · ` : ''}{player.name}</div>
-                        <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>{player.teamName}</div>
-                      </div>
-                      <span style={{ fontSize: 11, color: 'var(--accent)', fontWeight: 600 }}>+ Lägg till</span>
-                    </div>
-                  ))}
-                  {reviewPlayerSearch && searchResults.length === 0 && (
-                    <p style={{ fontSize: 13, color: 'var(--text-muted)', padding: '4px 8px' }}>Inga spelare hittades</p>
-                  )}
-                </>
-              );
-            })()}
-
-            <label style={{ fontSize: 13, fontWeight: 600, display: 'block', margin: '12px 0 6px' }}>Kommentar</label>
-            <textarea
-              value={reviewComment}
-              onChange={e => setReviewComment(e.target.value)}
-              onKeyDown={e => e.stopPropagation()}
-              placeholder="Skriv din feedback till spelaren..."
-              rows={4}
-              style={{
-                width: '100%', borderRadius: 8, border: '1px solid var(--border)',
-                background: 'var(--bg-primary)', color: 'var(--text-primary)',
-                padding: '8px 12px', fontSize: 14, resize: 'vertical',
-                boxSizing: 'border-box'
-              }}
-            />
-
-            {reviewError && <p style={{ color: 'var(--error, #f44336)', fontSize: 13, marginTop: 8 }}>{reviewError}</p>}
-            {reviewSuccess && <p style={{ color: 'var(--success, #4caf50)', fontSize: 13, marginTop: 8 }}>{reviewSuccess}</p>}
-
-            <div style={{ display: 'flex', gap: 8, marginTop: 16 }}>
-              <button
-                onClick={sendReview}
-                disabled={reviewLoading}
-                style={{
-                  flex: 1, padding: '10px 16px', borderRadius: 8, border: 'none',
-                  background: 'var(--accent)', color: '#fff', fontWeight: 600,
-                  cursor: reviewLoading ? 'not-allowed' : 'pointer', fontSize: 14
-                }}
-              >
-                {reviewLoading ? 'Skickar...' : 'Skicka'}
-              </button>
-              <button
-                onClick={() => setReviewModal(null)}
-                style={{
-                  padding: '10px 16px', borderRadius: 8,
-                  border: '1px solid var(--border)', background: 'transparent',
-                  color: 'var(--text-secondary)', cursor: 'pointer', fontSize: 14
-                }}
-              >
-                Avbryt
-              </button>
-            </div>
-            </div>}
-          </div>
-        </div>
-      )}
+      <ReviewPanel
+        reviewModal={reviewModal}
+        onClose={() => setReviewModal(null)}
+        reviewPlayers={reviewPlayers}
+        onSendReview={sendReview}
+        reviewLoading={reviewLoading}
+      />
     </div>
   );
 }
