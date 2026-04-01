@@ -4,17 +4,21 @@
 // ===========================================
 import { useState, useMemo } from 'react';
 
-// Zon-layout på volleybollplan (standard numrering)
+// Zon-layout på volleybollplan (standard DataVolley numrering)
 // Nät uppe, baklinje nere
-// 4 | 3 | 2
-// 5 | 6 | 1
+// 4 | 3 | 2    (framrad)
+// 7 | 8 | 9    (3m-zon)
+// 5 | 6 | 1    (bakrad)
 const ZONES = [
-  { id: 4, x: 0,   y: 0,   w: 33, h: 50, label: '4' },
-  { id: 3, x: 33,  y: 0,   w: 34, h: 50, label: '3' },
-  { id: 2, x: 67,  y: 0,   w: 33, h: 50, label: '2' },
-  { id: 5, x: 0,   y: 50,  w: 33, h: 50, label: '5' },
-  { id: 6, x: 33,  y: 50,  w: 34, h: 50, label: '6' },
-  { id: 1, x: 67,  y: 50,  w: 33, h: 50, label: '1' },
+  { id: 4, x: 0,   y: 0,   w: 33, h: 33, label: '4' },
+  { id: 3, x: 33,  y: 0,   w: 34, h: 33, label: '3' },
+  { id: 2, x: 67,  y: 0,   w: 33, h: 33, label: '2' },
+  { id: 7, x: 0,   y: 33,  w: 33, h: 34, label: '7' },
+  { id: 8, x: 33,  y: 33,  w: 34, h: 34, label: '8' },
+  { id: 9, x: 67,  y: 33,  w: 33, h: 34, label: '9' },
+  { id: 5, x: 0,   y: 67,  w: 33, h: 33, label: '5' },
+  { id: 6, x: 33,  y: 67,  w: 34, h: 33, label: '6' },
+  { id: 1, x: 67,  y: 67,  w: 33, h: 33, label: '1' },
 ];
 
 const SKILL_OPTIONS = [
@@ -61,7 +65,7 @@ export default function CourtHeatmap({ actions, team }) {
 
     for (const a of filtered) {
       const zone = a.startZone || a.endZone;
-      if (!zone || zone < 1 || zone > 6) continue;
+      if (!zone || zone < 1 || zone > 9) continue;
       counts[zone] = (counts[zone] || 0) + 1;
       if (!success[zone]) success[zone] = { good: 0, total: 0 };
       success[zone].total++;
@@ -120,24 +124,24 @@ export default function CourtHeatmap({ actions, team }) {
       </div>
 
       {/* Volleybollplan SVG */}
-      <svg viewBox="0 0 300 220" style={{ width: '100%', maxWidth: 360 }}>
+      <svg viewBox="0 0 300 310" style={{ width: '100%', maxWidth: 360 }}>
         {/* Nätlinje */}
         <line x1="0" y1="8" x2="300" y2="8" stroke="#94a3b8" strokeWidth="3" />
         <text x="150" y="6" textAnchor="middle" fill="#64748b" fontSize="10">NÄT</text>
 
         {/* Planens bakgrund */}
-        <rect x="0" y="10" width="300" height="200" rx="4" fill="#0f172a" stroke="#334155" strokeWidth="2" />
+        <rect x="0" y="10" width="300" height="300" rx="4" fill="#0f172a" stroke="#334155" strokeWidth="2" />
 
-        {/* 3-meterslinje */}
+        {/* 3-meterslinje (mellan framrad och 3m-zon) */}
         <line x1="0" y1="110" x2="300" y2="110" stroke="#334155" strokeWidth="1" strokeDasharray="6,4" />
 
         {/* Zoner */}
         {ZONES.map(z => {
           const data = zoneData[z.id] || { count: 0, ratio: 0, successRate: 0 };
           const zx = z.x * 3;
-          const zy = z.y * 2 + 10;
+          const zy = z.y * 3 + 10;
           const zw = z.w * 3;
-          const zh = z.h * 2;
+          const zh = z.h * 3;
           const color = showSuccess && data.count > 0
             ? getSuccessColor(data.successRate)
             : getHeatColor(data.ratio);

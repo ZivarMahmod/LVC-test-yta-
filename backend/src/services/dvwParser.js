@@ -31,14 +31,13 @@ const ZONE_POSITIONS = {
   9: { x: 90, y: 50 }   // Utanför höger
 };
 
-// Parsa 4-siffrig koordinat (XXYY) till {x, y} på 0-100 grid
+// Parsa DataVolley koordinatindex (1-10000) till {x, y}
+// Index 1 = nedre vänster, 10000 = övre höger, 100x100 grid
 const parseCoordinate = (val) => {
-  if (!val || val.length < 4) return null;
   const num = parseInt(val, 10);
-  if (isNaN(num) || num < 0) return null;
-  const x = Math.floor(num / 100);
-  const y = num % 100;
-  if (x > 100 || y > 100) return null;
+  if (isNaN(num) || num < 1 || num > 10000) return null;
+  const x = ((num - 1) % 100);
+  const y = Math.floor((num - 1) / 100);
   return { x, y };
 };
 
@@ -154,15 +153,15 @@ const parseScout = (lines, players, teams, matchStartSeconds, videoOffset) => {
     const skillName = SKILL_MAP[skill] || skill;
     const gradeName = GRADE_MAP[grade] || '';
 
-    // Zondata från kodsträngen (position 6+ om det finns)
-    const startZoneChar = code.length > 6 ? parseInt(code[6], 10) : NaN;
-    const endZoneChar = code.length > 7 ? parseInt(code[7], 10) : NaN;
+    // Zondata från kodsträngen (DVW-format: pos 9 = startzon, pos 10 = slutzon)
+    const startZoneChar = code.length > 9 && code[9] !== '~' ? parseInt(code[9], 10) : NaN;
+    const endZoneChar = code.length > 10 && code[10] !== '~' ? parseInt(code[10], 10) : NaN;
     const startZone = (!isNaN(startZoneChar) && startZoneChar >= 1 && startZoneChar <= 9) ? startZoneChar : null;
     const endZone = (!isNaN(endZoneChar) && endZoneChar >= 1 && endZoneChar <= 9) ? endZoneChar : null;
 
-    // Koordinatdata från parts (DataVolley-format: XXYY)
-    const startCoord = parts.length > 13 ? parseCoordinate(parts[13]) : null;
-    const endCoord = parts.length > 15 ? parseCoordinate(parts[15]) : null;
+    // Koordinatdata från parts (index 4=start, 5=mid, 6=end)
+    const startCoord = parts.length > 4 ? parseCoordinate(parts[4]) : null;
+    const endCoord = parts.length > 6 ? parseCoordinate(parts[6]) : null;
 
     actions.push({
       id: actions.length,
