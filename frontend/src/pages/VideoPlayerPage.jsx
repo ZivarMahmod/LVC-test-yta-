@@ -665,7 +665,7 @@ export default function VideoPlayerPage() {
                     color: 'var(--text)', fontSize: '0.78rem'
                   }}
                 >
-                  <option value="ALL">Alla set</option>
+                  <option value="ALL">Set</option>
                   {uniqueSets.map(s => <option key={s} value={String(s)}>Set {s}</option>)}
                 </select>
                 {scout && (
@@ -678,7 +678,7 @@ export default function VideoPlayerPage() {
                       color: 'var(--text)', fontSize: '0.78rem'
                     }}
                   >
-                    <option value="ALL">Båda lag</option>
+                    <option value="ALL">Lag</option>
                     <option value="H">{scout.teams?.H || 'Hemma'}</option>
                     <option value="V">{scout.teams?.V || 'Borta'}</option>
                   </select>
@@ -696,7 +696,7 @@ export default function VideoPlayerPage() {
                     color: 'var(--text)', fontSize: '0.78rem'
                   }}
                 >
-                  <option value="ALL">Alla spelare</option>
+                  <option value="ALL">Spelare</option>
                   {uniquePlayers.map(({ number, team }) => {
                     const key = team + '-' + number;
                     const p = scout.players.find(pl => parseInt(pl.number, 10) === number && pl.team === team);
