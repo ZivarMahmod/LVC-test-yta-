@@ -17,16 +17,18 @@ setInterval(() => {
   }
 }, 5 * 60 * 1000);
 
-// Middleware: registrera aktivitet vid varje autentiserat anrop
+// Middleware: registrera aktivitet efter response (req.user satt av auth)
 export const trackActivity = (req, res, next) => {
-  if (req.user) {
-    activeUsers.set(req.user.id, {
-      name: req.user.name || req.user.email,
-      role: req.user.role,
-      lastSeen: Date.now(),
-      path: req.originalUrl || req.path
-    });
-  }
+  res.on('finish', () => {
+    if (req.user && res.statusCode < 400) {
+      activeUsers.set(req.user.id, {
+        name: req.user.name || req.user.email,
+        role: req.user.role,
+        lastSeen: Date.now(),
+        path: req.originalUrl || req.path
+      });
+    }
+  });
   next();
 };
 
