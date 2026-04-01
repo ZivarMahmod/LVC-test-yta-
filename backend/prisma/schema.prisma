@@ -113,6 +113,8 @@ model Video {
   @@index([teamId])
   @@index([seasonId])
   @@index([filePath])
+  @@index([createdAt])
+  @@index([uploadedById])
 }
 
 model LoginAttempt {
@@ -173,4 +175,22 @@ model CoachReview {
   @@index([coachId])
   @@index([playerId])
   @@index([videoId])
+  @@index([createdAt])
+}
+
+model AuditLog {
+  id        String   @id @default(uuid())
+  action    String
+  entity    String
+  entityId  String?
+  userId    String
+  userName  String
+  details   String?
+  ipAddress String?
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+  @@index([action])
+  @@index([entity])
+  @@index([createdAt])
 }

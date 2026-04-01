@@ -8,6 +8,7 @@ import { tokenService } from '../services/tokenService.js';
 import logger from '../utils/logger.js';
 import crypto from 'crypto';
 import path from 'path';
+import { auditService } from '../services/auditService.js';
 
 const BCRYPT_ROUNDS = parseInt(process.env.BCRYPT_ROUNDS || '12');
 
@@ -37,6 +38,7 @@ export const adminController = {
       tokenService.setTokenCookies(res, accessToken, refreshToken);
 
       logger.info('Admin impersonerar användare', { adminId: req.user.id, targetUserId: targetUser.id, targetName: targetUser.name });
+      await auditService.log({ action: 'impersonate', entity: 'user', entityId: targetUser.id, req, details: { targetName: targetUser.name, targetRole: targetUser.role } });
       res.json({ user: { id: targetUser.id, name: targetUser.name, role: targetUser.role, username: targetUser.username } });
     } catch (error) {
       logger.error('Impersonate-fel:', error);
@@ -146,6 +148,7 @@ export const adminController = {
         role: user.role,
         createdBy: req.user.email
       });
+      await auditService.log({ action: 'create', entity: 'user', entityId: user.id, req, details: { email: user.email, role: user.role } });
 
       res.status(201).json({ message: 'Användaren har skapats.', user });
     } catch (error) {
@@ -208,6 +211,7 @@ export const adminController = {
         changes: Object.keys(updateData),
         updatedBy: req.user.email
       });
+      await auditService.log({ action: 'update', entity: 'user', entityId: id, req, details: { changes: Object.keys(updateData) } });
 
       res.json({ message: 'Användaren har uppdaterats.', user: updatedUser });
     } catch (error) {
@@ -243,6 +247,7 @@ export const adminController = {
         deletedEmail: user.email,
         deletedBy: req.user.email
       });
+      await auditService.log({ action: 'delete', entity: 'user', entityId: id, req, details: { email: user.email, name: user.name } });
 
       res.json({ message: 'Användaren har tagits bort.' });
     } catch (error) {
@@ -326,6 +331,7 @@ export const adminController = {
       }
       const team = await prisma.team.create({ data: { name: name.trim() } });
       logger.info('Nytt lag skapat', { teamId: team.id, name: team.name, createdBy: req.user.email });
+      await auditService.log({ action: 'create', entity: 'team', entityId: team.id, req, details: { name: team.name } });
       res.status(201).json({ message: 'Laget har skapats.', team });
     } catch (error) {
       logger.error('Skapa lag misslyckades:', error);
@@ -345,6 +351,7 @@ export const adminController = {
       }
       await prisma.team.delete({ where: { id } });
       logger.info('Lag borttaget', { teamId: id, name: team.name, deletedBy: req.user.email });
+      await auditService.log({ action: 'delete', entity: 'team', entityId: id, req, details: { name: team.name } });
       res.json({ message: 'Laget har tagits bort.' });
     } catch (error) {
       logger.error('Ta bort lag misslyckades:', error);
@@ -441,6 +448,7 @@ export const adminController = {
         include: { team: { select: { id: true, name: true } } }
       });
       logger.info('Ny säsong skapad', { seasonId: season.id, name: season.name, teamId, createdBy: req.user.email });
+      await auditService.log({ action: 'create', entity: 'season', entityId: season.id, req, details: { name: season.name, teamId } });
       res.status(201).json({ message: 'Säsongen har skapats.', season });
     } catch (error) {
       logger.error('Skapa säsong misslyckades:', error);
@@ -460,6 +468,7 @@ export const adminController = {
       }
       await prisma.season.delete({ where: { id } });
       logger.info('Säsong borttagen', { seasonId: id, name: season.name, deletedBy: req.user.email });
+      await auditService.log({ action: 'delete', entity: 'season', entityId: id, req, details: { name: season.name } });
       res.json({ message: 'Säsongen har tagits bort.' });
     } catch (error) {
       logger.error('Ta bort säsong misslyckades:', error);
@@ -496,6 +505,7 @@ export const adminController = {
       });
 
       logger.info('Inbjudan skapad', { inviteId: invite.id, role: invite.role, createdBy: req.user.email });
+      await auditService.log({ action: 'create', entity: 'invite', entityId: invite.id, req, details: { role: invite.role, maxUses: invite.maxUses } });
 
       res.status(201).json({
         invite: {
@@ -536,6 +546,7 @@ export const adminController = {
       const { id } = req.params;
       await prisma.inviteToken.delete({ where: { id } });
       logger.info('Inbjudan borttagen', { inviteId: id, deletedBy: req.user.email });
+      await auditService.log({ action: 'delete', entity: 'invite', entityId: id, req });
       res.json({ message: 'Inbjudan borttagen.' });
     } catch (error) {
       logger.error('Ta bort inbjudan misslyckades:', error);
@@ -689,6 +700,7 @@ export const adminController = {
         where: { id: req.params.id },
         data: { role }
       });
+      await auditService.log({ action: 'role_change', entity: 'user', entityId: req.params.id, req, details: { newRole: role } });
       res.json({ user });
     } catch (err) {
       res.status(500).json({ error: 'Kunde inte uppdatera roll' });
@@ -720,6 +732,7 @@ export const adminController = {
       });
 
       logger.info('Video tilldelad lag/säsong', { videoId: id, teamId, seasonId, updatedBy: req.user.email });
+      await auditService.log({ action: 'assign', entity: 'video', entityId: id, req, details: { teamId, seasonId } });
       res.json({ message: 'Videon har tilldelats.', video: { ...updated, fileSize: Number(updated.fileSize) } });
     } catch (error) {
       logger.error('Tilldela video misslyckades:', error);
