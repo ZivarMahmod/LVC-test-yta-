@@ -38,10 +38,14 @@ export default function VideoPlayerPage() {
   const [error, setError] = useState('');
   const videoRef = useRef(null);
 
-  // Skill-namn från inställningar
+  // Skill-namn och bokstäver från inställningar
   const [SKILL_NAMES, setSkillNames] = useState(DEFAULT_SKILL_NAMES);
+  const [SKILL_LETTERS, setSkillLetters] = useState({});
   useEffect(() => {
-    settingsApi.getSkillNames().then(names => { if (names) setSkillNames(names); }).catch(() => {});
+    settingsApi.getSkillNames().then(data => {
+      if (data?.names) setSkillNames(data.names);
+      if (data?.letters) setSkillLetters(data.letters);
+    }).catch(() => {});
   }, []);
 
   // Scout state
@@ -751,7 +755,7 @@ export default function VideoPlayerPage() {
                         letterSpacing: '0.02em',
                       }}
                     >
-                      {isActive ? sk.label : (sk.key === 'ALL' ? 'Alla' : sk.key)}
+                      {isActive ? sk.label : (sk.key === 'ALL' ? 'Alla' : (SKILL_LETTERS[sk.key] || sk.key))}
                     </button>
                   );
                 })}
@@ -854,7 +858,7 @@ export default function VideoPlayerPage() {
                       background: SKILL_COLORS[action.skill] || '#666',
                       display: 'flex', alignItems: 'center', justifyContent: 'center',
                       fontSize: '0.75rem', fontWeight: 'bold', color: '#fff'
-                    }}>{action.skill}</span>
+                    }}>{SKILL_LETTERS[action.skill] || action.skill}</span>
 
                     {/* Grade */}
                     <span style={{ fontSize: '0.85rem', width: '16px', textAlign: 'center', color: gradeColor(action.grade) }}>
