@@ -654,24 +654,36 @@ export default function VideoPlayerPage() {
                 </div>
               )}
 
-              {/* Filter: Set */}
-              <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap', marginBottom: '0.25rem' }}>
-                <button onClick={() => setFilterSet('ALL')} style={filterBtnStyle(filterSet === 'ALL')}>Alla set</button>
+              {/* Filter: Set + Lag — kompakt rad */}
+              <div style={{ display: 'flex', gap: '0.4rem', marginBottom: '0.4rem' }}>
+                <select
+                  value={filterSet}
+                  onChange={e => setFilterSet(e.target.value)}
+                  style={{
+                    flex: 1, padding: '0.3rem 0.4rem', borderRadius: '6px',
+                    border: '1px solid var(--border)', background: 'var(--surface-2)',
+                    color: 'var(--text)', fontSize: '0.78rem'
+                  }}
+                >
+                  <option value="ALL">Alla set</option>
+                  {uniqueSets.map(s => <option key={s} value={String(s)}>Set {s}</option>)}
+                </select>
+                {scout && (
+                  <select
+                    value={filterTeam}
+                    onChange={e => setFilterTeam(e.target.value)}
+                    style={{
+                      flex: 1, padding: '0.3rem 0.4rem', borderRadius: '6px',
+                      border: '1px solid var(--border)', background: 'var(--surface-2)',
+                      color: 'var(--text)', fontSize: '0.78rem'
+                    }}
+                  >
+                    <option value="ALL">Båda lag</option>
+                    <option value="H">{scout.teams?.H || 'Hemma'}</option>
+                    <option value="V">{scout.teams?.V || 'Borta'}</option>
+                  </select>
+                )}
               </div>
-              <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap', marginBottom: '0.5rem' }}>
-                {uniqueSets.map(s => (
-                  <button key={s} onClick={() => setFilterSet(String(s))} style={filterBtnStyle(filterSet === String(s))}>{s}</button>
-                ))}
-              </div>
-
-              {/* Filter: Team */}
-              {scout && (
-                <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap', marginBottom: '0.5rem' }}>
-                  <button onClick={() => setFilterTeam('ALL')} style={filterBtnStyle(filterTeam === 'ALL')}>Båda lag</button>
-                  <button onClick={() => setFilterTeam('H')} style={filterBtnStyle(filterTeam === 'H')}>{scout.teams?.H || 'Hemma'}</button>
-                  <button onClick={() => setFilterTeam('V')} style={filterBtnStyle(filterTeam === 'V')}>{scout.teams?.V || 'Borta'}</button>
-                </div>
-              )}
 
               {/* Filter: Skill */}
               <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap', marginBottom: '0.25rem', alignItems: 'center' }}>
