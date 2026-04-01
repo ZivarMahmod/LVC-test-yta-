@@ -727,7 +727,7 @@ export default function VideoPlayerPage() {
 
               {/* Filter: Grade — symboler, text visas vid vald */}
               <div style={{ display: 'flex', gap: '0.35rem', flexWrap: 'wrap', marginTop: '0.4rem', alignItems: 'center' }}>
-                <button onClick={() => setFilterGrade('ALL')} style={filterBtnStyle(filterGrade === 'ALL')}>Alla</button>
+                <button onClick={() => setFilterGrade('ALL')} style={{...filterBtnStyle(filterGrade === 'ALL'), minWidth: 'auto', padding: '0.25rem 0.4rem'}} title="Alla">◆{filterGrade === 'ALL' ? ' Alla' : ''}</button>
                 {[
                   { key: '#', symbol: '●', label: 'Perfekt', color: '#4CAF50' },
                   { key: '+', symbol: '▲', label: 'Positiv', color: '#4CAF50' },
