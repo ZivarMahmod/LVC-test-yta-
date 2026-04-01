@@ -20,8 +20,6 @@ export default function RegisterPage() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
-  if (isAuthenticated) return <Navigate to="/" replace />;
-
   useEffect(() => {
     async function check() {
       try {
@@ -39,6 +37,8 @@ export default function RegisterPage() {
     }
     check();
   }, [token]);
+
+  if (isAuthenticated) return <Navigate to="/" replace />;
 
   const handleSubmit = async (e) => {
     e.preventDefault();
