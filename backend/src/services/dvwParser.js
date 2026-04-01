@@ -7,9 +7,12 @@ import path from 'path';
 const STORAGE_PATH = process.env.STORAGE_PATH || '/storage';
 
 const SKILL_MAP = {
-  S: 'Serve', R: 'Reception', E: 'Set', A: 'Attack',
-  B: 'Block', D: 'Dig', F: 'Freeball', O: 'Overpass'
+  S: 'Serve', R: 'Reception', E: 'Pass', A: 'Attack',
+  B: 'Block', D: 'Dig', F: 'Gratisboll', O: 'Overpass'
 };
+
+// Remap DVW skill codes to our codes (E→P, F→G)
+const SKILL_REMAP = { E: 'P', F: 'G' };
 
 const GRADE_MAP = {
   '#': 'Perfekt', '+': 'Positiv', '!': 'OK',
@@ -172,7 +175,7 @@ const parseScout = (lines, players, teams, matchStartSeconds, videoOffset) => {
       teamName: teams[team] || team,
       playerNumber: playerNum,
       playerName: player ? player.name : `#${playerNum}`,
-      skill,
+      skill: SKILL_REMAP[skill] || skill,
       skillName,
       grade,
       gradeName,

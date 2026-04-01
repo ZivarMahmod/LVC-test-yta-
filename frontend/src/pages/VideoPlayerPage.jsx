@@ -14,15 +14,15 @@ import DvwSearchPanel from '../components/player/DvwSearchPanel.jsx';
 import './VideoPlayerPage.css';
 
 const SKILL_COLORS = {
-  S: '#4CAF50', R: '#2196F3', E: '#FF9800',
+  S: '#4CAF50', R: '#2196F3', P: '#FF9800',
   A: '#F44336', B: '#9C27B0', D: '#00BCD4',
-  F: '#607D8B', O: '#795548'
+  G: '#607D8B', O: '#795548'
 };
 
 const SKILL_NAMES = {
-  S: 'Serve', R: 'Mottagning', E: 'Lyftning',
+  S: 'Serve', R: 'Mottagning', P: 'Pass',
   A: 'Anfall', B: 'Block', D: 'Försvar',
-  F: 'Fritt', O: 'Övrigt'
+  G: 'Gratisboll', O: 'Övrigt'
 };
 
 const GRADE_SYMBOLS = {

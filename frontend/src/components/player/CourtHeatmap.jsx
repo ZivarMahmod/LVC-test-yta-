@@ -32,7 +32,7 @@ const SKILL_OPTIONS = [
   { key: 'D', label: 'Försvar' },
 ];
 
-const SKILL_LABELS = { S: 'Serve', A: 'Anfall', R: 'Mottagning', B: 'Block', D: 'Försvar', E: 'Passning' };
+const SKILL_LABELS = { S: 'Serve', A: 'Anfall', R: 'Mottagning', B: 'Block', D: 'Försvar', P: 'Pass', G: 'Gratisboll' };
 
 const GRADE_FILTERS = [
   { key: 'all', label: 'Alla', color: '#f1f5f9', symbol: '' },
