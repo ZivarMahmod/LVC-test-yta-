@@ -685,57 +685,72 @@ export default function VideoPlayerPage() {
                 )}
               </div>
 
-              {/* Filter: Skill */}
-              <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap', marginBottom: '0.25rem', alignItems: 'center' }}>
-                <button onClick={() => setFilterSkill('ALL')} style={filterBtnStyle(filterSkill === 'ALL')}>Alla</button>
-                {uniqueSkills.map(s => (
-                  <button
-                    key={s}
-                    onClick={() => setFilterSkill(s)}
-                    title={SKILL_NAMES[s] || s}
-                    style={{...filterBtnStyle(filterSkill === s), borderColor: SKILL_COLORS[s] || '#666'}}
-                  >
-                    {filterSkill === s ? SKILL_NAMES[s] || s : s}
-                  </button>
-                ))}
-                <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: '0.3rem', flexShrink: 0 }}>
-                  <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Pre</span>
+              {/* Pre/Skip + Spelare */}
+              <div style={{ display: 'flex', gap: '0.4rem', marginBottom: '0.4rem', alignItems: 'center' }}>
+                <select
+                  value={filterPlayer}
+                  onChange={e => setFilterPlayer(e.target.value)}
+                  style={{
+                    flex: 1, padding: '0.3rem 0.4rem', borderRadius: '6px',
+                    border: '1px solid var(--border)', background: 'var(--surface-2)',
+                    color: 'var(--text)', fontSize: '0.78rem'
+                  }}
+                >
+                  <option value="ALL">Alla spelare</option>
+                  {uniquePlayers.map(({ number, team }) => {
+                    const key = team + '-' + number;
+                    const p = scout.players.find(pl => parseInt(pl.number, 10) === number && pl.team === team);
+                    const teamName = scout.teams?.[team] || team;
+                    return <option key={key} value={key}>#{number} {p ? p.name : ''} ({teamName})</option>;
+                  })}
+                </select>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', flexShrink: 0 }}>
+                  <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>Pre</span>
                   <select
                     value={preRoll}
                     onChange={e => setPreRoll(Number(e.target.value))}
-                    style={{ padding: '0.15rem 0.35rem', borderRadius: '4px', border: '1px solid var(--border)', background: 'var(--surface-2)', color: 'var(--text)', fontSize: '0.78rem' }}
+                    style={{ padding: '0.15rem 0.3rem', borderRadius: '4px', border: '1px solid var(--border)', background: 'var(--surface-2)', color: 'var(--text)', fontSize: '0.75rem' }}
                   >
                     {[0,2,3,5].map(s => <option key={s} value={s}>{s}s</option>)}
                   </select>
-                  <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Skip</span>
+                  <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>Skip</span>
                   <select
                     value={skipSeconds}
                     onChange={e => setSkipSeconds(Number(e.target.value))}
-                    style={{ padding: '0.15rem 0.35rem', borderRadius: '4px', border: '1px solid var(--border)', background: 'var(--surface-2)', color: 'var(--text)', fontSize: '0.78rem' }}
+                    style={{ padding: '0.15rem 0.3rem', borderRadius: '4px', border: '1px solid var(--border)', background: 'var(--surface-2)', color: 'var(--text)', fontSize: '0.75rem' }}
                   >
                     {[1,2,5,10,30].map(s => <option key={s} value={s}>{s}s</option>)}
                   </select>
                 </div>
               </div>
 
-              {/* Filter: Spelare */}
-              <select
-                value={filterPlayer}
-                onChange={e => setFilterPlayer(e.target.value)}
-                style={{
-                  width: '100%', padding: '0.35rem 0.5rem', borderRadius: '6px',
-                  border: '1px solid var(--border)', background: 'var(--surface-2)',
-                  color: 'var(--text)', fontSize: '0.82rem'
-                }}
-              >
-                <option value="ALL">Alla spelare</option>
-                {uniquePlayers.map(({ number, team }) => {
-                  const key = team + '-' + number;
-                  const p = scout.players.find(pl => parseInt(pl.number, 10) === number && pl.team === team);
-                  const teamName = scout.teams?.[team] || team;
-                  return <option key={key} value={key}>#{number} {p ? p.name : ''} ({teamName})</option>;
+              {/* Filter: Skill — pill-knappar */}
+              <div style={{ display: 'flex', gap: '0.3rem', flexWrap: 'wrap', marginBottom: '0.25rem', alignItems: 'center' }}>
+                {[{ key: 'ALL', label: 'Alla', color: '#94a3b8' }, ...uniqueSkills.map(s => ({ key: s, label: SKILL_NAMES[s] || s, color: SKILL_COLORS[s] || '#666' }))].map(sk => {
+                  const isActive = filterSkill === sk.key;
+                  return (
+                    <button
+                      key={sk.key}
+                      onClick={() => setFilterSkill(sk.key)}
+                      title={sk.label}
+                      style={{
+                        padding: '0.25rem 0.55rem',
+                        borderRadius: '12px',
+                        border: `1.5px solid ${isActive ? sk.color : 'transparent'}`,
+                        background: isActive ? `${sk.color}22` : 'var(--surface-2)',
+                        color: isActive ? sk.color : 'var(--text-muted)',
+                        fontSize: '0.72rem',
+                        fontWeight: isActive ? '600' : '400',
+                        cursor: 'pointer',
+                        transition: 'all 0.15s',
+                        letterSpacing: '0.02em',
+                      }}
+                    >
+                      {isActive ? sk.label : (sk.key === 'ALL' ? 'Alla' : sk.key)}
+                    </button>
+                  );
                 })}
-              </select>
+              </div>
 
               {/* Filter: Grade — symboler, text visas vid vald */}
               <div style={{ display: 'flex', gap: '0.35rem', flexWrap: 'wrap', marginTop: '0.4rem', alignItems: 'center' }}>
