@@ -370,12 +370,12 @@ export const settingsApi = {
     if (!res.ok) return null;
     return res.json();
   },
-  async updateSkillNames(names) {
+  async updateSkillNames(data) {
     const csrf = await apiFetch('/api/auth/csrf-token').then(r => r.json());
     const res = await apiFetch('/api/admin/settings/skill-names', {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json', 'x-csrf-token': csrf.csrfToken },
-      body: JSON.stringify(names)
+      body: JSON.stringify(data)
     });
     if (!res.ok) throw new Error('Kunde inte spara');
     return res.json();
