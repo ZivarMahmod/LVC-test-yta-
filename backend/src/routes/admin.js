@@ -91,4 +91,10 @@ router.post('/videos/:id/secondary-upload', csrfProtection, upload.single('video
 // Inställningar
 router.put('/settings/skill-names', csrfProtection, settingsController.updateSkillNames);
 
+// Aktiva användare
+import { getActiveUsers } from '../middleware/activityTracker.js';
+router.get('/active-users', (req, res) => {
+  res.json(getActiveUsers());
+});
+
 export default router;

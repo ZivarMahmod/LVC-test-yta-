@@ -221,6 +221,11 @@ export const videoApi = {
 
 // -------- Admin API --------
 export const adminApi = {
+  async getActiveUsers() {
+    const res = await apiFetch('/api/admin/active-users');
+    if (!res.ok) throw new Error('Kunde inte hämta');
+    return res.json();
+  },
   async listUsers() {
     const res = await apiFetch('/api/admin/users');
     if (!res.ok) throw new Error('Kunde inte hämta användare');

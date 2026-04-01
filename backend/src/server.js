@@ -25,6 +25,7 @@ import settingsRoutes from './routes/settings.js';
 import { thumbnailController } from './controllers/thumbnailController.js';
 import { adminController } from './controllers/adminController.js';
 import { authenticateToken, requireAdmin } from './middleware/auth.js';
+import { trackActivity, getActiveUsers } from './middleware/activityTracker.js';
 import { csrfProtection } from './middleware/csrf.js';
 import { startFolderScanner } from './services/folderScanner.js';
 
@@ -105,8 +106,8 @@ app.use((req, res, next) => {
 // API Routes
 // ===========================================
 app.use('/api/auth', authRoutes);
-app.use('/api/videos', videoRoutes);
-app.use('/api/admin', adminRoutes);
+app.use('/api/videos', trackActivity, videoRoutes);
+app.use('/api/admin', trackActivity, adminRoutes);
 app.use('/api/reviews', reviewRoutes);
 
 // Impersonering — kräver INTE admin-roll (verifierar via cookie)
