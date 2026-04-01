@@ -578,6 +578,29 @@ export const videoController = {
   }
 };
 
+// Scout-cache (in-memory, 10 min TTL)
+const scoutCache = new Map();
+const SCOUT_CACHE_TTL = 10 * 60 * 1000;
+
+const getCachedScout = async (videoId, dvwPath, videoOffset) => {
+  const cacheKey = `${videoId}:${videoOffset}`;
+  const cached = scoutCache.get(cacheKey);
+  if (cached && Date.now() - cached.timestamp < SCOUT_CACHE_TTL) {
+    return cached.data;
+  }
+  const { dvwParserService } = await import('../services/dvwParser.js');
+  const data = await dvwParserService.parseFile(dvwPath, videoOffset);
+  scoutCache.set(cacheKey, { data, timestamp: Date.now() });
+  // Rensa gamla entries om cachen växer
+  if (scoutCache.size > 50) {
+    const now = Date.now();
+    for (const [key, val] of scoutCache) {
+      if (now - val.timestamp > SCOUT_CACHE_TTL) scoutCache.delete(key);
+    }
+  }
+  return data;
+};
+
 // Exportera scout-data (läggs till befintlig export)
 export const scoutController = {
   async getScout(req, res) {
@@ -586,8 +609,7 @@ export const scoutController = {
       if (!video) return res.status(404).json({ error: 'Videon kunde inte hittas.' });
       if (!video.dvwPath) return res.status(404).json({ error: 'Ingen scout-fil hittades.' });
 
-      const { dvwParserService } = await import('../services/dvwParser.js');
-      const data = await dvwParserService.parseFile(video.dvwPath, video.videoOffset || 0);
+      const data = await getCachedScout(video.id, video.dvwPath, video.videoOffset || 0);
       res.json(data);
     } catch (error) {
       logger.error('Scout-fel:', error);
@@ -624,9 +646,121 @@ export const scoutController = {
         where: { id: req.params.id },
         data: { videoOffset: offset }
       });
+      // Invalidera cache vid offset-ändring
+      for (const key of scoutCache.keys()) {
+        if (key.startsWith(req.params.id + ':')) scoutCache.delete(key);
+      }
       res.json({ videoOffset: video.videoOffset });
     } catch (error) {
       res.status(500).json({ error: 'Kunde inte uppdatera offset.' });
+    }
+  }
+};
+
+// Historisk spelarstatistik — aggregerar data över flera matcher
+export const playerStatsController = {
+  async getPlayerHistory(req, res) {
+    try {
+      const { playerId } = req.params;
+      const { teamId } = req.query;
+
+      // Stödjer både UUID och tröjnummer-sökning
+      const isUuid = playerId.includes('-');
+      const player = isUuid
+        ? await prisma.user.findUnique({ where: { id: playerId }, select: { id: true, name: true, username: true, jerseyNumber: true } })
+        : await prisma.user.findFirst({ where: { jerseyNumber: parseInt(playerId, 10) }, select: { id: true, name: true, username: true, jerseyNumber: true } });
+      if (!player) return res.status(404).json({ error: 'Spelaren hittades inte.' });
+
+      // Hämta alla videor med DVW-filer (valfritt filtrerade på lag)
+      const where = { dvwPath: { not: null }, deletedAt: null };
+      if (teamId) where.teamId = parseInt(teamId);
+
+      const videos = await prisma.video.findMany({
+        where,
+        orderBy: { matchDate: 'desc' },
+        select: {
+          id: true, title: true, opponent: true, matchDate: true,
+          dvwPath: true, videoOffset: true,
+          team: { select: { id: true, name: true } }
+        },
+        take: 50
+      });
+
+      // Parsa varje video och extrahera spelarens statistik
+      const matches = [];
+      const totals = { serve: { total: 0, err: 0, pts: 0 }, attack: { total: 0, err: 0, blocked: 0, pts: 0 }, reception: { total: 0, pos: 0, exc: 0, err: 0 }, block: { pts: 0 }, dig: { total: 0, pos: 0, err: 0 }, totalPts: 0 };
+
+      for (const video of videos) {
+        try {
+          const data = await getCachedScout(video.id, video.dvwPath, video.videoOffset || 0);
+          const playerActions = data.actions.filter(a =>
+            a.playerNumber === player.jerseyNumber && a.team === 'H'
+          );
+          if (playerActions.length === 0) continue;
+
+          const stats = { serve: { total: 0, err: 0, pts: 0 }, attack: { total: 0, err: 0, blocked: 0, pts: 0 }, reception: { total: 0, pos: 0, exc: 0, err: 0 }, block: { pts: 0 }, dig: { total: 0, pos: 0, err: 0 }, totalPts: 0 };
+
+          for (const a of playerActions) {
+            const isErr = a.grade === '/' || a.grade === '=';
+            const isPerfect = a.grade === '#';
+            const isPositive = a.grade === '+';
+
+            switch (a.skill) {
+              case 'S':
+                stats.serve.total++;
+                if (isPerfect) { stats.serve.pts++; stats.totalPts++; }
+                if (isErr) stats.serve.err++;
+                break;
+              case 'A':
+                stats.attack.total++;
+                if (isPerfect) { stats.attack.pts++; stats.totalPts++; }
+                if (isErr) stats.attack.err++;
+                if (a.grade === '/') stats.attack.blocked++;
+                break;
+              case 'R':
+                stats.reception.total++;
+                if (isPerfect || isPositive) stats.reception.pos++;
+                if (isPerfect) stats.reception.exc++;
+                if (isErr) stats.reception.err++;
+                break;
+              case 'B':
+                if (isPerfect) { stats.block.pts++; stats.totalPts++; }
+                break;
+              case 'D':
+                stats.dig.total++;
+                if (isPerfect || isPositive) stats.dig.pos++;
+                if (isErr) stats.dig.err++;
+                break;
+            }
+          }
+
+          // Ackumulera totaler
+          for (const skill of ['serve', 'attack', 'reception', 'dig']) {
+            for (const key of Object.keys(totals[skill])) {
+              totals[skill][key] += stats[skill][key];
+            }
+          }
+          totals.block.pts += stats.block.pts;
+          totals.totalPts += stats.totalPts;
+
+          matches.push({
+            videoId: video.id,
+            title: video.title,
+            opponent: video.opponent,
+            matchDate: video.matchDate,
+            team: video.team,
+            stats,
+            actionCount: playerActions.length
+          });
+        } catch {
+          // Skippa videor vars DVW-filer inte kan läsas
+        }
+      }
+
+      res.json({ player, matches, totals, matchCount: matches.length });
+    } catch (error) {
+      logger.error('Spelarhistorik-fel:', error);
+      res.status(500).json({ error: 'Kunde inte hämta spelarhistorik.' });
     }
   }
 };

@@ -5,7 +5,7 @@ import { Router } from 'express';
 import multer from 'multer';
 const thumbnailUpload = multer({ dest: '/tmp/uploads/', limits: { fileSize: 5 * 1024 * 1024 } });
 const videoUpload = multer({ dest: '/tmp/uploads/', limits: { fileSize: 15 * 1024 * 1024 * 1024 } });
-import { videoController, scoutController } from '../controllers/videoController.js';
+import { videoController, scoutController, playerStatsController } from '../controllers/videoController.js';
 import { adminController } from '../controllers/adminController.js';
 import { authenticateToken, requireRole, requireViewer, requireAdmin, requireUploader } from '../middleware/auth.js';
 import { csrfProtection } from '../middleware/csrf.js';
@@ -24,6 +24,13 @@ router.get('/teams/:teamId/seasons',
   authenticateToken,
   requireViewer,
   adminController.listSeasons
+);
+
+// Historisk spelarstatistik
+router.get('/player-stats/:playerId',
+  authenticateToken,
+  requireViewer,
+  playerStatsController.getPlayerHistory
 );
 
 // Lista videor

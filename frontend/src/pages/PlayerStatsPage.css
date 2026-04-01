@@ -1,0 +1,137 @@
+.psp-container {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 20px 16px;
+  color: #f1f5f9;
+}
+.psp-loading, .psp-error, .psp-empty {
+  text-align: center;
+  padding: 60px 20px;
+  color: #94a3b8;
+  font-size: 16px;
+}
+.psp-error { color: #ef4444; }
+.psp-back {
+  background: #334155;
+  color: #94a3b8;
+  border: none;
+  padding: 6px 14px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 13px;
+  margin-bottom: 16px;
+}
+.psp-back:hover { background: #475569; color: #f1f5f9; }
+.psp-header h1 {
+  font-size: 24px;
+  margin: 0 0 4px;
+}
+.psp-jersey {
+  color: #3b82f6;
+  margin-right: 8px;
+}
+.psp-header p {
+  color: #64748b;
+  margin: 0 0 20px;
+  font-size: 14px;
+}
+.psp-summary {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(110px, 1fr));
+  gap: 10px;
+  margin-bottom: 24px;
+}
+.psp-stat-card {
+  background: #1e293b;
+  border-radius: 10px;
+  padding: 14px 12px;
+  text-align: center;
+}
+.psp-stat-value {
+  font-size: 24px;
+  font-weight: 700;
+  line-height: 1.2;
+}
+.psp-stat-label {
+  font-size: 12px;
+  color: #64748b;
+  margin-top: 4px;
+}
+.psp-stat-sub {
+  font-size: 11px;
+  color: #475569;
+  margin-top: 2px;
+}
+.psp-details, .psp-trends, .psp-matches {
+  background: #1e293b;
+  border-radius: 10px;
+  padding: 16px;
+  margin-bottom: 16px;
+}
+.psp-details h2, .psp-trends h2, .psp-matches h2 {
+  font-size: 16px;
+  margin: 0 0 12px;
+  color: #e2e8f0;
+}
+.psp-skill {
+  margin-bottom: 10px;
+}
+.psp-skill h4 {
+  margin: 0 0 4px;
+  font-size: 13px;
+  color: #94a3b8;
+}
+.psp-skill-row {
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+  font-size: 13px;
+  color: #cbd5e1;
+}
+.psp-trend-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 12px;
+}
+.psp-trend-label {
+  font-size: 12px;
+  color: #94a3b8;
+  margin-bottom: 4px;
+}
+.psp-match-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.psp-match-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 12px;
+  background: #0f172a;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.psp-match-row:hover { background: #1a2744; }
+.psp-match-info {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  font-size: 13px;
+}
+.psp-match-date { color: #64748b; }
+.psp-match-opponent { color: #e2e8f0; font-weight: 500; }
+.psp-match-team {
+  background: #334155;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 11px;
+  color: #94a3b8;
+}
+.psp-match-stats {
+  display: flex;
+  gap: 12px;
+  font-size: 12px;
+  color: #94a3b8;
+}

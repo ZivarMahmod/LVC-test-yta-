@@ -16,6 +16,32 @@ const GRADE_MAP = {
   '-': 'Negativ', '/': 'Error', '=': 'Error'
 };
 
+// Volleybollplanens zoner (standard numrering)
+// 4 | 3 | 2    (nät)
+// 5 | 6 | 1    (baklinje)
+const ZONE_POSITIONS = {
+  1: { x: 83, y: 75 },
+  2: { x: 83, y: 25 },
+  3: { x: 50, y: 25 },
+  4: { x: 17, y: 25 },
+  5: { x: 17, y: 75 },
+  6: { x: 50, y: 75 },
+  7: { x: 10, y: 50 },  // Utanför vänster
+  8: { x: 50, y: 10 },  // Bakom nät
+  9: { x: 90, y: 50 }   // Utanför höger
+};
+
+// Parsa 4-siffrig koordinat (XXYY) till {x, y} på 0-100 grid
+const parseCoordinate = (val) => {
+  if (!val || val.length < 4) return null;
+  const num = parseInt(val, 10);
+  if (isNaN(num) || num < 0) return null;
+  const x = Math.floor(num / 100);
+  const y = num % 100;
+  if (x > 100 || y > 100) return null;
+  return { x, y };
+};
+
 const timeToSeconds = (timeStr) => {
   if (!timeStr) return null;
   const parts = timeStr.split('.');
@@ -128,6 +154,16 @@ const parseScout = (lines, players, teams, matchStartSeconds, videoOffset) => {
     const skillName = SKILL_MAP[skill] || skill;
     const gradeName = GRADE_MAP[grade] || '';
 
+    // Zondata från kodsträngen (position 6+ om det finns)
+    const startZoneChar = code.length > 6 ? parseInt(code[6], 10) : NaN;
+    const endZoneChar = code.length > 7 ? parseInt(code[7], 10) : NaN;
+    const startZone = (!isNaN(startZoneChar) && startZoneChar >= 1 && startZoneChar <= 9) ? startZoneChar : null;
+    const endZone = (!isNaN(endZoneChar) && endZoneChar >= 1 && endZoneChar <= 9) ? endZoneChar : null;
+
+    // Koordinatdata från parts (DataVolley-format: XXYY)
+    const startCoord = parts.length > 13 ? parseCoordinate(parts[13]) : null;
+    const endCoord = parts.length > 15 ? parseCoordinate(parts[15]) : null;
+
     actions.push({
       id: actions.length,
       set: currentSet,
@@ -141,7 +177,11 @@ const parseScout = (lines, players, teams, matchStartSeconds, videoOffset) => {
       skillName,
       grade,
       gradeName,
-      rawCode: code
+      rawCode: code,
+      startZone,
+      endZone,
+      startCoord,
+      endCoord
     });
   }
 
@@ -175,6 +215,6 @@ export const dvwParserService = {
       ...Object.values(players.V)
     ];
 
-    return { teams, players: allPlayers, matchStart: matchStartSeconds, actions };
+    return { teams, players: allPlayers, matchStart: matchStartSeconds, actions, zonePositions: ZONE_POSITIONS };
   }
 };

@@ -8,6 +8,7 @@ import { scoutApi } from '../utils/api.js';
 import { useAuth } from '../context/AuthContext.jsx';
 import { formatFileSize, formatDate, formatVideoTime } from '../utils/format.js';
 import MatchReport from '../components/player/MatchReport.jsx';
+import CourtHeatmap from '../components/player/CourtHeatmap.jsx';
 import ReviewPanel from '../components/player/ReviewPanel.jsx';
 import DvwSearchPanel from '../components/player/DvwSearchPanel.jsx';
 import './VideoPlayerPage.css';
@@ -951,7 +952,19 @@ export default function VideoPlayerPage() {
 
             {/* Rapport-vy */}
             {scoutTab === 'rapport' && (
-              <MatchReport stats={getMatchStats()} onJumpToActions={jumpToPlayerActions} />
+              <>
+                <MatchReport stats={getMatchStats()} onJumpToActions={jumpToPlayerActions} />
+                {scout?.actions && (
+                  <div style={{ display: 'flex', gap: 12, marginTop: 16, flexWrap: 'wrap' }}>
+                    <div style={{ flex: 1, minWidth: 200 }}>
+                      <CourtHeatmap actions={scout.actions} team="H" />
+                    </div>
+                    <div style={{ flex: 1, minWidth: 200 }}>
+                      <CourtHeatmap actions={scout.actions} team="V" />
+                    </div>
+                  </div>
+                )}
+              </>
             )}
           </div>
         )}
