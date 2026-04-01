@@ -21,6 +21,7 @@ import videoRoutes from './routes/videos.js';
 import adminRoutes from './routes/admin.js';
 import reviewRoutes from './routes/reviews.js';
 import changelogRoutes from './routes/changelog.js';
+import settingsRoutes from './routes/settings.js';
 import { thumbnailController } from './controllers/thumbnailController.js';
 import { adminController } from './controllers/adminController.js';
 import { authenticateToken, requireAdmin } from './middleware/auth.js';
@@ -122,6 +123,9 @@ app.get('/api/team-thumbnail/:file', thumbnailController.serveTeamImage);
 
 // Changelog
 app.use('/api/changelog', changelogRoutes);
+
+// Inställningar
+app.use('/api/settings', settingsRoutes);
 
 // Health check
 app.get('/api/health', (req, res) => {

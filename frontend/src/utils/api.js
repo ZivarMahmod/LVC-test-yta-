@@ -364,6 +364,24 @@ export const teamApi = {
   }
 };
 
+export const settingsApi = {
+  async getSkillNames() {
+    const res = await apiFetch('/api/settings/skill-names');
+    if (!res.ok) return null;
+    return res.json();
+  },
+  async updateSkillNames(names) {
+    const csrf = await apiFetch('/api/auth/csrf-token').then(r => r.json());
+    const res = await apiFetch('/api/admin/settings/skill-names', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json', 'x-csrf-token': csrf.csrfToken },
+      body: JSON.stringify(names)
+    });
+    if (!res.ok) throw new Error('Kunde inte spara');
+    return res.json();
+  }
+};
+
 export const playerStatsApi = {
   async getHistory(playerId, teamId = null) {
     const params = teamId ? `?teamId=${teamId}` : '';

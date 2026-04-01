@@ -178,6 +178,12 @@ model CoachReview {
   @@index([createdAt])
 }
 
+model Setting {
+  key       String   @id
+  value     String
+  updatedAt DateTime @updatedAt
+}
+
 model AuditLog {
   id        String   @id @default(uuid())
   action    String

@@ -5,6 +5,7 @@ import { Router } from 'express';
 import multer from 'multer';
 const upload = multer({ dest: '/tmp/uploads/', limits: { fileSize: 5 * 1024 * 1024 } });
 import { adminController } from '../controllers/adminController.js';
+import { settingsController } from '../controllers/settingsController.js';
 import { authenticateToken, requireAdmin } from '../middleware/auth.js';
 import { adminLimiter } from '../middleware/rateLimiter.js';
 import { csrfProtection } from '../middleware/csrf.js';
@@ -86,5 +87,8 @@ router.delete('/invites/:id', csrfProtection, adminController.deleteInvite);
 router.patch('/videos/:id/assign', csrfProtection, adminController.assignVideo);
 router.patch('/videos/:id/secondary', csrfProtection, adminController.setSecondaryVideo);
 router.post('/videos/:id/secondary-upload', csrfProtection, upload.single('video'), adminController.uploadSecondaryVideo);
+
+// Inställningar
+router.put('/settings/skill-names', csrfProtection, settingsController.updateSkillNames);
 
 export default router;

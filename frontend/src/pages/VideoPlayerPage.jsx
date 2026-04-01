@@ -3,8 +3,7 @@
 // ===========================================
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useParams, Link, useNavigate, useSearchParams } from 'react-router-dom';
-import { videoApi } from '../utils/api.js';
-import { scoutApi } from '../utils/api.js';
+import { videoApi, scoutApi, settingsApi } from '../utils/api.js';
 import { useAuth } from '../context/AuthContext.jsx';
 import { formatFileSize, formatDate, formatVideoTime } from '../utils/format.js';
 import MatchReport from '../components/player/MatchReport.jsx';
@@ -19,7 +18,7 @@ const SKILL_COLORS = {
   G: '#607D8B', O: '#795548'
 };
 
-const SKILL_NAMES = {
+const DEFAULT_SKILL_NAMES = {
   S: 'Serve', R: 'Mottagning', P: 'Pass',
   A: 'Anfall', B: 'Block', D: 'Försvar',
   G: 'Gratisboll', O: 'Övrigt'
@@ -38,6 +37,12 @@ export default function VideoPlayerPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const videoRef = useRef(null);
+
+  // Skill-namn från inställningar
+  const [SKILL_NAMES, setSkillNames] = useState(DEFAULT_SKILL_NAMES);
+  useEffect(() => {
+    settingsApi.getSkillNames().then(names => { if (names) setSkillNames(names); }).catch(() => {});
+  }, []);
 
   // Scout state
   const [scout, setScout] = useState(null);

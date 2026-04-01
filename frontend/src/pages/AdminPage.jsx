@@ -3,7 +3,7 @@
 // Hantera användare, visa uppladdningshistorik
 // ===========================================
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { adminApi, videoApi } from '../utils/api.js';
+import { adminApi, videoApi, settingsApi } from '../utils/api.js';
 import { teamApi } from '../utils/api.js';
 import { useAuth } from '../context/AuthContext.jsx';
 import { inviteApi } from '../utils/api.js';
@@ -409,7 +409,29 @@ export default function AdminPage() {
     else if (tab === 'teams') fetchTeamsAdmin();
     else if (tab === 'deleted') fetchDeletedVideos();
     else if (tab === 'thumbnails') { fetchThumbLibrary(); fetchTeamsAdmin(); }
+    else if (tab === 'scout') fetchSkillNames();
   }, [tab, fetchUsers, fetchUploads, fetchTeamsAdmin, fetchDeletedVideos]);
+
+  // Scout-inställningar
+  const [skillNames, setSkillNames] = useState({});
+  const [skillSaving, setSkillSaving] = useState(false);
+  const [skillMsg, setSkillMsg] = useState('');
+  const fetchSkillNames = async () => {
+    try {
+      const names = await settingsApi.getSkillNames();
+      if (names) setSkillNames(names);
+    } catch {}
+  };
+  const handleSaveSkillNames = async () => {
+    setSkillSaving(true);
+    setSkillMsg('');
+    try {
+      await settingsApi.updateSkillNames(skillNames);
+      setSkillMsg('Sparat!');
+      setTimeout(() => setSkillMsg(''), 2000);
+    } catch { setSkillMsg('Kunde inte spara'); }
+    setSkillSaving(false);
+  };
 
   const handleCreateUser = async (userData) => {
     await adminApi.createUser(userData);
@@ -537,6 +559,12 @@ export default function AdminPage() {
           onClick={() => setTab('deleted')}
         >
           Borttagna{deletedVideos.length > 0 ? ` (${deletedVideos.length})` : ''}
+        </button>
+        <button
+          className={`admin-tab ${tab === 'scout' ? 'active' : ''}`}
+          onClick={() => setTab('scout')}
+        >
+          Scout
         </button>
       </div>
 
@@ -1134,6 +1162,38 @@ export default function AdminPage() {
               )}
             </>
           )}
+        </div>
+      )}
+
+      {tab === 'scout' && (
+        <div className="admin-section">
+          <h2>Scout — Skill-namn</h2>
+          <p className="text-muted" style={{ fontSize: '0.85rem', marginBottom: '1rem' }}>
+            Ändra visningsnamn för skill-bokstäver. Alla användare ser ändringarna.
+          </p>
+          <div style={{ display: 'grid', gridTemplateColumns: '50px 1fr', gap: '0.5rem 0.75rem', alignItems: 'center', maxWidth: 320 }}>
+            {Object.entries(skillNames).map(([key, name]) => (
+              <label key={key} style={{ display: 'contents' }}>
+                <span style={{ fontWeight: 700, fontSize: '1rem', textAlign: 'center', color: 'var(--text-muted)' }}>{key}</span>
+                <input
+                  type="text"
+                  value={name}
+                  onChange={e => setSkillNames(prev => ({ ...prev, [key]: e.target.value }))}
+                  style={{
+                    padding: '0.35rem 0.5rem', borderRadius: '6px',
+                    border: '1px solid var(--border)', background: 'var(--surface-2)',
+                    color: 'var(--text)', fontSize: '0.85rem'
+                  }}
+                />
+              </label>
+            ))}
+          </div>
+          <div style={{ marginTop: '1rem', display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
+            <button className="btn-gold" onClick={handleSaveSkillNames} disabled={skillSaving}>
+              {skillSaving ? 'Sparar...' : 'Spara'}
+            </button>
+            {skillMsg && <span style={{ fontSize: '0.85rem', color: skillMsg === 'Sparat!' ? '#22c55e' : '#ef4444' }}>{skillMsg}</span>}
+          </div>
         </div>
       )}
 
