@@ -236,40 +236,29 @@ ${buildPlayerTable(vPlayers, stats.V.name)}
 
       {/* Navigerbar statistik-sektion */}
       <div style={{ background: 'rgba(255,255,255,0.03)', borderRadius: '8px', padding: '0.5rem', marginBottom: '0.75rem' }}>
-        {/* Navigation header */}
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.4rem' }}>
+        {/* Navigation header — bara aktiv titel med pilar */}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 12, marginBottom: '0.4rem' }}>
           <button
             onClick={prevPage}
             style={{
-              background: 'none', border: 'none', color: '#94a3b8', fontSize: '1.1rem',
-              cursor: 'pointer', padding: '2px 8px', borderRadius: 4
+              background: 'none', border: 'none', color: '#94a3b8', fontSize: '1.2rem',
+              cursor: 'pointer', padding: '4px 10px', borderRadius: 4
             }}
           >
             ‹
           </button>
-          <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
-            {STAT_SECTIONS.map((s, i) => (
-              <button
-                key={s.key}
-                onClick={() => setStatPage(i)}
-                style={{
-                  background: 'none', border: 'none', padding: '2px 6px', cursor: 'pointer',
-                  fontSize: i === statPage ? '0.75rem' : '0.65rem',
-                  fontWeight: i === statPage ? '700' : '400',
-                  color: i === statPage ? '#f1f5f9' : '#64748b',
-                  borderBottom: i === statPage ? '2px solid #3b82f6' : '2px solid transparent',
-                  transition: 'all 0.15s'
-                }}
-              >
-                {s.label}
-              </button>
-            ))}
-          </div>
+          <span style={{
+            fontSize: '0.85rem', fontWeight: '700', color: '#f1f5f9',
+            minWidth: 90, textAlign: 'center',
+            textTransform: 'uppercase', letterSpacing: '0.05em'
+          }}>
+            {currentSection.label}
+          </span>
           <button
             onClick={nextPage}
             style={{
-              background: 'none', border: 'none', color: '#94a3b8', fontSize: '1.1rem',
-              cursor: 'pointer', padding: '2px 8px', borderRadius: 4
+              background: 'none', border: 'none', color: '#94a3b8', fontSize: '1.2rem',
+              cursor: 'pointer', padding: '4px 10px', borderRadius: 4
             }}
           >
             ›
