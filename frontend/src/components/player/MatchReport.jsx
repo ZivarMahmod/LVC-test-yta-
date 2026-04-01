@@ -178,36 +178,71 @@ export default function MatchReport({ stats, onJumpToActions }) {
   const vPlayers = Object.values(stats.V.players).sort((a, b) => b.pts - a.pts);
 
   const handleExport = () => {
+    const now = new Date();
+    const dateStr = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')} ${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
+
     const buildPlayerTable = (players, teamName) => {
       const rows = players.map(p =>
-        `<tr><td>#${p.number}</td><td>${p.name}</td><td>${p.pts}</td>` +
-        `<td>${p.serve.total} (${p.serve.pts}A, ${p.serve.err}E)</td>` +
-        `<td>${p.attack.total} (${p.attack.pts}K, ${p.attack.err}E)</td>` +
-        `<td>${p.reception.total} (${pct(p.reception.pos, p.reception.total)} pos)</td>` +
-        `<td>${p.dig.total} (${p.dig.pos} pos)</td>` +
-        `<td>${p.block.pts}</td></tr>`
+        `<tr>
+          <td class="num">#${p.number}</td>
+          <td>${p.name}</td>
+          <td class="num">${p.pts}</td>
+          <td class="num">${p.serve.total} (${p.serve.pts}A, ${p.serve.err}E)</td>
+          <td class="num">${p.attack.total} (${p.attack.pts}K, ${p.attack.err}E)</td>
+          <td class="num">${p.reception.total > 0 ? p.reception.total + ' (' + pct(p.reception.pos, p.reception.total) + ' pos)' : '0 (- pos)'}</td>
+          <td class="num">${p.dig.total} (${p.dig.pos} pos)</td>
+          <td class="num">${p.block.pts}</td>
+        </tr>`
       ).join('');
-      return `<h3>${teamName}</h3><table><tr><th></th><th>Spelare</th><th>Pts</th><th>Serve</th><th>Anfall</th><th>Mottagning</th><th>Försvar</th><th>Block</th></tr>${rows}</table>`;
+      return `<h3>${teamName}</h3>
+        <table>
+          <thead><tr>
+            <th></th><th>Spelare</th><th>Pts</th>
+            <th>Serve</th><th>Anfall</th><th>Mottagning</th><th>Försvar</th><th>Block</th>
+          </tr></thead>
+          <tbody>${rows}</tbody>
+        </table>`;
     };
 
     const html = `<!DOCTYPE html><html><head><meta charset="utf-8"><title>Matchrapport</title>
-<style>body{font-family:system-ui;max-width:800px;margin:20px auto;color:#1e293b}
-h1{font-size:20px}h2{font-size:16px;border-bottom:1px solid #e2e8f0;padding-bottom:4px}
-h3{font-size:14px;margin:12px 0 4px}table{width:100%;border-collapse:collapse;font-size:12px;margin-bottom:16px}
-th,td{text-align:left;padding:4px 8px;border-bottom:1px solid #f1f5f9}th{background:#f8fafc;font-weight:600}
-.stat-row{display:flex;justify-content:space-between;padding:2px 0;font-size:13px}
-.label{color:#64748b}.val{font-weight:600}@media print{body{margin:0}}</style></head><body>
+<style>
+  * { box-sizing: border-box; }
+  body { font-family: system-ui, -apple-system, sans-serif; max-width: 800px; margin: 0 auto; padding: 20px; color: #1e293b; font-size: 13px; }
+  .header { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 8px; color: #64748b; font-size: 11px; }
+  h1 { font-size: 20px; margin: 0 0 4px 0; }
+  h2 { font-size: 15px; border-bottom: 2px solid #334155; padding-bottom: 4px; margin: 16px 0 8px 0; }
+  h3 { font-size: 14px; font-weight: 700; margin: 14px 0 6px 0; }
+  .summary { margin-bottom: 12px; }
+  .summary .row { display: flex; justify-content: space-between; padding: 3px 0; border-bottom: 1px solid #f1f5f9; }
+  .summary .label { color: #64748b; }
+  .summary .val { font-weight: 600; text-align: right; }
+  table { width: 100%; border-collapse: collapse; font-size: 11px; margin-bottom: 12px; }
+  thead th { background: #f8fafc; font-weight: 700; text-align: left; padding: 5px 6px; border-bottom: 2px solid #e2e8f0; white-space: nowrap; }
+  tbody td { padding: 4px 6px; border-bottom: 1px solid #f1f5f9; }
+  tbody tr:hover { background: #f8fafc; }
+  .num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .footer { color: #94a3b8; font-size: 10px; margin-top: 20px; border-top: 1px solid #e2e8f0; padding-top: 8px; }
+  @media print { body { margin: 0; padding: 10px; } }
+</style></head><body>
+<div class="header">
+  <span>${dateStr}</span>
+  <span>Matchrapport</span>
+</div>
 <h1>${stats.H.name} vs ${stats.V.name}</h1>
+
 <h2>Sammanfattning</h2>
-<div class="stat-row"><span class="label">Totala poäng</span><span class="val">${stats.H.totalPts} - ${stats.V.totalPts}</span></div>
-<div class="stat-row"><span class="label">Serve (ess/fel)</span><span class="val">${stats.H.serve.pts}/${stats.H.serve.err} - ${stats.V.serve.pts}/${stats.V.serve.err}</span></div>
-<div class="stat-row"><span class="label">Anfall (kill/tot)</span><span class="val">${stats.H.attack.pts}/${stats.H.attack.total} - ${stats.V.attack.pts}/${stats.V.attack.total}</span></div>
-<div class="stat-row"><span class="label">Mottagning pos%</span><span class="val">${pct(stats.H.reception.pos, stats.H.reception.total)} - ${pct(stats.V.reception.pos, stats.V.reception.total)}</span></div>
-<div class="stat-row"><span class="label">Block</span><span class="val">${stats.H.block.pts} - ${stats.V.block.pts}</span></div>
+<div class="summary">
+  <div class="row"><span class="label">Totala poäng</span><span class="val">${stats.H.totalPts} - ${stats.V.totalPts}</span></div>
+  <div class="row"><span class="label">Serve (ess/fel)</span><span class="val">${stats.H.serve.pts}/${stats.H.serve.err} - ${stats.V.serve.pts}/${stats.V.serve.err}</span></div>
+  <div class="row"><span class="label">Anfall (kill/tot)</span><span class="val">${stats.H.attack.pts}/${stats.H.attack.total} - ${stats.V.attack.pts}/${stats.V.attack.total}</span></div>
+  <div class="row"><span class="label">Mottagning pos%</span><span class="val">${pct(stats.H.reception.pos, stats.H.reception.total)} - ${pct(stats.V.reception.pos, stats.V.reception.total)}</span></div>
+  <div class="row"><span class="label">Block</span><span class="val">${stats.H.block.pts} - ${stats.V.block.pts}</span></div>
+</div>
+
 <h2>Spelarstatistik</h2>
 ${buildPlayerTable(hPlayers, stats.H.name)}
 ${buildPlayerTable(vPlayers, stats.V.name)}
-<p style="color:#94a3b8;font-size:11px;margin-top:24px">Genererad av LVC Media Hub</p>
+<div class="footer">Genererad av LVC Media Hub</div>
 </body></html>`;
 
     const win = window.open('', '_blank');

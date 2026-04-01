@@ -47,6 +47,7 @@ export default function VideoPlayerPage() {
   const [filterSet, setFilterSet] = useState('ALL');
   const [filterTeam, setFilterTeam] = useState('ALL');
   const [filterGrade, setFilterGrade] = useState('ALL');
+  const [showGradeFilter, setShowGradeFilter] = useState(false);
   const [offset, setOffset] = useState(0);
   const [offsetInput, setOffsetInput] = useState('0');
   const [activeActionId, setActiveActionId] = useState(null);
@@ -725,14 +726,31 @@ export default function VideoPlayerPage() {
                 })}
               </select>
 
-              {/* Filter: Grade */}
-              <div style={{ display: 'flex', gap: '0.3rem', flexWrap: 'wrap', marginTop: '0.4rem' }}>
-                <button onClick={() => setFilterGrade('ALL')} style={filterBtnStyle(filterGrade === 'ALL')}>Alla</button>
-                <button onClick={() => setFilterGrade('#')} style={{...filterBtnStyle(filterGrade === '#'), color: filterGrade === '#' ? '#fff' : '#4CAF50'}} title="Perfekt">● Perfekt</button>
-                <button onClick={() => setFilterGrade('+')} style={{...filterBtnStyle(filterGrade === '+'), color: filterGrade === '+' ? '#fff' : '#4CAF50'}} title="Positiv">▲ Positiv</button>
-                <button onClick={() => setFilterGrade('!')} style={{...filterBtnStyle(filterGrade === '!'), color: filterGrade === '!' ? '#fff' : '#FF9800'}} title="OK">■ OK</button>
-                <button onClick={() => setFilterGrade('-')} style={{...filterBtnStyle(filterGrade === '-'), color: filterGrade === '-' ? '#fff' : '#F44336'}} title="Negativ">▼ Negativ</button>
-                <button onClick={() => setFilterGrade('ERR')} style={{...filterBtnStyle(filterGrade === 'ERR'), color: filterGrade === 'ERR' ? '#fff' : '#F44336'}} title="Error">✕ Error</button>
+              {/* Filter: Grade — infällbar */}
+              <div style={{ marginTop: '0.4rem' }}>
+                <button
+                  onClick={() => setShowGradeFilter(prev => !prev)}
+                  style={{
+                    ...filterBtnStyle(filterGrade !== 'ALL'),
+                    fontSize: '0.72rem',
+                    display: 'flex', alignItems: 'center', gap: 4
+                  }}
+                >
+                  {filterGrade !== 'ALL'
+                    ? `Filtrerar: ${filterGrade === '#' ? 'Perfekt' : filterGrade === '+' ? 'Positiv' : filterGrade === '!' ? 'OK' : filterGrade === '-' ? 'Negativ' : 'Error'}`
+                    : 'Filtrera kvalitet'}
+                  <span style={{ fontSize: '0.65rem' }}>{showGradeFilter ? '▲' : '▼'}</span>
+                </button>
+                {showGradeFilter && (
+                  <div style={{ display: 'flex', gap: '0.3rem', flexWrap: 'wrap', marginTop: '0.3rem' }}>
+                    <button onClick={() => setFilterGrade('ALL')} style={filterBtnStyle(filterGrade === 'ALL')}>Alla</button>
+                    <button onClick={() => setFilterGrade('#')} style={{...filterBtnStyle(filterGrade === '#'), color: filterGrade === '#' ? '#fff' : '#4CAF50'}} title="Perfekt">● Perfekt</button>
+                    <button onClick={() => setFilterGrade('+')} style={{...filterBtnStyle(filterGrade === '+'), color: filterGrade === '+' ? '#fff' : '#4CAF50'}} title="Positiv">▲ Positiv</button>
+                    <button onClick={() => setFilterGrade('!')} style={{...filterBtnStyle(filterGrade === '!'), color: filterGrade === '!' ? '#fff' : '#FF9800'}} title="OK">■ OK</button>
+                    <button onClick={() => setFilterGrade('-')} style={{...filterBtnStyle(filterGrade === '-'), color: filterGrade === '-' ? '#fff' : '#F44336'}} title="Negativ">▼ Negativ</button>
+                    <button onClick={() => setFilterGrade('ERR')} style={{...filterBtnStyle(filterGrade === 'ERR'), color: filterGrade === 'ERR' ? '#fff' : '#F44336'}} title="Error">✕ Error</button>
+                  </div>
+                )}
               </div>
 
               </div>
