@@ -404,7 +404,7 @@ export default function AdminPage() {
   }, []);
 
   useEffect(() => {
-    if (tab === 'users') { fetchUsers(); fetchInvites(); fetchTeamsAdmin(); }
+    if (tab === 'users') { fetchUsers(); fetchInvites(); fetchTeamsAdmin(); fetchActiveUsers(); }
     else if (tab === 'uploads') fetchUploads();
     else if (tab === 'teams') fetchTeamsAdmin();
     else if (tab === 'deleted') fetchDeletedVideos();
@@ -820,8 +820,14 @@ export default function AdminPage() {
                         </span>
                       </td>
                       <td>
-                        <span className={`status-dot ${u.isActive ? 'active' : 'inactive'}`} />
-                        {u.isActive ? 'Aktiv' : 'Inaktiv'}
+                        {(() => {
+                          const isOnline = activeData.online.some(a => a.id === u.id);
+                          const isRecent = activeData.recent.some(a => a.id === u.id);
+                          if (!u.isActive) return <><span className="status-dot inactive" /> Inaktiv</>;
+                          if (isOnline) return <><span className="status-dot" style={{ background: '#22c55e' }} /> Online</>;
+                          if (isRecent) return <><span className="status-dot" style={{ background: '#f59e0b' }} /> Nyligen</>;
+                          return <><span className="status-dot" style={{ background: '#ef4444' }} /> Offline</>;
+                        })()}
                       </td>
                       <td className="text-muted">{u._count?.videos || 0}</td>
                       <td className="text-muted">
