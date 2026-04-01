@@ -106,8 +106,69 @@ function TeamPlayerList({ players, team, teamName, color, titleColor, selectedPl
   );
 }
 
+const STAT_SECTIONS = [
+  { key: 'points', label: 'Poäng' },
+  { key: 'serve', label: 'Serve' },
+  { key: 'attack', label: 'Anfall' },
+  { key: 'reception', label: 'Mottagning' },
+  { key: 'defense', label: 'Försvar' },
+];
+
+function StatSection({ section, stats }) {
+  switch (section) {
+    case 'points':
+      return (
+        <>
+          <StatBar label="Totalt" home={stats.H.totalPts} away={stats.V.totalPts} />
+          <StatBar label="Serve ace" home={stats.H.serve.pts} away={stats.V.serve.pts} />
+          <StatBar label="Anfall" home={stats.H.attack.pts} away={stats.V.attack.pts} />
+          <StatBar label="Block" home={stats.H.block.pts} away={stats.V.block.pts} />
+        </>
+      );
+    case 'serve':
+      return (
+        <>
+          <StatBar label="Totalt" home={stats.H.serve.total} away={stats.V.serve.total} />
+          <StatBar label="Aces" home={stats.H.serve.pts} away={stats.V.serve.pts} />
+          <StatBar label="Errors" home={stats.H.serve.err} away={stats.V.serve.err} higherIsBetter={false} />
+          <StatBar label="Miss %" home={pct(stats.H.serve.err, stats.H.serve.total)} away={pct(stats.V.serve.err, stats.V.serve.total)} higherIsBetter={false} />
+          <StatBar label="Ace %" home={pct(stats.H.serve.pts, stats.H.serve.total)} away={pct(stats.V.serve.pts, stats.V.serve.total)} />
+        </>
+      );
+    case 'attack':
+      return (
+        <>
+          <StatBar label="Totalt" home={stats.H.attack.total} away={stats.V.attack.total} />
+          <StatBar label="Kill" home={stats.H.attack.pts} away={stats.V.attack.pts} />
+          <StatBar label="Kill %" home={pct(stats.H.attack.pts, stats.H.attack.total)} away={pct(stats.V.attack.pts, stats.V.attack.total)} />
+          <StatBar label="Errors" home={stats.H.attack.err} away={stats.V.attack.err} higherIsBetter={false} />
+          <StatBar label="Blocked" home={stats.H.attack.blocked} away={stats.V.attack.blocked} higherIsBetter={false} />
+        </>
+      );
+    case 'reception':
+      return (
+        <>
+          <StatBar label="Totalt" home={stats.H.reception.total} away={stats.V.reception.total} />
+          <StatBar label="Positiv %" home={pct(stats.H.reception.pos, stats.H.reception.total)} away={pct(stats.V.reception.pos, stats.V.reception.total)} />
+          <StatBar label="Excellent %" home={pct(stats.H.reception.exc, stats.H.reception.total)} away={pct(stats.V.reception.exc, stats.V.reception.total)} />
+          <StatBar label="Errors" home={stats.H.reception.err} away={stats.V.reception.err} higherIsBetter={false} />
+        </>
+      );
+    case 'defense':
+      return (
+        <>
+          <StatBar label="Totalt" home={stats.H.dig.total} away={stats.V.dig.total} />
+          <StatBar label="Positiv %" home={pct(stats.H.dig.pos, stats.H.dig.total)} away={pct(stats.V.dig.pos, stats.V.dig.total)} />
+        </>
+      );
+    default:
+      return null;
+  }
+}
+
 export default function MatchReport({ stats, onJumpToActions }) {
   const [selectedPlayer, setSelectedPlayer] = useState(null);
+  const [statPage, setStatPage] = useState(0);
   const navigate = useNavigate();
   const handleShowHistory = (jerseyNumber) => navigate(`/player/${jerseyNumber}`);
 
@@ -126,7 +187,7 @@ export default function MatchReport({ stats, onJumpToActions }) {
         `<td>${p.dig.total} (${p.dig.pos} pos)</td>` +
         `<td>${p.block.pts}</td></tr>`
       ).join('');
-      return `<h3>${teamName}</h3><table><tr><th></th><th>Spelare</th><th>Pts</th><th>Serve</th><th>Angrepp</th><th>Mottagning</th><th>Försvar</th><th>Block</th></tr>${rows}</table>`;
+      return `<h3>${teamName}</h3><table><tr><th></th><th>Spelare</th><th>Pts</th><th>Serve</th><th>Anfall</th><th>Mottagning</th><th>Försvar</th><th>Block</th></tr>${rows}</table>`;
     };
 
     const html = `<!DOCTYPE html><html><head><meta charset="utf-8"><title>Matchrapport</title>
@@ -140,7 +201,7 @@ th,td{text-align:left;padding:4px 8px;border-bottom:1px solid #f1f5f9}th{backgro
 <h2>Sammanfattning</h2>
 <div class="stat-row"><span class="label">Totala poäng</span><span class="val">${stats.H.totalPts} - ${stats.V.totalPts}</span></div>
 <div class="stat-row"><span class="label">Serve (ess/fel)</span><span class="val">${stats.H.serve.pts}/${stats.H.serve.err} - ${stats.V.serve.pts}/${stats.V.serve.err}</span></div>
-<div class="stat-row"><span class="label">Angrepp (kill/tot)</span><span class="val">${stats.H.attack.pts}/${stats.H.attack.total} - ${stats.V.attack.pts}/${stats.V.attack.total}</span></div>
+<div class="stat-row"><span class="label">Anfall (kill/tot)</span><span class="val">${stats.H.attack.pts}/${stats.H.attack.total} - ${stats.V.attack.pts}/${stats.V.attack.total}</span></div>
 <div class="stat-row"><span class="label">Mottagning pos%</span><span class="val">${pct(stats.H.reception.pos, stats.H.reception.total)} - ${pct(stats.V.reception.pos, stats.V.reception.total)}</span></div>
 <div class="stat-row"><span class="label">Block</span><span class="val">${stats.H.block.pts} - ${stats.V.block.pts}</span></div>
 <h2>Spelarstatistik</h2>
@@ -154,6 +215,10 @@ ${buildPlayerTable(vPlayers, stats.V.name)}
     win.document.close();
     setTimeout(() => win.print(), 300);
   };
+
+  const currentSection = STAT_SECTIONS[statPage];
+  const prevPage = () => setStatPage(p => (p - 1 + STAT_SECTIONS.length) % STAT_SECTIONS.length);
+  const nextPage = () => setStatPage(p => (p + 1) % STAT_SECTIONS.length);
 
   return (
     <div style={{ overflowY: 'auto', flex: 1, padding: '0.75rem' }}>
@@ -169,37 +234,64 @@ ${buildPlayerTable(vPlayers, stats.V.name)}
         <span>{stats.V.name}</span>
       </div>
 
-      {/* Nyckeltal */}
+      {/* Navigerbar statistik-sektion */}
       <div style={{ background: 'rgba(255,255,255,0.03)', borderRadius: '8px', padding: '0.5rem', marginBottom: '0.75rem' }}>
-        <div style={{ textAlign: 'center', fontSize: '0.7rem', color: 'var(--text-muted)', marginBottom: '0.3rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Poäng</div>
-        <StatBar label="Totalt" home={stats.H.totalPts} away={stats.V.totalPts} />
-        <StatBar label="Serve ace" home={stats.H.serve.pts} away={stats.V.serve.pts} />
-        <StatBar label="Attack" home={stats.H.attack.pts} away={stats.V.attack.pts} />
-        <StatBar label="Block" home={stats.H.block.pts} away={stats.V.block.pts} />
+        {/* Navigation header */}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.4rem' }}>
+          <button
+            onClick={prevPage}
+            style={{
+              background: 'none', border: 'none', color: '#94a3b8', fontSize: '1.1rem',
+              cursor: 'pointer', padding: '2px 8px', borderRadius: 4
+            }}
+          >
+            ‹
+          </button>
+          <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+            {STAT_SECTIONS.map((s, i) => (
+              <button
+                key={s.key}
+                onClick={() => setStatPage(i)}
+                style={{
+                  background: 'none', border: 'none', padding: '2px 6px', cursor: 'pointer',
+                  fontSize: i === statPage ? '0.75rem' : '0.65rem',
+                  fontWeight: i === statPage ? '700' : '400',
+                  color: i === statPage ? '#f1f5f9' : '#64748b',
+                  borderBottom: i === statPage ? '2px solid #3b82f6' : '2px solid transparent',
+                  transition: 'all 0.15s'
+                }}
+              >
+                {s.label}
+              </button>
+            ))}
+          </div>
+          <button
+            onClick={nextPage}
+            style={{
+              background: 'none', border: 'none', color: '#94a3b8', fontSize: '1.1rem',
+              cursor: 'pointer', padding: '2px 8px', borderRadius: 4
+            }}
+          >
+            ›
+          </button>
+        </div>
 
-        <div style={{ textAlign: 'center', fontSize: '0.7rem', color: 'var(--text-muted)', margin: '0.5rem 0 0.3rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Serve</div>
-        <StatBar label="Totalt" home={stats.H.serve.total} away={stats.V.serve.total} />
-        <StatBar label="Aces" home={stats.H.serve.pts} away={stats.V.serve.pts} />
-        <StatBar label="Errors" home={stats.H.serve.err} away={stats.V.serve.err} higherIsBetter={false} />
-        <StatBar label="Miss %" home={pct(stats.H.serve.err, stats.H.serve.total)} away={pct(stats.V.serve.err, stats.V.serve.total)} higherIsBetter={false} />
-        <StatBar label="Ace %" home={pct(stats.H.serve.pts, stats.H.serve.total)} away={pct(stats.V.serve.pts, stats.V.serve.total)} />
+        {/* Section content */}
+        <StatSection section={currentSection.key} stats={stats} />
 
-        <div style={{ textAlign: 'center', fontSize: '0.7rem', color: 'var(--text-muted)', margin: '0.5rem 0 0.3rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Anfall</div>
-        <StatBar label="Totalt" home={stats.H.attack.total} away={stats.V.attack.total} />
-        <StatBar label="Kill" home={stats.H.attack.pts} away={stats.V.attack.pts} />
-        <StatBar label="Kill %" home={pct(stats.H.attack.pts, stats.H.attack.total)} away={pct(stats.V.attack.pts, stats.V.attack.total)} />
-        <StatBar label="Errors" home={stats.H.attack.err} away={stats.V.attack.err} higherIsBetter={false} />
-        <StatBar label="Blocked" home={stats.H.attack.blocked} away={stats.V.attack.blocked} higherIsBetter={false} />
-
-        <div style={{ textAlign: 'center', fontSize: '0.7rem', color: 'var(--text-muted)', margin: '0.5rem 0 0.3rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Mottagning</div>
-        <StatBar label="Totalt" home={stats.H.reception.total} away={stats.V.reception.total} />
-        <StatBar label="Positiv %" home={pct(stats.H.reception.pos, stats.H.reception.total)} away={pct(stats.V.reception.pos, stats.V.reception.total)} />
-        <StatBar label="Excellent %" home={pct(stats.H.reception.exc, stats.H.reception.total)} away={pct(stats.V.reception.exc, stats.V.reception.total)} />
-        <StatBar label="Errors" home={stats.H.reception.err} away={stats.V.reception.err} higherIsBetter={false} />
-
-        <div style={{ textAlign: 'center', fontSize: '0.7rem', color: 'var(--text-muted)', margin: '0.5rem 0 0.3rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Försvar</div>
-        <StatBar label="Totalt" home={stats.H.dig.total} away={stats.V.dig.total} />
-        <StatBar label="Positiv %" home={pct(stats.H.dig.pos, stats.H.dig.total)} away={pct(stats.V.dig.pos, stats.V.dig.total)} />
+        {/* Page indicator dots */}
+        <div style={{ display: 'flex', justifyContent: 'center', gap: 4, marginTop: '0.4rem' }}>
+          {STAT_SECTIONS.map((_, i) => (
+            <div
+              key={i}
+              style={{
+                width: i === statPage ? 12 : 5, height: 5, borderRadius: 3,
+                background: i === statPage ? '#3b82f6' : '#475569',
+                transition: 'all 0.2s'
+              }}
+            />
+          ))}
+        </div>
       </div>
 
       {/* Hemmalag */}
