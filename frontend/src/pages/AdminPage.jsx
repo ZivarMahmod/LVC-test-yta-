@@ -1188,8 +1188,15 @@ export default function AdminPage() {
                                 ?.seasons?.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
                             </select>
                           </td>
-                          <td>
+                          <td style={{ display: 'flex', gap: '0.4rem' }}>
                             <button className="btn-gold btn-sm" onClick={() => handleAssignVideo(v.id)}>Spara</button>
+                            <button className="btn-danger btn-sm" onClick={async () => {
+                              if (!confirm(`Ta bort "${v.title}"?`)) return;
+                              try {
+                                await videoApi.remove(v.id);
+                                setAllVideos(prev => prev.filter(vid => vid.id !== v.id));
+                              } catch (err) { setError(err.message); }
+                            }}>Ta bort</button>
                           </td>
                         </tr>
                       ))}
