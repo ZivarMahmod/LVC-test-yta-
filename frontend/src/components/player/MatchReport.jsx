@@ -106,7 +106,7 @@ function TeamPlayerList({ players, team, teamName, color, titleColor, selectedPl
   );
 }
 
-export default function MatchReport({ stats, onJumpToActions }) {
+export default function MatchReport({ stats, onJumpToActions, heatmapContent }) {
   const [selectedPlayer, setSelectedPlayer] = useState(null);
   const navigate = useNavigate();
   const handleShowHistory = (jerseyNumber) => navigate(`/player/${jerseyNumber}`);
@@ -227,6 +227,8 @@ ${buildPlayerTable(vPlayers, stats.V.name)}
         onJumpToActions={onJumpToActions}
         onShowHistory={handleShowHistory}
       />
+
+      {heatmapContent}
     </div>
   );
 }

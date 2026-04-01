@@ -952,19 +952,17 @@ export default function VideoPlayerPage() {
 
             {/* Rapport-vy */}
             {scoutTab === 'rapport' && (
-              <>
-                <MatchReport stats={getMatchStats()} onJumpToActions={jumpToPlayerActions} />
-                {scout?.actions && (
-                  <div style={{ display: 'flex', gap: 12, marginTop: 16, flexWrap: 'wrap' }}>
-                    <div style={{ flex: 1, minWidth: 200 }}>
-                      <CourtHeatmap actions={scout.actions} team="H" />
+              <MatchReport stats={getMatchStats()} onJumpToActions={jumpToPlayerActions} heatmapContent={
+                scout?.actions ? (
+                  <details style={{ marginTop: 8 }}>
+                    <summary style={{ cursor: 'pointer', color: '#94a3b8', fontSize: '0.78rem', padding: '4px 0', userSelect: 'none' }}>Visa planvy / heatmap</summary>
+                    <div style={{ display: 'flex', gap: 8, marginTop: 8, flexDirection: 'column' }}>
+                      <CourtHeatmap actions={scout.actions} team="H" teamName={scout.teams?.H} />
+                      <CourtHeatmap actions={scout.actions} team="V" teamName={scout.teams?.V} />
                     </div>
-                    <div style={{ flex: 1, minWidth: 200 }}>
-                      <CourtHeatmap actions={scout.actions} team="V" />
-                    </div>
-                  </div>
-                )}
-              </>
+                  </details>
+                ) : null
+              } />
             )}
           </div>
         )}

@@ -45,7 +45,7 @@ const getSuccessColor = (rate) => {
   return '#ef4444';
 };
 
-export default function CourtHeatmap({ actions, team }) {
+export default function CourtHeatmap({ actions, team, teamName }) {
   const [selectedSkill, setSelectedSkill] = useState('all');
   const [showSuccess, setShowSuccess] = useState(false);
 
@@ -90,9 +90,9 @@ export default function CourtHeatmap({ actions, team }) {
   const totalFiltered = Object.values(zoneData).reduce((sum, z) => sum + z.count, 0);
 
   return (
-    <div style={{ background: '#1e293b', borderRadius: 12, padding: 16 }}>
+    <div style={{ background: '#1e293b', borderRadius: 8, padding: 10 }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-        <h3 style={{ color: '#f1f5f9', margin: 0, fontSize: 15 }}>Planvy</h3>
+        <h3 style={{ color: '#f1f5f9', margin: 0, fontSize: 14 }}>{teamName || (team === 'H' ? 'Hemmalag' : 'Bortalag')}</h3>
         <div style={{ display: 'flex', gap: 6 }}>
           <button
             onClick={() => setShowSuccess(!showSuccess)}
@@ -124,7 +124,7 @@ export default function CourtHeatmap({ actions, team }) {
       </div>
 
       {/* Volleybollplan SVG */}
-      <svg viewBox="0 0 300 310" style={{ width: '100%', maxWidth: 360 }}>
+      <svg viewBox="0 0 300 310" style={{ width: '100%', maxWidth: 280 }}>
         {/* Nätlinje */}
         <line x1="0" y1="8" x2="300" y2="8" stroke="#94a3b8" strokeWidth="3" />
         <text x="150" y="6" textAnchor="middle" fill="#64748b" fontSize="10">NÄT</text>
