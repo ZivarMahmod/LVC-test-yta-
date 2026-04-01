@@ -741,7 +741,7 @@ export default function VideoPlayerPage() {
                     title={g.label}
                     style={{
                       ...filterBtnStyle(filterGrade === g.key),
-                      color: filterGrade === g.key ? '#fff' : g.color,
+                      color: g.color,
                       minWidth: 'auto',
                       padding: '0.25rem 0.4rem',
                     }}
