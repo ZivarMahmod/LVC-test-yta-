@@ -347,22 +347,31 @@ export const videoController = {
         }),
         prisma.video.count({ where })
       ]);
-      const videosWithUrls = videos.map(video => ({
-        id: video.id,
-        title: video.title,
-        opponent: video.opponent,
-        matchType: video.matchType || 'own',
-        matchDate: video.matchDate,
-        description: video.description,
-        fileSize: Number(video.fileSize),
-        mimeType: video.mimeType,
-        uploadedBy: video.uploadedBy,
-        team: video.team,
-        season: video.season,
-        createdAt: video.createdAt,
-        hasDvw: !!video.dvwPath,
-        streamUrl: fileStorageService.generateSignedUrl(video.id).url,
-        thumbnailUrl: video.thumbnailPath ? `/api/videos/thumbnail/${video.thumbnailPath.replace('/local/', '')}` : null
+      const videosWithUrls = await Promise.all(videos.map(async (video) => {
+        let hasDvw = false;
+        if (video.dvwPath) {
+          try {
+            await fsStat(fileStorageService.getAbsolutePath(video.dvwPath));
+            hasDvw = true;
+          } catch {}
+        }
+        return {
+          id: video.id,
+          title: video.title,
+          opponent: video.opponent,
+          matchType: video.matchType || 'own',
+          matchDate: video.matchDate,
+          description: video.description,
+          fileSize: Number(video.fileSize),
+          mimeType: video.mimeType,
+          uploadedBy: video.uploadedBy,
+          team: video.team,
+          season: video.season,
+          createdAt: video.createdAt,
+          hasDvw,
+          streamUrl: fileStorageService.generateSignedUrl(video.id).url,
+          thumbnailUrl: video.thumbnailPath ? `/api/videos/thumbnail/${video.thumbnailPath.replace('/local/', '')}` : null
+        };
       }));
       res.json({ videos: videosWithUrls, pagination: { page, limit, total, totalPages: Math.ceil(total / limit) } });
     } catch (error) {
