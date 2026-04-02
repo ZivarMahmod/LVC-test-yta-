@@ -1,5 +1,13 @@
 # LVC Media Hub — Ändringslogg
 
+## v2.1.0 — 2026-04-02
+- Dokument-uppladdning per match: ladda upp PDF:er och bilder (matchrapport, worksheet, distribution etc.)
+- Dok-tab i videospelaren med inline PDF-visare (overlay istället för ny flik)
+- PDF-uppladdning direkt vid videouppladdning (flera filer åt gången)
+- Flermatchsvy: actions och heatmap i sidopanelen (som enskild matchvy)
+- Videokort visar korrekt titel för motståndaranalys (t.ex. "Hästhagen vs Uppsala")
+- Standard matchtyp-filter satt till "Egna matcher"
+
 ## v2.0.2 — 2026-04-02
 - Hemmalag-fält vid motståndaranalys: ange vilket lag som spelar hemma (t.ex. "Hästhagen vs Uppsala" istället för "LVC vs Uppsala")
 - Bortalag-label vid motståndaranalys istället för "Motståndare"
