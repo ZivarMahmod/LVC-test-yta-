@@ -30,8 +30,8 @@ services:
     restart: unless-stopped
     volumes:
       - /root/certs:/acme.sh
-    environment:
-      - CF_Token=cfut_Jm5XKDPFXYu2avtUnUsmKQ0LIKivitCQ7OJRwznM6c17e451
+    env_file:
+      - ./acme.env
     command: daemon
 
 volumes:
