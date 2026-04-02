@@ -4,7 +4,7 @@
 import prisma from '../config/database.js';
 import { fileStorageService } from '../services/fileStorage.js';
 import path from 'path';
-import { mkdir, unlink, stat as fsStat, createReadStream } from 'fs/promises';
+import { mkdir, unlink, stat as fsStat } from 'fs/promises';
 import logger from '../utils/logger.js';
 
 export const documentController = {
