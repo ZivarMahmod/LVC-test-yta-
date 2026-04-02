@@ -353,7 +353,18 @@ export const changelogApi = {
   }
 }
 
-// Scout-tillägg (läggs till videoApi manuellt nedan)
+export const multiScoutApi = {
+  async fetch(ids) {
+    const res = await apiFetch('/api/videos/multi-scout', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ids })
+    });
+    if (!res.ok) throw new Error('Kunde inte hämta scout-data');
+    return res.json();
+  }
+};
+
 // -------- Team API (publik, kräver bara inloggning) --------
 export const teamApi = {
   async listTeams() {

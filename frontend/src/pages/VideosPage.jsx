@@ -2,7 +2,7 @@
 // LVC Media Hub — Videobibliotek
 // ===========================================
 import React, { useState, useEffect, useCallback } from 'react';
-import { Link, useParams } from 'react-router-dom';
+import { Link, useParams, useNavigate } from 'react-router-dom';
 import { videoApi, teamApi } from '../utils/api.js';
 import { useAuth } from '../context/AuthContext.jsx';
 import { formatFileSize } from '../utils/format.js';
@@ -17,6 +17,7 @@ function formatDate(dateStr) {
 export default function VideosPage() {
   const { isAdmin } = useAuth();
   const { teamId, seasonId } = useParams();
+  const navigate = useNavigate();
   const [videos, setVideos] = useState([]);
   const [pagination, setPagination] = useState({ page: 1, totalPages: 1 });
   const [search, setSearch] = useState('');
@@ -26,6 +27,8 @@ export default function VideosPage() {
   const [deleting, setDeleting] = useState(null);
   const [groupByOpponent, setGroupByOpponent] = useState(false);
   const [filterMatchType, setFilterMatchType] = useState('all');
+  const [compareMode, setCompareMode] = useState(false);
+  const [selectedIds, setSelectedIds] = useState(new Set());
 
   useEffect(() => {
     if (window.innerWidth <= 768) setViewMode('list');
@@ -97,6 +100,19 @@ export default function VideosPage() {
     }
   };
 
+  const toggleSelect = (id) => {
+    setSelectedIds(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  };
+
+  const openMultiScout = (ids) => {
+    if (ids.length < 1) return;
+    navigate('/multi-scout?ids=' + ids.join(','));
+  };
+
   const filteredVideos = filterMatchType === 'all' ? videos : videos.filter(v => (v.matchType || 'own') === filterMatchType);
 
   const groupedVideos = groupByOpponent
@@ -123,12 +139,24 @@ export default function VideosPage() {
   };
 
   const renderVideoList = (videosList) => {
+    const handleCardClick = (e, video) => {
+      if (compareMode) {
+        e.preventDefault();
+        toggleSelect(video.id);
+      }
+    };
+
     if (viewMode === 'grid') {
       return (
         <div className="video-grid">
           {videosList.map(video => (
-            <Link key={video.id} to={`/video/${video.id}`} className="video-card-overlay">
+            <Link key={video.id} to={compareMode ? '#' : `/video/${video.id}`} className="video-card-overlay" onClick={(e) => handleCardClick(e, video)}>
               <div className="video-card-overlay-thumb">
+                {compareMode && (
+                  <div style={{ position: 'absolute', top: 8, left: 8, zIndex: 5 }}>
+                    <input type="checkbox" checked={selectedIds.has(video.id)} readOnly style={{ width: 18, height: 18, accentColor: 'var(--primary)' }} />
+                  </div>
+                )}
                 {video.thumbnailUrl ? (
                   <img src={video.thumbnailUrl + "?t=" + new Date(video.updatedAt).getTime()} alt={video.title} onError={(e) => { e.target.style.display = 'none'; }} />
                 ) : null}
@@ -137,7 +165,7 @@ export default function VideosPage() {
                   <div className="video-card-overlay-title">{matchTypeIcon(video)}{videoTitle(video)}</div>
                   <div className="video-card-overlay-date">{formatDate(video.matchDate)}</div>
                 </div>
-                {isAdmin && (
+                {!compareMode && isAdmin && (
                   <>
                     <button className="video-card-delete" onClick={(e) => { e.preventDefault(); handleDelete(video.id, video.title); }} disabled={deleting === video.id} title="Ta bort">x</button>
                     <button className="video-card-thumb-btn" onClick={(e) => { e.preventDefault(); setThumbnailVideoId(video.id); thumbnailInputRef.current?.click(); }} title="Byt thumbnail">📷</button>
@@ -152,7 +180,14 @@ export default function VideosPage() {
     return (
       <div className="video-list">
         {videosList.map(video => (
-          <Link key={video.id} to={`/video/${video.id}`} className="video-list-item">
+          <Link key={video.id} to={compareMode ? '#' : `/video/${video.id}`} className="video-list-item" onClick={(e) => handleCardClick(e, video)}
+            style={compareMode && selectedIds.has(video.id) ? { outline: '2px solid var(--primary)', borderRadius: 8 } : {}}
+          >
+            {compareMode && (
+              <div style={{ display: 'flex', alignItems: 'center', marginRight: '0.4rem' }}>
+                <input type="checkbox" checked={selectedIds.has(video.id)} readOnly style={{ width: 18, height: 18, accentColor: 'var(--primary)' }} />
+              </div>
+            )}
             <div className="video-list-thumb">
               {video.thumbnailUrl ? (
                 <img src={video.thumbnailUrl + "?t=" + new Date(video.updatedAt).getTime()} alt={video.title} />
@@ -166,7 +201,7 @@ export default function VideosPage() {
               <div className="video-list-title">{matchTypeIcon(video)}{videoTitle(video)}</div>
               <div className="video-list-date">{formatDate(video.matchDate)}</div>
             </div>
-            {isAdmin && (
+            {!compareMode && isAdmin && (
               <button className="video-list-delete" onClick={(e) => { e.preventDefault(); handleDelete(video.id, video.title); }} disabled={deleting === video.id}>x</button>
             )}
           </Link>
@@ -254,12 +289,24 @@ export default function VideosPage() {
             onClick={() => setFilterMatchType('opponent')}
             style={{ fontSize: '0.8rem', padding: '0.3rem 0.7rem', borderRadius: 6 }}
           >Motståndaranalys</button>
-          <span style={{ marginLeft: 'auto' }}>
+          <span style={{ marginLeft: 'auto', display: 'flex', gap: '0.4rem' }}>
+            <button
+              className={`btn-sm ${compareMode ? 'btn-primary' : 'btn-secondary'}`}
+              onClick={() => { setCompareMode(!compareMode); setSelectedIds(new Set()); }}
+              style={{ fontSize: '0.8rem', padding: '0.3rem 0.7rem', borderRadius: 6 }}
+            >{compareMode ? 'Avbryt' : 'Jämför'}</button>
+            {compareMode && selectedIds.size >= 1 && (
+              <button
+                className="btn-sm btn-primary"
+                onClick={() => openMultiScout([...selectedIds])}
+                style={{ fontSize: '0.8rem', padding: '0.3rem 0.7rem', borderRadius: 6 }}
+              >Visa {selectedIds.size} matcher</button>
+            )}
             <button
               className={`btn-sm ${groupByOpponent ? 'btn-primary' : 'btn-secondary'}`}
               onClick={() => setGroupByOpponent(!groupByOpponent)}
               style={{ fontSize: '0.8rem', padding: '0.3rem 0.7rem', borderRadius: 6 }}
-            >Gruppera per motståndare</button>
+            >Gruppera</button>
           </span>
         </div>
       )}
@@ -282,6 +329,11 @@ export default function VideosPage() {
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem', padding: '0.4rem 0.6rem', background: 'var(--surface-2)', borderRadius: 8, border: '1px solid var(--border)' }}>
               <span style={{ fontWeight: 600, fontSize: '0.95rem' }}>{opponentName}</span>
               <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>({opponentVideos.length} {opponentVideos.length === 1 ? 'match' : 'matcher'})</span>
+              <button
+                className="btn-sm btn-secondary"
+                onClick={() => openMultiScout(opponentVideos.map(v => v.id))}
+                style={{ marginLeft: 'auto', fontSize: '0.72rem', padding: '0.2rem 0.5rem', borderRadius: 5 }}
+              >Visa alla</button>
             </div>
             {renderVideoList(opponentVideos)}
           </div>
