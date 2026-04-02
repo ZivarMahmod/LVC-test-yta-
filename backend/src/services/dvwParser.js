@@ -192,54 +192,34 @@ const parseScout = (lines, players, teams, matchStartSeconds, videoOffset) => {
 
 // Beräkna poängställning per action från DVW-data
 const calculateScoreboard = (actions) => {
-  const score = { H: 0, V: 0 };
-  const setScores = []; // { H, V } per set
   let currentSet = 1;
   let setScore = { H: 0, V: 0 };
 
   const scoreboard = []; // index matchar actions index
 
   for (const a of actions) {
-    // Nytt set — spara förra setpoängen
+    // Nytt set — nollställ setpoäng
     if (a.set !== currentSet) {
-      setScores.push({ ...setScore });
       setScore = { H: 0, V: 0 };
       currentSet = a.set;
     }
 
-    // Poäng för laget: attack kill, serve ace, block kill
-    const isPoint = a.grade === '#' && (a.skill === 'A' || a.skill === 'S' || a.skill === 'B' ||
-      a.skill === SKILL_REMAP?.A || a.skill === SKILL_REMAP?.S || a.skill === SKILL_REMAP?.B);
-
-    // Motståndare gör error = poäng för andra laget
-    const isError = (a.grade === '=' || a.grade === '/') &&
-      (a.skill === 'A' || a.skill === 'S' || a.skill === 'R' ||
-       a.skill === SKILL_REMAP?.A || a.skill === SKILL_REMAP?.S || a.skill === SKILL_REMAP?.R);
-
-    if (isPoint) {
+    // DVW: '#' = poäng för laget, '=' = poäng för motståndaren
+    if (a.grade === '#') {
       setScore[a.team]++;
-      score[a.team]++;
-    } else if (isError) {
+    } else if (a.grade === '=') {
       const otherTeam = a.team === 'H' ? 'V' : 'H';
       setScore[otherTeam]++;
-      score[otherTeam]++;
     }
 
     scoreboard.push({
       id: a.id,
       set: a.set,
       setScore: { ...setScore },
-      totalScore: { ...score },
-      setScores: [...setScores]
     });
   }
 
-  // Lägg till sista settet
-  if (setScore.H > 0 || setScore.V > 0) {
-    setScores.push({ ...setScore });
-  }
-
-  return { scoreboard, finalSetScores: setScores, finalScore: { ...score } };
+  return { scoreboard };
 };
 
 export const dvwParserService = {
@@ -262,7 +242,7 @@ export const dvwParserService = {
     const teams = parseTeams(lines);
     const matchStartSeconds = parseMatchStart(lines);
     const actions = parseScout(lines, players, teams, matchStartSeconds, videoOffset);
-    const { scoreboard, finalSetScores, finalScore } = calculateScoreboard(actions);
+    const { scoreboard } = calculateScoreboard(actions);
 
     // Platta ut spelare för frontend
     const allPlayers = [
@@ -270,6 +250,6 @@ export const dvwParserService = {
       ...Object.values(players.V)
     ];
 
-    return { teams, players: allPlayers, matchStart: matchStartSeconds, actions, zonePositions: ZONE_POSITIONS, scoreboard, finalSetScores, finalScore };
+    return { teams, players: allPlayers, matchStart: matchStartSeconds, actions, zonePositions: ZONE_POSITIONS, scoreboard };
   }
 };

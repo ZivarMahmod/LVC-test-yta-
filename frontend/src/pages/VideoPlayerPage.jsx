@@ -473,16 +473,18 @@ export default function VideoPlayerPage() {
 
   // Scoreboard — nuvarande ställning baserat på aktiv action (måste vara före early returns)
   const currentScore = useMemo(() => {
-    if (!scout?.scoreboard || !activeActionId) {
-      if (scout?.finalScore) return { setScore: scout.finalSetScores?.[scout.finalSetScores.length - 1] || { H: 0, V: 0 }, totalScore: scout.finalScore, set: scout.finalSetScores?.length || 1 };
-      return null;
+    if (!scout?.scoreboard || scout.scoreboard.length === 0) return null;
+    if (!activeActionId) {
+      // Visa sista ställningen
+      return scout.scoreboard[scout.scoreboard.length - 1];
     }
     const entry = scout.scoreboard.find(s => s.id === activeActionId);
     if (entry) return entry;
+    // Fallback: närmaste innan
     for (let i = scout.scoreboard.length - 1; i >= 0; i--) {
       if (scout.scoreboard[i].id <= activeActionId) return scout.scoreboard[i];
     }
-    return null;
+    return { set: 1, setScore: { H: 0, V: 0 } };
   }, [scout, activeActionId]);
 
   if (loading) return <div className="loading-container"><div className="spinner" /></div>;
