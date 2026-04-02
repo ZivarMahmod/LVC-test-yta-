@@ -390,7 +390,7 @@ export default function MultiScoutPage() {
                       color: isActive ? SKILL_COLORS[sk] : 'var(--text)'
                     }}
                   >
-                    {SKILL_LETTERS[sk] || sk}
+                    {SKILL_LETTERS[sk] || sk}{isActive ? ` ${SKILL_NAMES[sk] || sk}` : ''}
                   </button>
                 );
               })}
@@ -399,11 +399,11 @@ export default function MultiScoutPage() {
             {/* Grades */}
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.25rem' }}>
               {[
-                { key: '#', symbol: '●', color: '#4CAF50' },
-                { key: '+', symbol: '▲', color: '#8BC34A' },
-                { key: '!', symbol: '■', color: '#FF9800' },
-                { key: '-', symbol: '▼', color: '#FF5722' },
-                { key: 'ERR', symbol: '✕', color: '#f44336' }
+                { key: '#', symbol: '●', label: 'Perfekt', color: '#4CAF50' },
+                { key: '+', symbol: '▲', label: 'Positiv', color: '#8BC34A' },
+                { key: '!', symbol: '■', label: 'OK', color: '#FF9800' },
+                { key: '-', symbol: '▼', label: 'Negativ', color: '#FF5722' },
+                { key: 'ERR', symbol: '✕', label: 'Error', color: '#f44336' }
               ].map(g => {
                 const isActive = filterGrade === g.key;
                 return (
@@ -417,7 +417,7 @@ export default function MultiScoutPage() {
                       color: isActive ? g.color : 'var(--text)'
                     }}
                   >
-                    {g.symbol}
+                    {g.symbol}{isActive ? ` ${g.label}` : ''}
                   </button>
                 );
               })}
