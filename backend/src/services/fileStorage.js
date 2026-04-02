@@ -15,8 +15,17 @@ const getStoragePath = () => {
 export const fileStorageService = {
 
   getAbsolutePath(filePath) {
-    const safePath = filePath.replace(/\.\./g, '').replace(/\\/g, '/');
-    return path.join(getStoragePath(), safePath);
+    const storagePath = path.resolve(getStoragePath());
+    const cleaned = filePath.startsWith('/') ? filePath.slice(1) : filePath;
+    const normalized = path.normalize(cleaned);
+    if (normalized.startsWith('..')) {
+      throw new Error('Ogiltig sökväg: path traversal detekterad');
+    }
+    const absPath = path.resolve(storagePath, normalized);
+    if (!absPath.startsWith(storagePath)) {
+      throw new Error('Ogiltig sökväg: utanför storage');
+    }
+    return absPath;
   },
 
   async ensureDirectoryTree(filePath) {
