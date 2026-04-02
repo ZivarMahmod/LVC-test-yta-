@@ -52,7 +52,7 @@ export default function AnalysisPage() {
         totalPages = data.pagination?.totalPages || 1;
         page++;
       } while (page <= totalPages);
-      setVideos(allVideos.filter(v => v.hasDvw));
+      setVideos(allVideos.filter(v => v.hasDvw && v.team && v.season));
     } catch {
       setVideos([]);
     }
