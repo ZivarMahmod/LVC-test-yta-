@@ -1164,7 +1164,9 @@ export default function VideoPlayerPage() {
           </div>
           <div style={{ padding: 8 }}>
             <CourtHeatmap actions={scout.actions} team={filterTeam !== 'ALL' ? filterTeam : undefined}
-              teamName={filterTeam === 'H' ? scout.teams?.H : filterTeam === 'V' ? scout.teams?.V : 'Alla'}
+              teamName={filterPlayer !== 'ALL'
+                ? (() => { const [t, n] = filterPlayer.split('-'); const p = scout.players.find(pl => parseInt(pl.number, 10) === parseInt(n, 10) && pl.team === t); return p ? `#${p.number} ${p.name}` : 'Spelare'; })()
+                : filterTeam === 'H' ? scout.teams?.H : filterTeam === 'V' ? scout.teams?.V : 'Alla'}
               highlightZone={filterStartZone !== 'ALL' ? parseInt(filterStartZone, 10) : null}
               onZoneSelect={(z) => setFilterStartZone(z ? String(z) : 'ALL')}
               onActionClick={(a) => jumpToAction(a)}
