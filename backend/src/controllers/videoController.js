@@ -622,15 +622,16 @@ export const scoutController = {
       let zonePositions = {};
 
       for (const video of videos) {
-        if (!video.dvwPath) continue;
-        const data = await getCachedScout(video.id, video.dvwPath, video.videoOffset || 0);
-        if (data.zonePositions) zonePositions = data.zonePositions;
         matches.push({
           videoId: video.id,
           opponent: video.opponent,
           matchDate: video.matchDate,
           matchType: video.matchType || 'own'
         });
+
+        if (!video.dvwPath) continue;
+        const data = await getCachedScout(video.id, video.dvwPath, video.videoOffset || 0);
+        if (data.zonePositions) zonePositions = data.zonePositions;
 
         for (const action of data.actions) {
           allActions.push({
