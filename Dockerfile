@@ -29,6 +29,7 @@ RUN apk del python3 make g++
 # Kopiera backend-källkod
 COPY backend/src/ ./src/
 COPY backend/prisma/ ./prisma/
+COPY backend/scripts/ ./scripts/
 
 # Generera Prisma-klient
 RUN npx prisma generate
