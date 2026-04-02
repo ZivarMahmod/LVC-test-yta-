@@ -56,6 +56,8 @@ export default function VideoPlayerPage() {
   const [filterSet, setFilterSet] = useState('ALL');
   const [filterTeam, setFilterTeam] = useState('ALL');
   const [filterGrade, setFilterGrade] = useState('ALL');
+  const [filterStartZone, setFilterStartZone] = useState('ALL');
+  const [filterEndZone, setFilterEndZone] = useState('ALL');
   const [offset, setOffset] = useState(0);
   const [offsetInput, setOffsetInput] = useState('0');
   const [activeActionId, setActiveActionId] = useState(null);
@@ -268,7 +270,7 @@ export default function VideoPlayerPage() {
         }, 5000);
       }
     }
-  }, [scout, filterSkill, filterPlayer, filterSet, filterTeam, filterGrade, autoAction, preRoll]);
+  }, [scout, filterSkill, filterPlayer, filterSet, filterTeam, filterGrade, filterStartZone, filterEndZone, autoAction, preRoll]);
 
   // Rensa timer vid unmount
   useEffect(() => {
@@ -309,7 +311,7 @@ export default function VideoPlayerPage() {
       }
     }, 500);
     return () => clearInterval(interval);
-  }, [scout, activeActionId, filterSkill, filterPlayer, filterSet, filterTeam, filterGrade]);
+  }, [scout, activeActionId, filterSkill, filterPlayer, filterSet, filterTeam, filterGrade, filterStartZone, filterEndZone]);
 
   const handleSaveOffset = async () => {
     const newOffset = parseInt(offsetInput, 10);
@@ -421,6 +423,8 @@ export default function VideoPlayerPage() {
         if (filterGrade === 'ERR') { if (a.grade !== '/' && a.grade !== '=') return false; }
         else if (a.grade !== filterGrade) return false;
       }
+      if (filterStartZone !== 'ALL' && String(a.startZone) !== filterStartZone) return false;
+      if (filterEndZone !== 'ALL' && String(a.endZone) !== filterEndZone) return false;
       return true;
     });
   };
@@ -703,7 +707,7 @@ export default function VideoPlayerPage() {
                 </div>
               )}
 
-              {/* Filter: Set + Lag — kompakt rad */}
+              {/* Filter: Set + Lag + Zoner — kompakt rad */}
               <div style={{ display: 'flex', gap: '0.4rem', marginBottom: '0.4rem' }}>
                 <select
                   value={filterSet}
@@ -732,6 +736,30 @@ export default function VideoPlayerPage() {
                     <option value="V">{scout.teams?.V || 'Borta'}</option>
                   </select>
                 )}
+                <select
+                  value={filterStartZone}
+                  onChange={e => setFilterStartZone(e.target.value)}
+                  style={{
+                    flex: 1, padding: '0.3rem 0.4rem', borderRadius: '6px',
+                    border: '1px solid var(--border)', background: 'var(--surface-2)',
+                    color: 'var(--text)', fontSize: '0.78rem'
+                  }}
+                >
+                  <option value="ALL">Startzon</option>
+                  {[1,2,3,4,5,6,7,8,9].map(z => <option key={z} value={String(z)}>Zon {z}</option>)}
+                </select>
+                <select
+                  value={filterEndZone}
+                  onChange={e => setFilterEndZone(e.target.value)}
+                  style={{
+                    flex: 1, padding: '0.3rem 0.4rem', borderRadius: '6px',
+                    border: '1px solid var(--border)', background: 'var(--surface-2)',
+                    color: 'var(--text)', fontSize: '0.78rem'
+                  }}
+                >
+                  <option value="ALL">Slutzon</option>
+                  {[1,2,3,4,5,6,7,8,9].map(z => <option key={z} value={String(z)}>Zon {z}</option>)}
+                </select>
               </div>
 
               {/* Pre/Skip + Spelare */}
