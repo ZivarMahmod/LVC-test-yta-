@@ -116,6 +116,7 @@ const parseMatchStart = (lines) => {
 
 const parseScout = (lines, players, teams, matchStartSeconds, videoOffset) => {
   const actions = [];
+  const scoreEvents = []; // { afterActionIndex, set, scoreH, scoreV }
   let inSection = false;
   let currentSet = 1;
 
@@ -128,6 +129,18 @@ const parseScout = (lines, players, teams, matchStartSeconds, videoOffset) => {
     if (line.match(/^\*\*\d+set/)) {
       const setMatch = line.match(/^\*\*(\d+)set/);
       if (setMatch) currentSet = parseInt(setMatch[1], 10) + 1;
+      continue;
+    }
+
+    // Poängrader: *pHH:AA eller apHH:AA (DVW explicit score lines)
+    const scoreMatch = line.match(/^[*a]p(\d{2}):(\d{2})/);
+    if (scoreMatch) {
+      scoreEvents.push({
+        afterActionIndex: actions.length - 1,
+        set: currentSet,
+        scoreH: parseInt(scoreMatch[1], 10),
+        scoreV: parseInt(scoreMatch[2], 10)
+      });
       continue;
     }
 
@@ -187,35 +200,34 @@ const parseScout = (lines, players, teams, matchStartSeconds, videoOffset) => {
     });
   }
 
-  return actions;
+  return { actions, scoreEvents };
 };
 
-// Beräkna poängställning per action från DVW-data
-const calculateScoreboard = (actions) => {
+// Beräkna poängställning per action från DVW score events (*pHH:AA / apHH:AA)
+const calculateScoreboard = (actions, scoreEvents) => {
+  const scoreAtAction = new Map();
+  for (const se of scoreEvents) {
+    const idx = Math.max(0, se.afterActionIndex);
+    scoreAtAction.set(idx, { H: se.scoreH, V: se.scoreV });
+  }
+
+  const scoreboard = [];
+  let currentScore = { H: 0, V: 0 };
   let currentSet = 1;
-  let setScore = { H: 0, V: 0 };
 
-  const scoreboard = []; // index matchar actions index
-
-  for (const a of actions) {
-    // Nytt set — nollställ setpoäng
+  for (let i = 0; i < actions.length; i++) {
+    const a = actions[i];
     if (a.set !== currentSet) {
-      setScore = { H: 0, V: 0 };
+      currentScore = { H: 0, V: 0 };
       currentSet = a.set;
     }
-
-    // DVW: '#' = poäng för laget, '=' = poäng för motståndaren
-    if (a.grade === '#') {
-      setScore[a.team]++;
-    } else if (a.grade === '=') {
-      const otherTeam = a.team === 'H' ? 'V' : 'H';
-      setScore[otherTeam]++;
+    if (scoreAtAction.has(i)) {
+      currentScore = { ...scoreAtAction.get(i) };
     }
-
     scoreboard.push({
       id: a.id,
       set: a.set,
-      setScore: { ...setScore },
+      setScore: { ...currentScore },
     });
   }
 
@@ -241,8 +253,8 @@ export const dvwParserService = {
     const players = parsePlayers(lines);
     const teams = parseTeams(lines);
     const matchStartSeconds = parseMatchStart(lines);
-    const actions = parseScout(lines, players, teams, matchStartSeconds, videoOffset);
-    const { scoreboard } = calculateScoreboard(actions);
+    const { actions, scoreEvents } = parseScout(lines, players, teams, matchStartSeconds, videoOffset);
+    const { scoreboard } = calculateScoreboard(actions, scoreEvents);
 
     // Platta ut spelare för frontend
     const allPlayers = [
