@@ -58,8 +58,8 @@ app.use(helmet({
       mediaSrc: ["'self'", 'blob:', isProduction ? 'https://stream.lvcmediahub.com' : "'self'"],
       connectSrc: ["'self'", isProduction ? 'https://stream.lvcmediahub.com' : "'self'"],
       fontSrc: ["'self'", 'https://fonts.gstatic.com'],
-      objectSrc: ["'none'"],
-      frameSrc: ["'none'"],
+      objectSrc: ["'self'"],
+      frameSrc: ["'self'"],
       baseUri: ["'self'"],
       formAction: ["'self'"],
       ...(isProduction ? {} : { upgradeInsecureRequests: null })
