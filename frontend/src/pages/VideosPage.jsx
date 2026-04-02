@@ -2,7 +2,7 @@
 // LVC Media Hub — Videobibliotek
 // ===========================================
 import React, { useState, useEffect, useCallback } from 'react';
-import { Link, useParams, useNavigate } from 'react-router-dom';
+import { Link, useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { videoApi, teamApi } from '../utils/api.js';
 import { useAuth } from '../context/AuthContext.jsx';
 import { formatFileSize } from '../utils/format.js';
@@ -18,6 +18,7 @@ export default function VideosPage() {
   const { isAdmin } = useAuth();
   const { teamId, seasonId } = useParams();
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [videos, setVideos] = useState([]);
   const [pagination, setPagination] = useState({ page: 1, totalPages: 1 });
   const [search, setSearch] = useState('');
@@ -26,7 +27,12 @@ export default function VideosPage() {
   const [viewMode, setViewMode] = useState('grid');
   const [deleting, setDeleting] = useState(null);
   const [groupByOpponent, setGroupByOpponent] = useState(false);
-  const [filterMatchType, setFilterMatchType] = useState('own');
+  const [filterMatchType, setFilterMatchTypeState] = useState(searchParams.get('type') || 'own');
+  const setFilterMatchType = (type) => {
+    setFilterMatchTypeState(type);
+    if (type === 'own') { searchParams.delete('type'); } else { searchParams.set('type', type); }
+    setSearchParams(searchParams, { replace: true });
+  };
   const [compareMode, setCompareMode] = useState(false);
   const [selectedIds, setSelectedIds] = useState(new Set());
 
