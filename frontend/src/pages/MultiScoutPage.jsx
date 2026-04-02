@@ -60,7 +60,7 @@ export default function MultiScoutPage() {
 
   // Heatmap overlay (Ctrl+Z)
   const [heatmapOverlay, setHeatmapOverlay] = useState(false);
-  const [overlayPos, setOverlayPos] = useState({ x: 20, y: 60 });
+  const overlayPosRef = useRef({ x: 20, y: 60 });
   const dragRef = useRef(null);
 
   // Skill names
@@ -98,14 +98,17 @@ export default function MultiScoutPage() {
     return () => window.removeEventListener('keydown', handler);
   }, []);
 
-  // Drag logic for overlay
+  // Drag logic for overlay — direct DOM manipulation, no re-renders
   const handleDragStart = (e) => {
     e.preventDefault();
-    const startX = e.clientX - overlayPos.x;
-    const startY = e.clientY - overlayPos.y;
+    const el = dragRef.current;
+    if (!el) return;
+    const startX = e.clientX - overlayPosRef.current.x;
+    const startY = e.clientY - overlayPosRef.current.y;
     const onMove = (ev) => {
       ev.preventDefault();
-      setOverlayPos({ x: ev.clientX - startX, y: ev.clientY - startY });
+      overlayPosRef.current = { x: ev.clientX - startX, y: ev.clientY - startY };
+      el.style.transform = `translate(${overlayPosRef.current.x}px, ${overlayPosRef.current.y}px)`;
     };
     const onUp = () => {
       window.removeEventListener('mousemove', onMove);
@@ -431,7 +434,7 @@ export default function MultiScoutPage() {
           ref={dragRef}
           style={{
             position: 'fixed', left: 0, top: 0,
-            transform: `translate(${overlayPos.x}px, ${overlayPos.y}px)`,
+            transform: `translate(${overlayPosRef.current.x}px, ${overlayPosRef.current.y}px)`,
             width: 300, zIndex: 1000,
             background: '#0f172a', border: '1px solid #334155',
             borderRadius: 10, boxShadow: '0 8px 32px rgba(0,0,0,0.6)',
