@@ -605,6 +605,51 @@ const getCachedScout = async (videoId, dvwPath, videoOffset) => {
 
 // Exportera scout-data (läggs till befintlig export)
 export const scoutController = {
+  async getMultiScout(req, res) {
+    try {
+      const { ids } = req.body;
+      if (!Array.isArray(ids) || ids.length === 0 || ids.length > 20) {
+        return res.status(400).json({ error: 'Ange 1-20 video-IDn.' });
+      }
+
+      const videos = await prisma.video.findMany({
+        where: { id: { in: ids }, deletedAt: null },
+        select: { id: true, opponent: true, matchDate: true, matchType: true, dvwPath: true, videoOffset: true }
+      });
+
+      const allActions = [];
+      const matches = [];
+      let zonePositions = {};
+
+      for (const video of videos) {
+        if (!video.dvwPath) continue;
+        const data = await getCachedScout(video.id, video.dvwPath, video.videoOffset || 0);
+        if (data.zonePositions) zonePositions = data.zonePositions;
+        matches.push({
+          videoId: video.id,
+          opponent: video.opponent,
+          matchDate: video.matchDate,
+          matchType: video.matchType || 'own'
+        });
+
+        for (const action of data.actions) {
+          allActions.push({
+            ...action,
+            videoId: video.id,
+            matchOpponent: video.opponent,
+            matchDate: video.matchDate,
+            matchType: video.matchType || 'own'
+          });
+        }
+      }
+
+      res.json({ actions: allActions, matches, zonePositions });
+    } catch (error) {
+      logger.error('Multi-scout-fel:', error);
+      res.status(500).json({ error: 'Kunde inte hämta scout-data.' });
+    }
+  },
+
   async getScout(req, res) {
     try {
       const video = await prisma.video.findUnique({ where: { id: req.params.id } });

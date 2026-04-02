@@ -63,6 +63,13 @@ router.get('/:id/stream',
   videoController.stream
 );
 
+// Multi-scout (flermatchsvy)
+router.post('/multi-scout',
+  authenticateToken,
+  requireViewer,
+  scoutController.getMultiScout
+);
+
 // Scout-data
 router.get('/:id/scout',
   authenticateToken,
