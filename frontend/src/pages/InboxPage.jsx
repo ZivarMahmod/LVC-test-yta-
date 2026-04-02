@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
+import { reviewApi } from "../utils/api.js";
 
 export default function InboxPage() {
   const { user, isCoach } = useAuth();
@@ -25,8 +26,7 @@ function PlayerInbox() {
 
   async function fetchInbox() {
     try {
-      const res = await fetch("/api/reviews/inbox", { credentials: "include" });
-      const data = await res.json();
+      const data = await reviewApi.getInbox();
       setReviews(data.reviews || []);
     } catch {}
     finally { setLoading(false); }
@@ -36,18 +36,10 @@ function PlayerInbox() {
     setError(""); setSuccess("");
     if (!password) return setError("Ange ditt lösenord");
     try {
-      const csrfRes = await fetch('/api/auth/csrf-token', { credentials: 'include' });
-      const { csrfToken } = await csrfRes.json();
-      const res = await fetch(`/api/reviews/${reviewId}/acknowledge`, {
-        method: "POST", credentials: "include",
-        headers: { "Content-Type": "application/json", "X-CSRF-Token": csrfToken },
-        body: JSON.stringify({ password })
-      });
-      const data = await res.json();
-      if (!res.ok) return setError(data.error || "Fel uppstod");
+      await reviewApi.acknowledge(reviewId, password);
       setSuccess("Bekräftad!"); setPassword(""); setAcknowledging(null);
       fetchInbox();
-    } catch { setError("Serverfel"); }
+    } catch (err) { setError(err.message || "Serverfel"); }
   }
 
   const unread = reviews.filter(r => !r.acknowledgedAt);
@@ -284,8 +276,7 @@ function CoachInbox() {
 
   async function fetchOverview() {
     try {
-      const res = await fetch("/api/reviews/coach-overview", { credentials: "include" });
-      const data = await res.json();
+      const data = await reviewApi.getCoachOverview();
       setTeams(data.teams || []);
     } catch {}
     finally { setLoading(false); }

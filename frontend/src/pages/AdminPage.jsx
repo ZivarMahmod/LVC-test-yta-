@@ -262,8 +262,7 @@ export default function AdminPage() {
 
   const fetchThumbLibrary = useCallback(async () => {
     try {
-      const res = await fetch('/api/thumbnail-library', { credentials: 'include' });
-      const data = await res.json();
+      const data = await adminApi.getThumbnailLibrary();
       setThumbLibrary(data.thumbnails || []);
     } catch {}
   }, []);
@@ -271,38 +270,27 @@ export default function AdminPage() {
   const handleUploadThumb = async (e) => {
     const files = e.target.files;
     if (!files || files.length === 0 || !thumbTeamId) return;
-    const csrfRes = await fetch('/api/auth/csrf-token', { credentials: 'include' });
-    const csrfData = await csrfRes.json();
-    const formData = new FormData();
-    for (const file of files) {
-      formData.append('images', file);
-    }
-    formData.append('teamId', thumbTeamId);
-    const res = await fetch('/api/admin/thumbnail-library', {
-      method: 'POST', credentials: 'include',
-      headers: { 'X-CSRF-Token': csrfData.csrfToken },
-      body: formData
-    });
-    if (res.ok) fetchThumbLibrary();
+    try {
+      for (const file of files) {
+        await adminApi.uploadThumbnailLibrary(file);
+      }
+      fetchThumbLibrary();
+    } catch {}
     e.target.value = '';
   };
 
   const handleDeleteThumb = async (id) => {
     if (!confirm('Ta bort denna thumbnail?')) return;
-    const csrfRes = await fetch('/api/auth/csrf-token', { credentials: 'include' });
-    const csrfData = await csrfRes.json();
-    const res = await fetch('/api/admin/thumbnail-library/' + id, {
-      method: 'DELETE', credentials: 'include',
-      headers: { 'X-CSRF-Token': csrfData.csrfToken }
-    });
-    if (res.ok) fetchThumbLibrary();
+    try {
+      await adminApi.deleteThumbnailLibrary(id);
+      fetchThumbLibrary();
+    } catch {}
   };
 
   const fetchDeletedVideos = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await fetch('/api/admin/deleted-videos', { credentials: 'include' });
-      const data = await res.json();
+      const data = await adminApi.getDeletedVideos();
       setDeletedVideos(data.videos || []);
     } catch {
       setError('Kunde inte hamta borttagna videor.');
@@ -699,12 +687,7 @@ export default function AdminPage() {
                               <button
                                 onClick={async () => {
                                   try {
-                                    const csrfRes = await fetch('/api/auth/csrf-token', { credentials: 'include' });
-                                    const { csrfToken } = await csrfRes.json();
-                                    await fetch(`/api/admin/users/${u.id}/teams/${ut.team?.id || ut.teamId}`, {
-                                      method: 'DELETE', credentials: 'include',
-                                      headers: { 'X-CSRF-Token': csrfToken }
-                                    });
+                                    await adminApi.removeUserTeam(u.id, ut.team?.id || ut.teamId);
                                     fetchUsers();
                                   } catch {}
                                 }}
@@ -719,14 +702,8 @@ export default function AdminPage() {
                                 const selectedTeamId = e.target.value;
                                 if (!selectedTeamId) return;
                                 try {
-                                  const csrfRes = await fetch('/api/auth/csrf-token', { credentials: 'include' });
-                                  const { csrfToken } = await csrfRes.json();
-                                  const res = await fetch(`/api/admin/users/${u.id}/teams`, {
-                                    method: 'POST', credentials: 'include',
-                                    headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': csrfToken },
-                                    body: JSON.stringify({ teamId: parseInt(selectedTeamId) })
-                                  });
-                                  if (res.ok) fetchUsers();
+                                  await adminApi.addUserTeam(u.id, selectedTeamId);
+                                  fetchUsers();
                                 } catch {}
                               }}
                               style={{
@@ -1275,14 +1252,8 @@ export default function AdminPage() {
           teams={teams}
           onAddTeam={async (userId, teamId) => {
             try {
-              const csrfRes = await fetch('/api/auth/csrf-token', { credentials: 'include' });
-              const { csrfToken } = await csrfRes.json();
-              await fetch(`/api/admin/users/${userId}/teams`, {
-                method: 'POST', credentials: 'include',
-                headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': csrfToken },
-                body: JSON.stringify({ teamId: parseInt(teamId) })
-              });
-              const data = await fetch('/api/admin/users', { credentials: 'include' }).then(r => r.json());
+              await adminApi.addUserTeam(userId, teamId);
+              const data = await adminApi.listUsers();
               setUsers(data.users || []);
               const updated = (data.users || []).find(u => u.id === userId);
               if (updated) setModal(updated);
@@ -1290,13 +1261,8 @@ export default function AdminPage() {
           }}
           onRemoveTeam={async (userId, teamId) => {
             try {
-              const csrfRes = await fetch('/api/auth/csrf-token', { credentials: 'include' });
-              const { csrfToken } = await csrfRes.json();
-              await fetch(`/api/admin/users/${userId}/teams/${teamId}`, {
-                method: 'DELETE', credentials: 'include',
-                headers: { 'X-CSRF-Token': csrfToken }
-              });
-              const data = await fetch('/api/admin/users', { credentials: 'include' }).then(r => r.json());
+              await adminApi.removeUserTeam(userId, teamId);
+              const data = await adminApi.listUsers();
               setUsers(data.users || []);
               const updated = (data.users || []).find(u => u.id === userId);
               if (updated) setModal(updated);

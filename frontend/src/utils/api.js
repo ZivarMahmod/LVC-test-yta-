@@ -108,6 +108,16 @@ export const authApi = {
 
   async refresh() {
     return refreshToken();
+  },
+
+  async changePassword(currentPassword, newPassword) {
+    const res = await apiFetch('/api/auth/change-password', {
+      method: 'POST',
+      body: JSON.stringify({ currentPassword, newPassword })
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Kunde inte byta lösenord');
+    return data;
   }
 };
 
@@ -216,6 +226,42 @@ export const videoApi = {
       throw new Error(data.error || 'Kunde inte radera videon');
     }
     return res.json();
+  },
+
+  async uploadDvw(videoId, file) {
+    const formData = new FormData();
+    formData.append('dvw', file);
+    const res = await apiFetch(`/api/videos/${videoId}/dvw`, {
+      method: 'POST',
+      body: formData
+    });
+    if (!res.ok) throw new Error('Kunde inte ladda upp DVW-fil');
+    return res.json();
+  },
+  async updateTitle(videoId, title) {
+    const res = await apiFetch(`/api/videos/${videoId}/title`, {
+      method: 'PATCH',
+      body: JSON.stringify({ title })
+    });
+    if (!res.ok) throw new Error('Kunde inte uppdatera titel');
+    return res.json();
+  },
+
+  async uploadChunk(formData) {
+    const res = await apiFetch('/api/videos/upload/chunk', {
+      method: 'POST',
+      body: formData
+    });
+    if (!res.ok) throw new Error('Chunk-uppladdning misslyckades');
+    return res.json();
+  },
+  async uploadComplete(data) {
+    const res = await apiFetch('/api/videos/upload/complete', {
+      method: 'POST',
+      body: JSON.stringify(data)
+    });
+    if (!res.ok) throw new Error('Kunde inte slutföra uppladdning');
+    return res.json();
   }
 };
 
@@ -321,6 +367,86 @@ export const adminApi = {
     const data = await res.json();
     if (!res.ok) throw new Error(data.error || 'Kunde inte tilldela video');
     return data;
+  },
+
+  async getThumbnailLibrary(teamId = null) {
+    const params = teamId ? `?teamId=${teamId}` : '';
+    const res = await apiFetch(`/api/thumbnail-library${params}`);
+    if (!res.ok) throw new Error('Kunde inte hämta thumbnails');
+    return res.json();
+  },
+  async uploadThumbnailLibrary(file) {
+    const formData = new FormData();
+    formData.append('thumbnail', file);
+    const res = await apiFetch('/api/admin/thumbnail-library', {
+      method: 'POST',
+      body: formData
+    });
+    if (!res.ok) throw new Error('Kunde inte ladda upp thumbnail');
+    return res.json();
+  },
+  async deleteThumbnailLibrary(id) {
+    const res = await apiFetch(`/api/admin/thumbnail-library/${id}`, { method: 'DELETE' });
+    if (!res.ok) throw new Error('Kunde inte ta bort thumbnail');
+    return res.json();
+  },
+  async getDeletedVideos() {
+    const res = await apiFetch('/api/admin/deleted-videos');
+    if (!res.ok) throw new Error('Kunde inte hämta borttagna videor');
+    return res.json();
+  },
+  async addUserTeam(userId, teamId) {
+    const res = await apiFetch(`/api/admin/users/${userId}/teams`, {
+      method: 'POST',
+      body: JSON.stringify({ teamId: parseInt(teamId) })
+    });
+    if (!res.ok) throw new Error('Kunde inte lägga till lag');
+    return res.json();
+  },
+  async removeUserTeam(userId, teamId) {
+    const res = await apiFetch(`/api/admin/users/${userId}/teams/${teamId}`, { method: 'DELETE' });
+    if (!res.ok) throw new Error('Kunde inte ta bort lag');
+    return res.json();
+  }
+};
+
+// -------- Review API --------
+export const reviewApi = {
+  async getInbox() {
+    const res = await apiFetch('/api/reviews/inbox');
+    if (!res.ok) throw new Error('Kunde inte hämta inbox');
+    return res.json();
+  },
+  async getCoachOverview() {
+    const res = await apiFetch('/api/reviews/coach-overview');
+    if (!res.ok) throw new Error('Kunde inte hämta översikt');
+    return res.json();
+  },
+  async getVideoReviews(videoId) {
+    const res = await apiFetch(`/api/reviews/video/${videoId}`);
+    if (!res.ok) throw new Error('Kunde inte hämta reviews');
+    return res.json();
+  },
+  async getTeamPlayers() {
+    const res = await apiFetch('/api/reviews/team-players');
+    if (!res.ok) throw new Error('Kunde inte hämta spelare');
+    return res.json();
+  },
+  async create(data) {
+    const res = await apiFetch('/api/reviews', {
+      method: 'POST',
+      body: JSON.stringify(data)
+    });
+    if (!res.ok) throw new Error('Kunde inte skapa review');
+    return res.json();
+  },
+  async acknowledge(reviewId, password) {
+    const res = await apiFetch(`/api/reviews/${reviewId}/acknowledge`, {
+      method: 'POST',
+      body: JSON.stringify({ password })
+    });
+    if (!res.ok) throw new Error('Kunde inte bekräfta review');
+    return res.json();
   }
 };
 

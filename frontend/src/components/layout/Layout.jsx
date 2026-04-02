@@ -4,7 +4,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { Outlet, NavLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext.jsx';
-import { authApi } from '../../utils/api.js';
+import { authApi, reviewApi } from '../../utils/api.js';
 import './Layout.css';
 
 export default function Layout() {
@@ -31,9 +31,7 @@ export default function Layout() {
 
   async function fetchUnreadCount() {
     try {
-      const res = await fetch('/api/reviews/inbox', { credentials: 'include' });
-      if (!res.ok) return;
-      const data = await res.json();
+      const data = await reviewApi.getInbox();
       const unread = (data.reviews || []).filter(r => !r.acknowledgedAt).length;
       setUnreadCount(unread);
     } catch {}
@@ -84,24 +82,14 @@ export default function Layout() {
 
     setPwLoading(true);
     try {
-      const res = await fetch('/api/auth/change-password', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify({ oldPassword, newPassword })
-      });
-      const data = await res.json();
-      if (res.ok) {
-        setPwSuccess('Lösenord ändrat!');
-        setOldPassword('');
-        setNewPassword('');
-        setNewPassword2('');
-        setTimeout(() => { setShowPassword(false); setPwSuccess(''); }, 2000);
-      } else {
-        setPwError(data.error || 'Kunde inte ändra lösenord.');
-      }
-    } catch {
-      setPwError('Nätverksfel.');
+      await authApi.changePassword(oldPassword, newPassword);
+      setPwSuccess('Lösenord ändrat!');
+      setOldPassword('');
+      setNewPassword('');
+      setNewPassword2('');
+      setTimeout(() => { setShowPassword(false); setPwSuccess(''); }, 2000);
+    } catch (err) {
+      setPwError(err.message || 'Nätverksfel.');
     } finally {
       setPwLoading(false);
     }
