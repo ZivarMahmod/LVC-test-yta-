@@ -182,7 +182,7 @@ export const videoController = {
 
   async uploadComplete(req, res) {
     try {
-      const { uploadId, fileName, opponent, matchDate, description, teamId, seasonId, thumbnailId, matchType } = req.body;
+      const { uploadId, fileName, opponent, matchDate, description, teamId, seasonId, thumbnailId, matchType, homeTeam } = req.body;
       if (!uploadId || !fileName || !opponent || !matchDate) {
         return res.status(400).json({ error: 'Saknar obligatoriska falt.' });
       }
@@ -231,7 +231,7 @@ export const videoController = {
 
       // Skapa datum och titel
       const date = new Date(matchDate);
-      const title = formatVideoTitle(opponent, matchDate);
+      const title = formatVideoTitle(opponent, matchDate, homeTeam || 'LVC');
 
       const ext = path.extname(fileName).toLowerCase();
       const mimeType = ext === '.mp4' ? 'video/mp4' : ext === '.mov' ? 'video/quicktime' : 'video/x-matroska';

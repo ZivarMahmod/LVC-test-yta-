@@ -1,7 +1,7 @@
-export function formatVideoTitle(opponent, matchDate) {
+export function formatVideoTitle(opponent, matchDate, homeTeam = 'LVC') {
   const date = new Date(matchDate);
   const day = String(date.getDate()).padStart(2, '0');
   const month = String(date.getMonth() + 1).padStart(2, '0');
   const year = date.getFullYear();
-  return 'LVC vs ' + opponent + ' \u2014 ' + day + '/' + month + '/' + year;
+  return homeTeam + ' vs ' + opponent + ' \u2014 ' + day + '/' + month + '/' + year;
 }
