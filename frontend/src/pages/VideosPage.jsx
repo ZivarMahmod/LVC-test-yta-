@@ -24,6 +24,8 @@ export default function VideosPage() {
   const [error, setError] = useState('');
   const [viewMode, setViewMode] = useState('grid');
   const [deleting, setDeleting] = useState(null);
+  const [groupByOpponent, setGroupByOpponent] = useState(false);
+  const [filterMatchType, setFilterMatchType] = useState('all');
 
   useEffect(() => {
     if (window.innerWidth <= 768) setViewMode('list');
@@ -95,6 +97,84 @@ export default function VideosPage() {
     }
   };
 
+  const filteredVideos = filterMatchType === 'all' ? videos : videos.filter(v => (v.matchType || 'own') === filterMatchType);
+
+  const groupedVideos = groupByOpponent
+    ? Object.entries(filteredVideos.reduce((acc, v) => {
+        const key = v.opponent || 'Okänd';
+        if (!acc[key]) acc[key] = [];
+        acc[key].push(v);
+        return acc;
+      }, {})).sort(([a], [b]) => a.localeCompare(b, 'sv'))
+    : null;
+
+  const videoTitle = (video) => {
+    if ((video.matchType || 'own') === 'opponent') {
+      return video.opponent;
+    }
+    return `LVC vs ${video.opponent}`;
+  };
+
+  const matchTypeIcon = (video) => {
+    if ((video.matchType || 'own') === 'opponent') {
+      return <span title="Motståndaranalys" style={{ fontSize: '0.65rem', background: '#f59e0b', color: '#000', borderRadius: 3, padding: '1px 4px', marginRight: 4, fontWeight: 600 }}>SCOUT</span>;
+    }
+    return null;
+  };
+
+  const renderVideoList = (videosList) => {
+    if (viewMode === 'grid') {
+      return (
+        <div className="video-grid">
+          {videosList.map(video => (
+            <Link key={video.id} to={`/video/${video.id}`} className="video-card-overlay">
+              <div className="video-card-overlay-thumb">
+                {video.thumbnailUrl ? (
+                  <img src={video.thumbnailUrl + "?t=" + new Date(video.updatedAt).getTime()} alt={video.title} onError={(e) => { e.target.style.display = 'none'; }} />
+                ) : null}
+                <div className="video-card-overlay-gradient" />
+                <div className="video-card-overlay-text">
+                  <div className="video-card-overlay-title">{matchTypeIcon(video)}{videoTitle(video)}</div>
+                  <div className="video-card-overlay-date">{formatDate(video.matchDate)}</div>
+                </div>
+                {isAdmin && (
+                  <>
+                    <button className="video-card-delete" onClick={(e) => { e.preventDefault(); handleDelete(video.id, video.title); }} disabled={deleting === video.id} title="Ta bort">x</button>
+                    <button className="video-card-thumb-btn" onClick={(e) => { e.preventDefault(); setThumbnailVideoId(video.id); thumbnailInputRef.current?.click(); }} title="Byt thumbnail">📷</button>
+                  </>
+                )}
+              </div>
+            </Link>
+          ))}
+        </div>
+      );
+    }
+    return (
+      <div className="video-list">
+        {videosList.map(video => (
+          <Link key={video.id} to={`/video/${video.id}`} className="video-list-item">
+            <div className="video-list-thumb">
+              {video.thumbnailUrl ? (
+                <img src={video.thumbnailUrl + "?t=" + new Date(video.updatedAt).getTime()} alt={video.title} />
+              ) : (
+                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" opacity="0.3">
+                  <polygon points="5 3 19 12 5 21 5 3"/>
+                </svg>
+              )}
+            </div>
+            <div className="video-list-info">
+              <div className="video-list-title">{matchTypeIcon(video)}{videoTitle(video)}</div>
+              <div className="video-list-date">{formatDate(video.matchDate)}</div>
+            </div>
+            {isAdmin && (
+              <button className="video-list-delete" onClick={(e) => { e.preventDefault(); handleDelete(video.id, video.title); }} disabled={deleting === video.id}>x</button>
+            )}
+          </Link>
+        ))}
+      </div>
+    );
+  };
+
   return (
     <>
       <input type="file" ref={thumbnailInputRef} accept="image/*" style={{ display: 'none' }} onChange={handleThumbnailUpload} />
@@ -157,6 +237,33 @@ export default function VideosPage() {
         </div>
       </div>
 
+      {seasonId && (
+        <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '0.75rem', alignItems: 'center', flexWrap: 'wrap' }}>
+          <button
+            className={`btn-sm ${filterMatchType === 'all' ? 'btn-primary' : 'btn-secondary'}`}
+            onClick={() => setFilterMatchType('all')}
+            style={{ fontSize: '0.8rem', padding: '0.3rem 0.7rem', borderRadius: 6 }}
+          >Alla</button>
+          <button
+            className={`btn-sm ${filterMatchType === 'own' ? 'btn-primary' : 'btn-secondary'}`}
+            onClick={() => setFilterMatchType('own')}
+            style={{ fontSize: '0.8rem', padding: '0.3rem 0.7rem', borderRadius: 6 }}
+          >Egna matcher</button>
+          <button
+            className={`btn-sm ${filterMatchType === 'opponent' ? 'btn-primary' : 'btn-secondary'}`}
+            onClick={() => setFilterMatchType('opponent')}
+            style={{ fontSize: '0.8rem', padding: '0.3rem 0.7rem', borderRadius: 6 }}
+          >Motståndaranalys</button>
+          <span style={{ marginLeft: 'auto' }}>
+            <button
+              className={`btn-sm ${groupByOpponent ? 'btn-primary' : 'btn-secondary'}`}
+              onClick={() => setGroupByOpponent(!groupByOpponent)}
+              style={{ fontSize: '0.8rem', padding: '0.3rem 0.7rem', borderRadius: 6 }}
+            >Gruppera per motståndare</button>
+          </span>
+        </div>
+      )}
+
       {error && <div className="alert alert-error">{error}</div>}
 
       {loading ? (
@@ -169,65 +276,18 @@ export default function VideosPage() {
           <h3>Inga videor {search ? 'hittades' : 'uppladdade ännu'}</h3>
           <p>{search ? 'Prova en annan sökning.' : 'Videor visas här när de laddas upp.'}</p>
         </div>
-      ) : viewMode === 'grid' ? (
-        <div className="video-grid">
-          {videos.map(video => (
-            <Link key={video.id} to={`/video/${video.id}`} className="video-card-overlay">
-              <div className="video-card-overlay-thumb">
-                {video.thumbnailUrl ? (
-                  <img src={video.thumbnailUrl + "?t=" + new Date(video.updatedAt).getTime()} alt={video.title} onError={(e) => { e.target.style.display = 'none'; }} />
-                ) : null}
-                <div className="video-card-overlay-gradient" />
-                <div className="video-card-overlay-text">
-                  <div className="video-card-overlay-title">LVC vs {video.opponent}</div>
-                  <div className="video-card-overlay-date">{formatDate(video.matchDate)}</div>
-                </div>
-                {isAdmin && (
-                  <>
-                    <button
-                      className="video-card-delete"
-                      onClick={(e) => { e.preventDefault(); handleDelete(video.id, video.title); }}
-                      disabled={deleting === video.id}
-                      title="Ta bort"
-                    >x</button>
-                    <button
-                      className="video-card-thumb-btn"
-                      onClick={(e) => { e.preventDefault(); setThumbnailVideoId(video.id); thumbnailInputRef.current?.click(); }}
-                      title="Byt thumbnail"
-                    >📷</button>
-                  </>
-                )}
-              </div>
-            </Link>
-          ))}
-        </div>
+      ) : groupByOpponent && groupedVideos ? (
+        groupedVideos.map(([opponentName, opponentVideos]) => (
+          <div key={opponentName} style={{ marginBottom: '1.5rem' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem', padding: '0.4rem 0.6rem', background: 'var(--surface-2)', borderRadius: 8, border: '1px solid var(--border)' }}>
+              <span style={{ fontWeight: 600, fontSize: '0.95rem' }}>{opponentName}</span>
+              <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>({opponentVideos.length} {opponentVideos.length === 1 ? 'match' : 'matcher'})</span>
+            </div>
+            {renderVideoList(opponentVideos)}
+          </div>
+        ))
       ) : (
-        <div className="video-list">
-          {videos.map(video => (
-            <Link key={video.id} to={`/video/${video.id}`} className="video-list-item">
-              <div className="video-list-thumb">
-                {video.thumbnailUrl ? (
-                  <img src={video.thumbnailUrl + "?t=" + new Date(video.updatedAt).getTime()} alt={video.title} />
-                ) : (
-                  <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" opacity="0.3">
-                    <polygon points="5 3 19 12 5 21 5 3"/>
-                  </svg>
-                )}
-              </div>
-              <div className="video-list-info">
-                <div className="video-list-title">LVC vs {video.opponent}</div>
-                <div className="video-list-date">{formatDate(video.matchDate)}</div>
-              </div>
-              {isAdmin && (
-                <button
-                  className="video-list-delete"
-                  onClick={(e) => { e.preventDefault(); handleDelete(video.id, video.title); }}
-                  disabled={deleting === video.id}
-                >x</button>
-              )}
-            </Link>
-          ))}
-        </div>
+        renderVideoList(filteredVideos)
       )}
 
       {pagination.totalPages > 1 && (

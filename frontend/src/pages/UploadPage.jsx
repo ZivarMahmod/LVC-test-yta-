@@ -35,6 +35,7 @@ export default function UploadPage() {
   const [thumbnails, setThumbnails] = useState([]);
   const [selectedThumb, setSelectedThumb] = useState(null);
   const [opponents, setOpponents] = useState([]);
+  const [matchType, setMatchType] = useState('own');
 
   useEffect(() => {
     teamApi.listTeams().then(data => setTeams(data.teams || [])).catch(() => {});
@@ -154,7 +155,7 @@ export default function UploadPage() {
       const completeRes = await fetch('/api/videos/upload/complete', {
         method: 'POST', credentials: 'include',
         headers: { 'Content-Type': 'application/json; charset=utf-8', 'X-CSRF-Token': csrfToken },
-        body: JSON.stringify({ uploadId, fileName: file.name, opponent, matchDate, description: description || null, teamId: selectedTeam || null, seasonId: selectedSeason || null, thumbnailId: selectedThumb || null })
+        body: JSON.stringify({ uploadId, fileName: file.name, opponent, matchDate, description: description || null, teamId: selectedTeam || null, seasonId: selectedSeason || null, thumbnailId: selectedThumb || null, matchType })
       });
       if (!completeRes.ok) {
         const data = await completeRes.json();
@@ -305,6 +306,15 @@ export default function UploadPage() {
 
           {/* Matchinfo */}
           <p className="upload-section-label" style={{marginBottom: '0.75rem'}}>MATCHINFO</p>
+          <div className="form-row" style={{marginBottom: '0.5rem'}}>
+            <div className="form-group">
+              <label htmlFor="matchType">Matchtyp</label>
+              <select id="matchType" value={matchType} onChange={(e) => setMatchType(e.target.value)} disabled={uploading}>
+                <option value="own">Egen match</option>
+                <option value="opponent">Motståndaranalys</option>
+              </select>
+            </div>
+          </div>
           <div className="form-row" style={{marginBottom: '1rem'}}>
             <div className="form-group">
               <label htmlFor="opponent">Motståndare</label>

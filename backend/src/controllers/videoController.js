@@ -182,7 +182,7 @@ export const videoController = {
 
   async uploadComplete(req, res) {
     try {
-      const { uploadId, fileName, opponent, matchDate, description, teamId, seasonId, thumbnailId } = req.body;
+      const { uploadId, fileName, opponent, matchDate, description, teamId, seasonId, thumbnailId, matchType } = req.body;
       if (!uploadId || !fileName || !opponent || !matchDate) {
         return res.status(400).json({ error: 'Saknar obligatoriska falt.' });
       }
@@ -247,6 +247,7 @@ export const videoController = {
           fileSize: BigInt(fileStat.size),
           mimeType,
           dvwPath: null,
+          matchType: matchType === 'opponent' ? 'opponent' : 'own',
           thumbnailPath: thumbnailId ? '/local/library/' + thumbnailId : null,
           uploadedById: req.user.id,
           teamId: teamId ? parseInt(teamId) : null,
@@ -350,6 +351,7 @@ export const videoController = {
         id: video.id,
         title: video.title,
         opponent: video.opponent,
+        matchType: video.matchType || 'own',
         matchDate: video.matchDate,
         description: video.description,
         fileSize: Number(video.fileSize),
