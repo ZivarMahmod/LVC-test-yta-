@@ -355,7 +355,7 @@ export default function MultiScoutPage() {
                       color: isActive ? SKILL_COLORS[sk] : 'var(--text)'
                     }}
                   >
-                    {SKILL_LETTERS[sk] || sk}{isActive ? ` ${SKILL_NAMES[sk] || sk}` : ''}
+                    {isActive ? SKILL_NAMES[sk] || sk : SKILL_LETTERS[sk] || sk}
                   </button>
                 );
               })}
