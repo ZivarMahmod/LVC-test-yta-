@@ -42,8 +42,17 @@ export default function AnalysisPage() {
   const fetchVideos = useCallback(async () => {
     setLoading(true);
     try {
-      const data = await videoApi.list(1, 200, search, filterTeam || null, filterSeason || null);
-      setVideos(data.videos || []);
+      // Hämta alla sidor (max 50 per sida pga backend-validering)
+      let allVideos = [];
+      let page = 1;
+      let totalPages = 1;
+      do {
+        const data = await videoApi.list(page, 50, search, filterTeam || null, filterSeason || null);
+        allVideos = allVideos.concat(data.videos || []);
+        totalPages = data.pagination?.totalPages || 1;
+        page++;
+      } while (page <= totalPages);
+      setVideos(allVideos);
     } catch {
       setVideos([]);
     }

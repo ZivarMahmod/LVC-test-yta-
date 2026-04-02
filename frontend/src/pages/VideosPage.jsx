@@ -291,18 +291,6 @@ export default function VideosPage() {
           >Motståndaranalys</button>
           <span style={{ marginLeft: 'auto', display: 'flex', gap: '0.4rem' }}>
             <button
-              className={`btn-sm ${compareMode ? 'btn-primary' : 'btn-secondary'}`}
-              onClick={() => { setCompareMode(!compareMode); setSelectedIds(new Set()); }}
-              style={{ fontSize: '0.8rem', padding: '0.3rem 0.7rem', borderRadius: 6 }}
-            >{compareMode ? 'Avbryt' : 'Jämför'}</button>
-            {compareMode && selectedIds.size >= 1 && (
-              <button
-                className="btn-sm btn-primary"
-                onClick={() => openMultiScout([...selectedIds])}
-                style={{ fontSize: '0.8rem', padding: '0.3rem 0.7rem', borderRadius: 6 }}
-              >Visa {selectedIds.size} matcher</button>
-            )}
-            <button
               className={`btn-sm ${groupByOpponent ? 'btn-primary' : 'btn-secondary'}`}
               onClick={() => setGroupByOpponent(!groupByOpponent)}
               style={{ fontSize: '0.8rem', padding: '0.3rem 0.7rem', borderRadius: 6 }}
