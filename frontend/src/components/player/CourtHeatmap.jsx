@@ -161,7 +161,7 @@ function ZoneDetail({ zone, actions, team, selectedSkill, onClose, onActionClick
                       color: gradeInfo?.color || '#e2e8f0',
                       cursor: onActionClick ? 'pointer' : 'default'
                     }}>
-                      {gradeInfo?.symbol || '?'} #{a.playerNumber} {a.playerName ? a.playerName.split(' ').pop() : ''}
+                      {gradeInfo?.symbol || '?'} {a.playerName ? a.playerName.split(' ').pop() : ''}
                     </span>
                   );
                 })}
