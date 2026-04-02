@@ -1,5 +1,11 @@
 # LVC Media Hub — Ändringslogg
 
+## v2.0.1 — 2026-04-02
+- Lagfilter i flermatchsvyn visar riktiga lagnamn istället för Hemma/Borta
+- Pre-roll och Skip i flermatchsvyn (samma som enskild matchvy)
+- Tangentbord: pil upp/ned byter action, vänster/höger skippar i video, space play/pause
+- Analys-sidan visar bara matcher med DVW-fil, lag och säsong
+
 ## v2.0.0 — 2026-04-02
 - Ny Analys-sida: dedikerad flik i toppmenyn för flermatchsanalys
 - Flermatchsvy (Multi-scout): kombinera actions från flera matcher med inbäddad videospelare
