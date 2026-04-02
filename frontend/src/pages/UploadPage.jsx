@@ -3,7 +3,7 @@
 // ===========================================
 import { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { videoApi, teamApi, documentApi } from '../utils/api.js';
+import { videoApi, teamApi, documentApi, adminApi } from '../utils/api.js';
 import { formatFileSize } from '../utils/format.js';
 import './UploadPage.css';
 
@@ -47,8 +47,7 @@ export default function UploadPage() {
   useEffect(() => {
     if (selectedTeam) {
       teamApi.listSeasons(selectedTeam).then(data => setSeasons(data.seasons || [])).catch(() => {});
-      fetch('/api/thumbnail-library?teamId=' + selectedTeam, { credentials: 'include' })
-        .then(r => r.json()).then(d => {
+      adminApi.getThumbnailLibrary(selectedTeam).then(d => {
           const thumbs = d.thumbnails || [];
           setThumbnails(thumbs);
           setOpponents(thumbs.filter(t => t.name.toLowerCase() !== 'standard').map(t => t.name).sort());
@@ -101,12 +100,6 @@ export default function UploadPage() {
     if (dropped) handleFileChange({ target: { files: [dropped] } });
   };
 
-  const getCsrfToken = async () => {
-    const res = await fetch('/api/auth/csrf-token', { credentials: 'include' });
-    const data = await res.json();
-    return data.csrfToken;
-  };
-
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
@@ -120,7 +113,6 @@ export default function UploadPage() {
     const controller = new AbortController();
     abortRef.current = controller;
     try {
-      const csrfToken = await getCsrfToken();
       const uploadId = generateId();
       const totalChunks = Math.ceil(file.size / CHUNK_SIZE);
       for (let i = 0; i < totalChunks; i++) {
@@ -136,45 +128,21 @@ export default function UploadPage() {
         const secsLeft = speed > 0 ? Math.round(bytesLeft / speed) : 0;
         const timeStr = secsLeft > 60 ? `${Math.floor(secsLeft / 60)}m ${secsLeft % 60}s` : `${secsLeft}s`;
         setStatus(i === 0 ? `Del 1 av ${totalChunks}` : `Del ${i + 1} av ${totalChunks} — ~${timeStr} kvar`);
-        const formData = new FormData();
-        formData.append('chunk', chunk, 'chunk');
-        formData.append('uploadId', uploadId);
-        formData.append('chunkIndex', String(i));
-        formData.append('totalChunks', String(totalChunks));
-        formData.append('fileName', file.name);
-        const res = await fetch('/api/videos/upload/chunk', {
-          method: 'POST', credentials: 'include',
-          headers: { 'X-CSRF-Token': csrfToken },
-          body: formData,
-          signal: controller.signal
-        });
-        if (!res.ok) {
-          const data = await res.json();
-          throw new Error(data.error || 'Uppladdning misslyckades');
-        }
+        const chunkFormData = new FormData();
+        chunkFormData.append('chunk', chunk, 'chunk');
+        chunkFormData.append('uploadId', uploadId);
+        chunkFormData.append('chunkIndex', String(i));
+        chunkFormData.append('totalChunks', String(totalChunks));
+        chunkFormData.append('fileName', file.name);
+        await videoApi.uploadChunk(chunkFormData);
         setProgress(Math.round(((i + 1) / totalChunks) * 90));
       }
       setStatus('Sätter ihop filen...');
-      const completeRes = await fetch('/api/videos/upload/complete', {
-        method: 'POST', credentials: 'include',
-        headers: { 'Content-Type': 'application/json; charset=utf-8', 'X-CSRF-Token': csrfToken },
-        body: JSON.stringify({ uploadId, fileName: file.name, opponent, matchDate, description: description || null, teamId: selectedTeam || null, seasonId: selectedSeason || null, thumbnailId: selectedThumb || null, matchType, homeTeam: matchType === 'opponent' && homeTeam ? homeTeam : null })
-      });
-      if (!completeRes.ok) {
-        const data = await completeRes.json();
-        throw new Error(data.error || 'Kunde inte slutföra uppladdningen');
-      }
-      const result = await completeRes.json();
+      const result = await videoApi.uploadComplete({ uploadId, fileName: file.name, opponent, matchDate, description: description || null, teamId: selectedTeam || null, seasonId: selectedSeason || null, thumbnailId: selectedThumb || null, matchType, homeTeam: matchType === 'opponent' && homeTeam ? homeTeam : null });
       setProgress(95);
       if (dvwFile && result.video?.id) {
         setStatus('Laddar upp scout-fil...');
-        const dvwForm = new FormData();
-        dvwForm.append('dvw', dvwFile);
-        await fetch(`/api/videos/${result.video.id}/dvw`, {
-          method: 'POST', credentials: 'include',
-          headers: { 'X-CSRF-Token': csrfToken },
-          body: dvwForm
-        });
+        await videoApi.uploadDvw(result.video.id, dvwFile);
       }
       if (pdfFiles.length > 0 && result.video?.id) {
         setStatus('Laddar upp dokument...');

@@ -3,7 +3,7 @@
 // ===========================================
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { useParams, Link, useNavigate, useSearchParams } from 'react-router-dom';
-import { videoApi, scoutApi, settingsApi, documentApi } from '../utils/api.js';
+import { videoApi, scoutApi, settingsApi, documentApi, reviewApi } from '../utils/api.js';
 import { useAuth } from '../context/AuthContext.jsx';
 import { formatFileSize, formatDate, formatVideoTime } from '../utils/format.js';
 import { SKILL_COLORS, DEFAULT_SKILL_NAMES, GRADE_SYMBOLS } from '../utils/scoutConstants.js';
@@ -152,8 +152,7 @@ export default function VideoPlayerPage() {
   // Hämta spelarens reviews för denna video
   useEffect(() => {
     if (!user || !id) return;
-    fetch(`/api/reviews/video/${id}`, { credentials: 'include' })
-      .then(r => r.ok ? r.json() : { reviews: [] })
+    reviewApi.getVideoReviews(id)
       .then(d => setMyReviews(d.reviews || []))
       .catch(() => {});
   }, [user, id]);
@@ -174,22 +173,13 @@ export default function VideoPlayerPage() {
     setAckLoading(true);
     setAckError('');
     try {
-      const csrfRes = await fetch('/api/auth/csrf-token', { credentials: 'include' });
-      const { csrfToken } = await csrfRes.json();
-      const res = await fetch(`/api/reviews/${reviewId}/acknowledge`, {
-        method: 'POST',
-        credentials: 'include',
-        headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': csrfToken },
-        body: JSON.stringify({ password: ackPassword })
-      });
-      const data = await res.json();
-      if (!res.ok) return setAckError(data.error || 'Fel uppstod');
+      await reviewApi.acknowledge(reviewId, ackPassword);
       // Markera som bekräftad i lokal state (behåll)
       setMyReviews(prev => prev.map(r => r.id === reviewId ? { ...r, acknowledgedAt: new Date().toISOString() } : r));
       setAckPassword('');
       setAckError('');
-    } catch {
-      setAckError('Serverfel');
+    } catch (err) {
+      setAckError(err.message || 'Serverfel');
     } finally {
       setAckLoading(false);
     }
@@ -352,27 +342,13 @@ export default function VideoPlayerPage() {
     setDvwUploading(true);
     setDvwMsg('');
     try {
-      const csrfRes = await fetch('/api/auth/csrf-token', { credentials: 'include' });
-      const csrfData = await csrfRes.json();
-      const formData = new FormData();
-      formData.append('dvw', file);
-      const res = await fetch(`/api/videos/${id}/dvw`, {
-        method: 'POST',
-        credentials: 'include',
-        headers: { 'X-CSRF-Token': csrfData.csrfToken },
-        body: formData
-      });
-      if (!res.ok) {
-        const data = await res.json();
-        setDvwMsg(data.error || 'Uppladdning misslyckades');
-        return;
-      }
+      await videoApi.uploadDvw(id, file);
       setDvwMsg('Scout-fil uppladdad!');
       const data = await scoutApi.getScout(id);
       setScout(data);
       setTimeout(() => setDvwMsg(''), 3000);
-    } catch {
-      setDvwMsg('Serverfel');
+    } catch (err) {
+      setDvwMsg(err.message || 'Serverfel');
     } finally {
       setDvwUploading(false);
       if (dvwInputRef.current) dvwInputRef.current.value = '';
@@ -386,18 +362,8 @@ export default function VideoPlayerPage() {
     }
     setTitleSaving(true);
     try {
-      const csrfRes = await fetch('/api/auth/csrf-token', { credentials: 'include' });
-      const { csrfToken } = await csrfRes.json();
-      const res = await fetch(`/api/videos/${id}/title`, {
-        method: 'PATCH',
-        credentials: 'include',
-        headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': csrfToken },
-        body: JSON.stringify({ opponent: titleInput.trim() })
-      });
-      if (res.ok) {
-        const data = await res.json();
-        setVideo(prev => ({ ...prev, title: data.title, opponent: data.opponent }));
-      }
+      const data = await videoApi.updateTitle(id, titleInput.trim());
+      setVideo(prev => ({ ...prev, title: data.title, opponent: data.opponent }));
     } catch {}
     setTitleSaving(false);
     setEditingTitle(false);
@@ -406,8 +372,7 @@ export default function VideoPlayerPage() {
   // Hämta lagspelare för coach
   useEffect(() => {
     if (!isCoach) return;
-    fetch('/api/reviews/team-players', { credentials: 'include' })
-      .then(r => r.json())
+    reviewApi.getTeamPlayers()
       .then(d => setReviewPlayers(d.teams || []))
       .catch(() => {});
   }, [isCoach]);
@@ -415,19 +380,10 @@ export default function VideoPlayerPage() {
   async function sendReview({ actionIndex, playerIds, comment }) {
     setReviewLoading(true);
     try {
-      const csrfRes = await fetch('/api/auth/csrf-token', { credentials: 'include' });
-      const { csrfToken } = await csrfRes.json();
-      const res = await fetch('/api/reviews', {
-        method: 'POST',
-        credentials: 'include',
-        headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': csrfToken },
-        body: JSON.stringify({ videoId: id, actionIndex, playerIds, comment })
-      });
-      const data = await res.json();
-      if (!res.ok) return { error: data.error || 'Fel uppstod' };
+      await reviewApi.create({ videoId: id, actionIndex, playerIds, comment });
       return { success: true };
-    } catch {
-      return { error: 'Serverfel' };
+    } catch (err) {
+      return { error: err.message || 'Serverfel' };
     } finally {
       setReviewLoading(false);
     }
