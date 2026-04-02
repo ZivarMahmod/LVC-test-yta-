@@ -272,7 +272,7 @@ export default function AdminPage() {
     if (!files || files.length === 0 || !thumbTeamId) return;
     try {
       for (const file of files) {
-        await adminApi.uploadThumbnailLibrary(file);
+        await adminApi.uploadThumbnailLibrary(file, thumbTeamId);
       }
       fetchThumbLibrary();
     } catch {}

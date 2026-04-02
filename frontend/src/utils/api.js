@@ -375,9 +375,10 @@ export const adminApi = {
     if (!res.ok) throw new Error('Kunde inte hämta thumbnails');
     return res.json();
   },
-  async uploadThumbnailLibrary(file) {
+  async uploadThumbnailLibrary(file, teamId) {
     const formData = new FormData();
-    formData.append('thumbnail', file);
+    formData.append('images', file);
+    formData.append('teamId', teamId);
     const res = await apiFetch('/api/admin/thumbnail-library', {
       method: 'POST',
       body: formData
