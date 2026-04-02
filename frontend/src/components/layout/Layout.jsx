@@ -149,6 +149,9 @@ export default function Layout() {
                 Admin
               </NavLink>
             )}
+            <NavLink to="/analys" className="nav-link">
+              Analys
+            </NavLink>
             <NavLink to="/inbox" className="nav-link" style={{ position: 'relative' }}>
               Inbox
               {unreadCount > 0 && (
@@ -284,6 +287,9 @@ export default function Layout() {
                 Admin
               </NavLink>
             )}
+            <NavLink to="/analys" className="mobile-nav-link" onClick={closeMenu}>
+              Analys
+            </NavLink>
             <NavLink to="/inbox" className="mobile-nav-link" onClick={closeMenu} style={{ position: 'relative' }}>
               Inbox {unreadCount > 0 && <span style={{
                 background: 'var(--lvc-blue)', color: '#fff',
