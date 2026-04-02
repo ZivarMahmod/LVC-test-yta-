@@ -3,7 +3,7 @@
 // ===========================================
 import { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { videoApi, teamApi } from '../utils/api.js';
+import { videoApi, teamApi, documentApi } from '../utils/api.js';
 import { formatFileSize } from '../utils/format.js';
 import './UploadPage.css';
 
@@ -18,6 +18,8 @@ export default function UploadPage() {
   const dvwRef = useRef(null);
   const [file, setFile] = useState(null);
   const [dvwFile, setDvwFile] = useState(null);
+  const [pdfFiles, setPdfFiles] = useState([]);
+  const pdfRef = useRef(null);
   const [opponent, setOpponent] = useState('');
   const [matchDate, setMatchDate] = useState('');
   const [description, setDescription] = useState('');
@@ -174,6 +176,12 @@ export default function UploadPage() {
           body: dvwForm
         });
       }
+      if (pdfFiles.length > 0 && result.video?.id) {
+        setStatus('Laddar upp dokument...');
+        for (const pf of pdfFiles) {
+          await documentApi.upload(result.video.id, pf, pf.name.replace(/\.[^.]+$/, '')).catch(() => {});
+        }
+      }
       setProgress(100);
       setStatus('');
       setSuccess('Videon har laddats upp!');
@@ -248,6 +256,32 @@ export default function UploadPage() {
             )}
             <input ref={dvwRef} type="file" accept=".dvw" onChange={(e) => setDvwFile(e.target.files[0] || null)} hidden disabled={uploading} />
           </div>
+
+          {/* PDF / Dokument */}
+          <div className="upload-dvw-row">
+            <span className="upload-section-label">DOKUMENT</span>
+            <button type="button" className="btn-dvw" onClick={() => pdfRef.current?.click()} disabled={uploading}>Välj PDF</button>
+            <span className="upload-dvw-name">
+              {pdfFiles.length > 0 ? `${pdfFiles.length} fil${pdfFiles.length > 1 ? 'er' : ''}` : 'Inga filer valda'}
+            </span>
+            {pdfFiles.length > 0 && !uploading && (
+              <button type="button" className="drop-zone-remove" onClick={() => setPdfFiles([])} style={{marginLeft: 'auto'}}>×</button>
+            )}
+            <input ref={pdfRef} type="file" accept=".pdf,.png,.jpg,.jpeg" multiple onChange={(e) => setPdfFiles([...e.target.files])} hidden disabled={uploading} />
+          </div>
+          {pdfFiles.length > 0 && (
+            <div style={{ marginBottom: '0.5rem', paddingLeft: '0.5rem' }}>
+              {pdfFiles.map((f, i) => (
+                <div key={i} style={{ fontSize: '0.78rem', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
+                  <span>📄 {f.name}</span>
+                  {!uploading && (
+                    <button type="button" onClick={() => setPdfFiles(prev => prev.filter((_, j) => j !== i))}
+                      style={{ background: 'none', border: 'none', color: '#f44336', cursor: 'pointer', fontSize: '0.7rem' }}>×</button>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
 
           {/* Thumbnail preview */}
           {selectedThumb && (

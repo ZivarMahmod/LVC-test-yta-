@@ -51,6 +51,7 @@ export default function VideoPlayerPage() {
   // Documents
   const [documents, setDocuments] = useState([]);
   const [docUploading, setDocUploading] = useState(false);
+  const [viewingDoc, setViewingDoc] = useState(null);
   const docFileRef = useRef(null);
 
   // Scout state
@@ -1168,13 +1169,11 @@ export default function VideoPlayerPage() {
                       <span style={{ color: '#f59e0b', fontSize: '0.9rem' }}>
                         {doc.filePath?.endsWith('.pdf') ? '📄' : '🖼️'}
                       </span>
-                      <a
-                        href={`/api/videos/documents/${doc.id}/view`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        style={{ flex: 1, color: 'var(--text)', textDecoration: 'none', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}
+                      <button
+                        onClick={() => setViewingDoc(doc)}
+                        style={{ flex: 1, color: 'var(--text)', background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left', padding: 0, fontSize: '0.8rem', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}
                         title={doc.name}
-                      >{doc.name}</a>
+                      >{doc.name}</button>
                       <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)', flexShrink: 0 }}>
                         {Math.round(doc.fileSize / 1024)} KB
                       </span>
@@ -1268,6 +1267,54 @@ export default function VideoPlayerPage() {
               onActionClick={(a) => jumpToAction(a)}
               onAutoPlay={(a, list) => jumpToAction(a, list)}
               compact />
+          </div>
+        </div>
+      )}
+
+      {/* Dokument-visare overlay */}
+      {viewingDoc && (
+        <div
+          onClick={() => setViewingDoc(null)}
+          style={{
+            position: 'fixed', inset: 0, zIndex: 2000,
+            background: 'rgba(0,0,0,0.85)',
+            display: 'flex', flexDirection: 'column',
+            alignItems: 'center', justifyContent: 'center'
+          }}
+        >
+          <div style={{
+            display: 'flex', alignItems: 'center', gap: '1rem',
+            marginBottom: '0.5rem', color: '#fff'
+          }} onClick={e => e.stopPropagation()}>
+            <span style={{ fontSize: '1rem', fontWeight: 600 }}>{viewingDoc.name}</span>
+            <a
+              href={`/api/videos/documents/${viewingDoc.id}/view`}
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{ color: '#93c5fd', fontSize: '0.8rem', textDecoration: 'none' }}
+            >Öppna i ny flik ↗</a>
+            <button
+              onClick={() => setViewingDoc(null)}
+              style={{
+                background: 'none', border: '1px solid #475569', color: '#fff',
+                borderRadius: 6, padding: '0.3rem 0.8rem', cursor: 'pointer', fontSize: '0.85rem'
+              }}
+            >Stäng</button>
+          </div>
+          <div onClick={e => e.stopPropagation()} style={{ width: '90vw', height: '85vh', borderRadius: 8, overflow: 'hidden' }}>
+            {viewingDoc.filePath?.endsWith('.pdf') ? (
+              <iframe
+                src={`/api/videos/documents/${viewingDoc.id}/view`}
+                style={{ width: '100%', height: '100%', border: 'none', background: '#fff' }}
+                title={viewingDoc.name}
+              />
+            ) : (
+              <img
+                src={`/api/videos/documents/${viewingDoc.id}/view`}
+                alt={viewingDoc.name}
+                style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain', margin: 'auto', display: 'block' }}
+              />
+            )}
           </div>
         </div>
       )}
