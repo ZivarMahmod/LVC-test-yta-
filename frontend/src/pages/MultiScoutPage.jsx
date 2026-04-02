@@ -326,16 +326,16 @@ export default function MultiScoutPage() {
               </select>
             </div>
 
-            {/* Pre/Skip + Skills on same area */}
-            <div style={{ display: 'flex', gap: '0.25rem', marginBottom: '0.3rem', alignItems: 'center', flexWrap: 'wrap' }}>
+            {/* Pre/Skip */}
+            <div style={{ display: 'flex', gap: '0.25rem', marginBottom: '0.3rem', alignItems: 'center' }}>
               <span style={{ fontSize: '0.65rem', color: 'var(--text-muted)' }}>Pre</span>
               <select value={preRoll} onChange={e => setPreRoll(Number(e.target.value))}
-                style={{ padding: '0.1rem 0.2rem', borderRadius: '4px', border: '1px solid var(--border)', background: 'var(--surface-2)', color: 'var(--text)', fontSize: '0.7rem' }}>
+                style={{ ...selectStyle, flex: 'none', width: 'auto', padding: '0.1rem 0.2rem', fontSize: '0.7rem' }}>
                 {[0,2,3,5].map(s => <option key={s} value={s}>{s}s</option>)}
               </select>
-              <span style={{ fontSize: '0.65rem', color: 'var(--text-muted)' }}>Skip</span>
+              <span style={{ fontSize: '0.65rem', color: 'var(--text-muted)', marginLeft: '0.25rem' }}>Skip</span>
               <select value={skipSeconds} onChange={e => setSkipSeconds(Number(e.target.value))}
-                style={{ padding: '0.1rem 0.2rem', borderRadius: '4px', border: '1px solid var(--border)', background: 'var(--surface-2)', color: 'var(--text)', fontSize: '0.7rem' }}>
+                style={{ ...selectStyle, flex: 'none', width: 'auto', padding: '0.1rem 0.2rem', fontSize: '0.7rem' }}>
                 {[1,2,5,10,30].map(s => <option key={s} value={s}>{s}s</option>)}
               </select>
             </div>
