@@ -1,5 +1,16 @@
 # LVC Media Hub — Ändringslogg
 
+## v2.0.0 — 2026-04-02
+- Ny Analys-sida: dedikerad flik i toppmenyn för flermatchsanalys
+- Flermatchsvy (Multi-scout): kombinera actions från flera matcher med inbäddad videospelare
+- Zonfilter: filtrera actions på startzon (Från) och slutzon (Till), Z1–Z9
+- Heatmap-overlay: 9 DVW-zoner med effektivitet (%) per zon, öppnas med Ctrl+Z
+- Draggbar heatmap direkt i videospelaren — fungerar även under uppspelning
+- Klickbara actions i heatmap-zonerna med auto-play och pausdetektering
+- Motståndaranalys: ny matchtyp vid uppladdning, SCOUT-badge på videokort
+- Scoreboard-fix: korrekt parsning av DVW-scorelines (*pHH:AA / apHH:AA)
+- Jämför-knappen ersatt av Analys-fliken
+
 ## v1.9.1 — 2026-03-30
 - Coach Review-bubblor: spelare ser coach-kommentarer som 💬-ikoner direkt i action-listan
 - Bekräfta reviews med lösenord — bubblan byts till ✅ och blir kvar för genomgång med tränare
