@@ -255,7 +255,7 @@ export default function MultiScoutPage() {
                 controls
                 playsInline
                 preload="metadata"
-                style={{ width: '100%', maxHeight: '50vh', display: 'block' }}
+                style={{ width: '100%', maxHeight: '75vh', display: 'block' }}
                 onLoadedMetadata={(e) => { e.target.volume = 0.15; }}
                 key={videoData.id}
               >
