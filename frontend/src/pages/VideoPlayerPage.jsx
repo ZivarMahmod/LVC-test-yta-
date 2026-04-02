@@ -745,8 +745,8 @@ export default function VideoPlayerPage() {
                     color: 'var(--text)', fontSize: '0.78rem'
                   }}
                 >
-                  <option value="ALL">Startzon</option>
-                  {[1,2,3,4,5,6,7,8,9].map(z => <option key={z} value={String(z)}>Zon {z}</option>)}
+                  <option value="ALL">Från</option>
+                  {[1,2,3,4,5,6,7,8,9].map(z => <option key={z} value={String(z)}>Z{z}</option>)}
                 </select>
                 <select
                   value={filterEndZone}
@@ -757,8 +757,8 @@ export default function VideoPlayerPage() {
                     color: 'var(--text)', fontSize: '0.78rem'
                   }}
                 >
-                  <option value="ALL">Slutzon</option>
-                  {[1,2,3,4,5,6,7,8,9].map(z => <option key={z} value={String(z)}>Zon {z}</option>)}
+                  <option value="ALL">Till</option>
+                  {[1,2,3,4,5,6,7,8,9].map(z => <option key={z} value={String(z)}>Z{z}</option>)}
                 </select>
               </div>
 
