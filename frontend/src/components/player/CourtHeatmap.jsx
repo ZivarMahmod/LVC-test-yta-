@@ -286,16 +286,22 @@ export default function CourtHeatmap({ actions, team, teamName, highlightZone, o
                 strokeWidth={isSelected ? 2.5 : 0.5}
               />
               <text
-                x={zx + zw / 2} y={zy + zh / 2 - 8}
+                x={zx + zw / 2} y={zy + zh / 2 - 14}
                 textAnchor="middle" fill="#94a3b8" fontSize="11"
               >
                 Zon {z.label}
               </text>
               <text
-                x={zx + zw / 2} y={zy + zh / 2 + 10}
+                x={zx + zw / 2} y={zy + zh / 2 + 6}
                 textAnchor="middle" fill="#f1f5f9" fontSize="18" fontWeight="bold"
               >
                 {data.count}
+              </text>
+              <text
+                x={zx + zw / 2} y={zy + zh / 2 + 22}
+                textAnchor="middle" fill="#94a3b8" fontSize="11"
+              >
+                {totalFiltered > 0 ? Math.round((data.count / totalFiltered) * 100) : 0}%
               </text>
             </g>
           );
