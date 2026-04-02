@@ -260,14 +260,14 @@ export default function UploadPage() {
           {/* PDF / Dokument */}
           <div className="upload-dvw-row">
             <span className="upload-section-label">DOKUMENT</span>
-            <button type="button" className="btn-dvw" onClick={() => pdfRef.current?.click()} disabled={uploading}>Välj PDF</button>
+            <button type="button" className="btn-dvw" onClick={() => pdfRef.current?.click()} disabled={uploading}>{pdfFiles.length > 0 ? '+ Lägg till' : 'Välj PDF'}</button>
             <span className="upload-dvw-name">
               {pdfFiles.length > 0 ? `${pdfFiles.length} fil${pdfFiles.length > 1 ? 'er' : ''}` : 'Inga filer valda'}
             </span>
             {pdfFiles.length > 0 && !uploading && (
               <button type="button" className="drop-zone-remove" onClick={() => setPdfFiles([])} style={{marginLeft: 'auto'}}>×</button>
             )}
-            <input ref={pdfRef} type="file" accept=".pdf,.png,.jpg,.jpeg" multiple onChange={(e) => setPdfFiles([...e.target.files])} hidden disabled={uploading} />
+            <input ref={pdfRef} type="file" accept=".pdf,.png,.jpg,.jpeg" multiple onChange={(e) => { setPdfFiles(prev => [...prev, ...e.target.files]); if (pdfRef.current) pdfRef.current.value = ''; }} hidden disabled={uploading} />
           </div>
           {pdfFiles.length > 0 && (
             <div style={{ marginBottom: '0.5rem', paddingLeft: '0.5rem' }}>
