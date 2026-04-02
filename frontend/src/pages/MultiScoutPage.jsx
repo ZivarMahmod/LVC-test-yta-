@@ -281,86 +281,11 @@ export default function MultiScoutPage() {
             </div>
           )}
 
-          {/* Tabs */}
-          <div style={{ display: 'flex', gap: '0.25rem', marginBottom: '0.5rem' }}>
-            {['actions', 'heatmap'].map(tab => (
-              <button
-                key={tab}
-                onClick={() => setActiveTab(tab)}
-                style={{
-                  padding: '0.35rem 0.8rem', borderRadius: 6, fontSize: '0.8rem', cursor: 'pointer',
-                  border: activeTab === tab ? '1px solid var(--primary)' : '1px solid var(--border)',
-                  background: activeTab === tab ? 'var(--primary)' : 'var(--surface-2)',
-                  color: activeTab === tab ? '#fff' : 'var(--text)'
-                }}
-              >
-                {tab === 'actions' ? 'Actions' : 'Heatmap'}
-              </button>
-            ))}
-            <span style={{ marginLeft: 'auto', fontSize: '0.78rem', color: 'var(--text-muted)', alignSelf: 'center' }}>
-              {filteredActions.length} actions
-            </span>
-          </div>
-
-          {activeTab === 'heatmap' && (
-            <CourtHeatmap actions={filteredActions} highlightZone={highlightZone} onZoneSelect={handleHeatmapZoneSelect} onActionClick={handleActionClick} />
-          )}
-
-          {activeTab === 'actions' && (
-            <div style={{ maxHeight: '60vh', overflowY: 'auto' }}>
-              {filteredActions.length === 0 ? (
-                <div style={{ padding: '2rem', textAlign: 'center', color: 'var(--text-muted)' }}>Inga actions matchar filtren.</div>
-              ) : (
-                filteredActions.map(action => {
-                  const isActive = activeAction?.id === action.id && activeAction?.videoId === action.videoId;
-                  return (
-                    <div
-                      key={`${action.videoId}-${action.id}`}
-                      onClick={() => handleActionClick(action)}
-                      style={{
-                        display: 'flex', alignItems: 'center', gap: '0.5rem',
-                        padding: '0.45rem 0.6rem', marginBottom: 2, borderRadius: 6, cursor: 'pointer',
-                        background: isActive ? 'var(--primary-alpha, rgba(59,130,246,0.15))' : 'var(--surface-2)',
-                        border: isActive ? '1px solid var(--primary)' : '1px solid transparent',
-                        transition: 'background 0.15s'
-                      }}
-                    >
-                      <span style={{
-                        width: 6, height: 6, borderRadius: '50%',
-                        background: SKILL_COLORS[action.skill] || '#666', flexShrink: 0
-                      }} />
-                      <span style={{
-                        fontWeight: 600, fontSize: '0.8rem', minWidth: 18,
-                        color: SKILL_COLORS[action.skill] || 'var(--text)'
-                      }}>
-                        {SKILL_LETTERS[action.skill] || action.skill}
-                      </span>
-                      <span style={{ fontSize: '0.78rem', color: 'var(--text)' }}>
-                        #{action.playerNumber} {action.playerName}
-                      </span>
-                      <span style={{
-                        fontSize: '0.75rem',
-                        color: GRADE_COLORS[action.grade] || 'var(--text-muted)'
-                      }}>
-                        {GRADE_SYMBOLS[action.grade] || action.grade}
-                      </span>
-                      {action.startZone && (
-                        <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>Z{action.startZone}</span>
-                      )}
-                      <span style={{ marginLeft: 'auto', fontSize: '0.7rem', color: 'var(--text-muted)' }}>
-                        {action.matchOpponent} {formatDate(action.matchDate)}
-                      </span>
-                    </div>
-                  );
-                })
-              )}
-            </div>
-          )}
         </div>
 
-        {/* Höger: Filter */}
-        <div style={{ width: 220, flexShrink: 0 }}>
-          <div style={{ background: 'var(--surface)', borderRadius: 8, padding: '0.75rem', border: '1px solid var(--border)' }}>
+        {/* Höger: Filter + Actions */}
+        <div style={{ width: 280, flexShrink: 0, display: 'flex', flexDirection: 'column', maxHeight: '85vh' }}>
+          <div style={{ background: 'var(--surface)', borderRadius: 8, padding: '0.75rem', border: '1px solid var(--border)', display: 'flex', flexDirection: 'column', flex: 1, overflow: 'hidden' }}>
             <div style={{ fontWeight: 600, fontSize: '0.85rem', marginBottom: '0.5rem' }}>Filter</div>
 
             {/* Match */}
@@ -465,6 +390,75 @@ export default function MultiScoutPage() {
                 );
               })}
             </div>
+
+            {/* Tabs */}
+            <div style={{ display: 'flex', gap: '0.25rem', marginTop: '0.5rem', marginBottom: '0.4rem', alignItems: 'center' }}>
+              {['actions', 'heatmap'].map(tab => (
+                <button
+                  key={tab}
+                  onClick={() => setActiveTab(tab)}
+                  style={{
+                    padding: '0.25rem 0.6rem', borderRadius: 5, fontSize: '0.75rem', cursor: 'pointer',
+                    border: activeTab === tab ? '1px solid var(--primary)' : '1px solid var(--border)',
+                    background: activeTab === tab ? 'var(--primary)' : 'var(--surface-2)',
+                    color: activeTab === tab ? '#fff' : 'var(--text)'
+                  }}
+                >
+                  {tab === 'actions' ? 'Actions' : 'Heatmap'}
+                </button>
+              ))}
+              <span style={{ marginLeft: 'auto', fontSize: '0.7rem', color: 'var(--text-muted)' }}>
+                {filteredActions.length}
+              </span>
+            </div>
+
+            {/* Actions / Heatmap */}
+            {activeTab === 'heatmap' ? (
+              <div style={{ overflowY: 'auto', flex: 1 }}>
+                <CourtHeatmap actions={filteredActions} highlightZone={highlightZone} onZoneSelect={handleHeatmapZoneSelect} onActionClick={handleActionClick} />
+              </div>
+            ) : (
+              <div style={{ overflowY: 'auto', flex: 1 }}>
+                {filteredActions.length === 0 ? (
+                  <div style={{ padding: '1rem', textAlign: 'center', color: 'var(--text-muted)', fontSize: '0.8rem' }}>Inga actions matchar filtren.</div>
+                ) : (
+                  filteredActions.map(action => {
+                    const isActive = activeAction?.id === action.id && activeAction?.videoId === action.videoId;
+                    return (
+                      <div
+                        key={`${action.videoId}-${action.id}`}
+                        onClick={() => handleActionClick(action)}
+                        style={{
+                          display: 'flex', alignItems: 'center', gap: '0.4rem',
+                          padding: '0.35rem 0.5rem', marginBottom: 2, borderRadius: 5, cursor: 'pointer',
+                          background: isActive ? 'var(--primary-alpha, rgba(59,130,246,0.15))' : 'transparent',
+                          border: isActive ? '1px solid var(--primary)' : '1px solid transparent',
+                        }}
+                      >
+                        <span style={{
+                          fontWeight: 600, fontSize: '0.75rem', minWidth: 14,
+                          color: SKILL_COLORS[action.skill] || 'var(--text)'
+                        }}>
+                          {SKILL_LETTERS[action.skill] || action.skill}
+                        </span>
+                        <span style={{
+                          fontSize: '0.72rem',
+                          color: GRADE_COLORS[action.grade] || 'var(--text-muted)'
+                        }}>
+                          {GRADE_SYMBOLS[action.grade] || action.grade}
+                        </span>
+                        <span style={{ fontSize: '0.75rem', color: 'var(--text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', flex: 1 }}>
+                          #{action.playerNumber} {action.playerName.split(' ').pop()}
+                        </span>
+                        <span style={{ fontSize: '0.65rem', color: 'var(--text-muted)', flexShrink: 0 }}>
+                          {action.matchOpponent}
+                        </span>
+                      </div>
+                    );
+                  })
+                )}
+              </div>
+            )}
           </div>
         </div>
       </div>
