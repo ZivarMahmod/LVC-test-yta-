@@ -225,13 +225,17 @@ export default function CourtHeatmap({ actions, team, teamName, highlightZone, o
     if (onZoneSelect) onZoneSelect(newZone ? newZone.id : null);
   }, [effectiveSelectedZone, onZoneSelect]);
 
+  const displayName = teamName || (team === 'H' ? 'Hemmalag' : team === 'V' ? 'Bortalag' : '');
+
   return (
     <div style={{ background: '#1e293b', borderRadius: 8, padding: 10 }}>
-      <div style={{ marginBottom: 12 }}>
-        <h3 style={{ color: '#f1f5f9', margin: '0 0 8px 0', fontSize: 14 }}>
-          {teamName || (team === 'H' ? 'Hemmalag' : 'Bortalag')}
-        </h3>
-      </div>
+      {displayName && (
+        <div style={{ marginBottom: 12 }}>
+          <h3 style={{ color: '#f1f5f9', margin: '0 0 8px 0', fontSize: 14 }}>
+            {displayName}
+          </h3>
+        </div>
+      )}
 
       {/* Skill filter */}
       <div style={{ display: 'flex', gap: 4, marginBottom: 12, flexWrap: 'wrap' }}>

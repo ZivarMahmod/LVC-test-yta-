@@ -101,14 +101,11 @@ export default function MultiScoutPage() {
   // Drag logic for overlay
   const handleDragStart = (e) => {
     e.preventDefault();
-    const el = dragRef.current;
-    if (!el) return;
-    const rect = el.getBoundingClientRect();
-    const offsetX = e.clientX - rect.left;
-    const offsetY = e.clientY - rect.top;
+    const startX = e.clientX - overlayPos.x;
+    const startY = e.clientY - overlayPos.y;
     const onMove = (ev) => {
       ev.preventDefault();
-      setOverlayPos({ x: ev.clientX - offsetX, y: ev.clientY - offsetY });
+      setOverlayPos({ x: ev.clientX - startX, y: ev.clientY - startY });
     };
     const onUp = () => {
       window.removeEventListener('mousemove', onMove);
@@ -433,28 +430,27 @@ export default function MultiScoutPage() {
         <div
           ref={dragRef}
           style={{
-            position: 'fixed', left: overlayPos.x, top: overlayPos.y,
-            width: 320, zIndex: 1000,
-            background: 'var(--surface)', border: '1px solid var(--border)',
-            borderRadius: 10, boxShadow: '0 8px 32px rgba(0,0,0,0.5)',
-            overflow: 'hidden', userSelect: 'none'
+            position: 'fixed', left: 0, top: 0,
+            transform: `translate(${overlayPos.x}px, ${overlayPos.y}px)`,
+            width: 300, zIndex: 1000,
+            background: '#0f172a', border: '1px solid #334155',
+            borderRadius: 10, boxShadow: '0 8px 32px rgba(0,0,0,0.6)',
+            userSelect: 'none', willChange: 'transform'
           }}
         >
           <div
             onMouseDown={handleDragStart}
             style={{
-              padding: '6px 10px', background: 'var(--surface-2)', cursor: 'grab',
-              display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-              borderBottom: '1px solid var(--border)', fontSize: '0.8rem', fontWeight: 600
+              padding: '4px 10px', cursor: 'grab',
+              display: 'flex', justifyContent: 'flex-end', alignItems: 'center'
             }}
           >
-            <span>Heatmap</span>
             <button onClick={() => setHeatmapOverlay(false)} style={{
-              background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', fontSize: '1rem'
+              background: 'none', border: 'none', color: '#64748b', cursor: 'pointer', fontSize: '0.85rem'
             }}>x</button>
           </div>
-          <div style={{ padding: 8 }}>
-            <CourtHeatmap actions={filteredActions} highlightZone={highlightZone} onZoneSelect={handleHeatmapZoneSelect} onActionClick={handleActionClick} compact />
+          <div style={{ padding: '0 8px 8px' }}>
+            <CourtHeatmap actions={filteredActions} teamName="" highlightZone={highlightZone} onZoneSelect={handleHeatmapZoneSelect} onActionClick={handleActionClick} compact />
           </div>
         </div>
       )}
