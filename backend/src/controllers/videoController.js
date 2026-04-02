@@ -393,6 +393,7 @@ export const videoController = {
           id: video.id,
           title: video.title,
           opponent: video.opponent,
+          matchType: video.matchType || 'own',
           matchDate: video.matchDate,
           description: video.description,
           fileSize: Number(video.fileSize),

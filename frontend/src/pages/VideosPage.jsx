@@ -126,7 +126,8 @@ export default function VideosPage() {
 
   const videoTitle = (video) => {
     if ((video.matchType || 'own') === 'opponent') {
-      return video.opponent;
+      // Visa matchnamn utan datum (t.ex. "Hästhagen vs Uppsala")
+      return video.title?.split(' \u2014 ')[0] || video.opponent;
     }
     return `LVC vs ${video.opponent}`;
   };

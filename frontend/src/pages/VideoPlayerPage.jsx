@@ -552,7 +552,11 @@ export default function VideoPlayerPage() {
           <div className="video-title-bar">
             {editingTitle ? (
               <div style={{ display: 'flex', gap: '0.4rem', alignItems: 'center', flex: 1 }}>
-                <span style={{ fontSize: '1.1rem', fontWeight: 600, whiteSpace: 'nowrap' }}>LVC vs</span>
+                <span style={{ fontSize: '1.1rem', fontWeight: 600, whiteSpace: 'nowrap' }}>
+                  {(video?.matchType || 'own') === 'opponent'
+                    ? (video?.title?.split(' vs ')[0]?.split(' \u2014 ')[0] || '') + ' vs'
+                    : 'LVC vs'}
+                </span>
                 <input
                   autoFocus
                   value={titleInput}
