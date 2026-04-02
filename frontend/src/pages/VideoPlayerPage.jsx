@@ -1092,11 +1092,13 @@ export default function VideoPlayerPage() {
               <div style={{ padding: '0.75rem', overflowY: 'auto', flex: 1 }}>
                 <CourtHeatmap actions={scout.actions} team="H" teamName={scout.teams?.H}
                   highlightZone={filterStartZone !== 'ALL' ? parseInt(filterStartZone, 10) : null}
-                  onZoneSelect={(z) => setFilterStartZone(z ? String(z) : 'ALL')} />
+                  onZoneSelect={(z) => setFilterStartZone(z ? String(z) : 'ALL')}
+                  onActionClick={(a) => jumpToAction(a)} />
                 <div style={{ height: 12 }} />
                 <CourtHeatmap actions={scout.actions} team="V" teamName={scout.teams?.V}
                   highlightZone={filterStartZone !== 'ALL' ? parseInt(filterStartZone, 10) : null}
-                  onZoneSelect={(z) => setFilterStartZone(z ? String(z) : 'ALL')} />
+                  onZoneSelect={(z) => setFilterStartZone(z ? String(z) : 'ALL')}
+                  onActionClick={(a) => jumpToAction(a)} />
               </div>
             )}
           </div>
@@ -1133,17 +1135,18 @@ export default function VideoPlayerPage() {
             width: 320, zIndex: 1000,
             background: 'var(--surface)', border: '1px solid var(--border)',
             borderRadius: 10, boxShadow: '0 8px 32px rgba(0,0,0,0.5)',
-            overflow: 'hidden'
+            overflow: 'hidden', userSelect: 'none'
           }}
         >
           <div
             onMouseDown={(e) => {
+              e.preventDefault();
               const el = heatmapDragRef.current;
               if (!el) return;
               const rect = el.getBoundingClientRect();
               const ox = e.clientX - rect.left;
               const oy = e.clientY - rect.top;
-              const onMove = (ev) => setOverlayPos({ x: ev.clientX - ox, y: ev.clientY - oy });
+              const onMove = (ev) => { ev.preventDefault(); setOverlayPos({ x: ev.clientX - ox, y: ev.clientY - oy }); };
               const onUp = () => { window.removeEventListener('mousemove', onMove); window.removeEventListener('mouseup', onUp); };
               window.addEventListener('mousemove', onMove);
               window.addEventListener('mouseup', onUp);
@@ -1164,6 +1167,7 @@ export default function VideoPlayerPage() {
               teamName={filterTeam === 'H' ? scout.teams?.H : filterTeam === 'V' ? scout.teams?.V : 'Alla'}
               highlightZone={filterStartZone !== 'ALL' ? parseInt(filterStartZone, 10) : null}
               onZoneSelect={(z) => setFilterStartZone(z ? String(z) : 'ALL')}
+              onActionClick={(a) => jumpToAction(a)}
               compact />
           </div>
         </div>

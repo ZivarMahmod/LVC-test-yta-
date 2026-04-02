@@ -1,26 +1,28 @@
 // ===========================================
 // LVC Media Hub — Volleybollplan Heatmap
-// 6 zoner (volleyboll-rotationer), klickbara
+// 9 zoner (DVW standard), klickbara
 // ===========================================
 import { useState, useMemo, useCallback } from 'react';
 
-// Volleyboll-rotationer (6 zoner)
-// Nät uppe, baklinje nere
-// 4 | 3 | 2    (framrad)
+// DVW 9-zoners layout:
+// 4 | 3 | 2    (framrad, nät)
+// 7 | 8 | 9    (mittrad)
 // 5 | 6 | 1    (bakrad)
 const ZONES = [
-  { id: 4, x: 0,  y: 0,  w: 33, h: 50, label: '4' },
-  { id: 3, x: 33, y: 0,  w: 34, h: 50, label: '3' },
-  { id: 2, x: 67, y: 0,  w: 33, h: 50, label: '2' },
-  { id: 5, x: 0,  y: 50, w: 33, h: 50, label: '5' },
-  { id: 6, x: 33, y: 50, w: 34, h: 50, label: '6' },
-  { id: 1, x: 67, y: 50, w: 33, h: 50, label: '1' },
+  { id: 4, x: 0,  y: 0,  w: 33, h: 33, label: '4' },
+  { id: 3, x: 33, y: 0,  w: 34, h: 33, label: '3' },
+  { id: 2, x: 67, y: 0,  w: 33, h: 33, label: '2' },
+  { id: 7, x: 0,  y: 33, w: 33, h: 34, label: '7' },
+  { id: 8, x: 33, y: 33, w: 34, h: 34, label: '8' },
+  { id: 9, x: 67, y: 33, w: 33, h: 34, label: '9' },
+  { id: 5, x: 0,  y: 67, w: 33, h: 33, label: '5' },
+  { id: 6, x: 33, y: 67, w: 34, h: 33, label: '6' },
+  { id: 1, x: 67, y: 67, w: 33, h: 33, label: '1' },
 ];
 
-// Map old 9-zone DVW data to 6 zones (merge middle row into front/back)
+// 1:1 mapping — no merging needed with 9 zones
 const ZONE_MAP = {
-  1: 1, 2: 2, 3: 3, 4: 4, 5: 5, 6: 6,
-  7: 5, 8: 6, 9: 1, // middle row merges into back row
+  1: 1, 2: 2, 3: 3, 4: 4, 5: 5, 6: 6, 7: 7, 8: 8, 9: 9,
 };
 
 const SKILL_OPTIONS = [
@@ -53,7 +55,7 @@ const getHeatColor = (ratio) => {
 };
 
 // Zone detail panel with grade filters
-function ZoneDetail({ zone, actions, team, selectedSkill, onClose }) {
+function ZoneDetail({ zone, actions, team, selectedSkill, onClose, onActionClick }) {
   const [gradeFilter, setGradeFilter] = useState('all');
 
   const zoneActions = useMemo(() => {
@@ -153,12 +155,13 @@ function ZoneDetail({ zone, actions, team, selectedSkill, onClose }) {
                 {acts.slice(0, 30).map((a, i) => {
                   const gradeInfo = GRADE_FILTERS.find(g => g.key === a.grade);
                   return (
-                    <span key={i} style={{
+                    <span key={i} onClick={() => onActionClick && onActionClick(a)} style={{
                       fontSize: 10, padding: '2px 5px', borderRadius: 3,
                       background: '#1e293b', border: `1px solid ${gradeInfo?.color || '#475569'}33`,
-                      color: gradeInfo?.color || '#e2e8f0'
+                      color: gradeInfo?.color || '#e2e8f0',
+                      cursor: onActionClick ? 'pointer' : 'default'
                     }}>
-                      #{a.jersey} {a.playerName ? a.playerName.split(' ').pop() : ''}
+                      #{a.playerNumber} {a.playerName ? a.playerName.split(' ').pop() : ''}
                     </span>
                   );
                 })}
@@ -174,7 +177,7 @@ function ZoneDetail({ zone, actions, team, selectedSkill, onClose }) {
   );
 }
 
-export default function CourtHeatmap({ actions, team, teamName, highlightZone, onZoneSelect, compact }) {
+export default function CourtHeatmap({ actions, team, teamName, highlightZone, onZoneSelect, onActionClick, compact }) {
   const [selectedSkill, setSelectedSkill] = useState('all');
   const [selectedZone, setSelectedZone] = useState(null);
 
@@ -247,25 +250,26 @@ export default function CourtHeatmap({ actions, team, teamName, highlightZone, o
         ))}
       </div>
 
-      {/* Volleybollplan SVG — 6 zoner */}
-      <svg viewBox="0 0 300 220" style={{ width: '100%', maxWidth: 280 }}>
+      {/* Volleybollplan SVG — 9 zoner */}
+      <svg viewBox="0 0 300 320" style={{ width: '100%', maxWidth: 280 }}>
         {/* Nätlinje */}
         <line x1="0" y1="8" x2="300" y2="8" stroke="#94a3b8" strokeWidth="3" />
         <text x="150" y="6" textAnchor="middle" fill="#64748b" fontSize="10">NÄT</text>
 
         {/* Planens bakgrund */}
-        <rect x="0" y="10" width="300" height="200" rx="4" fill="#0f172a" stroke="#334155" strokeWidth="2" />
+        <rect x="0" y="10" width="300" height="300" rx="4" fill="#0f172a" stroke="#334155" strokeWidth="2" />
 
-        {/* 3-meterslinje (mellan framrad och bakrad) */}
+        {/* 3-meterslinjer */}
         <line x1="0" y1="110" x2="300" y2="110" stroke="#334155" strokeWidth="1" strokeDasharray="6,4" />
+        <line x1="0" y1="210" x2="300" y2="210" stroke="#334155" strokeWidth="1" strokeDasharray="6,4" />
 
         {/* Zoner */}
         {ZONES.map(z => {
           const data = zoneData[z.id] || { count: 0, ratio: 0 };
-          const zx = z.x * 3;
-          const zy = z.y * 2 + 10;
-          const zw = z.w * 3;
-          const zh = z.h * 2;
+          const zx = (z.x / 100) * 300;
+          const zy = (z.y / 100) * 300 + 10;
+          const zw = (z.w / 100) * 300;
+          const zh = (z.h / 100) * 300;
           const color = getHeatColor(data.ratio);
           const isSelected = effectiveSelectedZone && effectiveSelectedZone.id === z.id;
 
@@ -306,6 +310,7 @@ export default function CourtHeatmap({ actions, team, teamName, highlightZone, o
           team={team}
           selectedSkill={selectedSkill}
           onClose={() => { setSelectedZone(null); if (onZoneSelect) onZoneSelect(null); }}
+          onActionClick={onActionClick}
         />
       )}
     </div>

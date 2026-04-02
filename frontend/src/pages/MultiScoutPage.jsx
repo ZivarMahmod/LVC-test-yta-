@@ -100,12 +100,14 @@ export default function MultiScoutPage() {
 
   // Drag logic for overlay
   const handleDragStart = (e) => {
+    e.preventDefault();
     const el = dragRef.current;
     if (!el) return;
     const rect = el.getBoundingClientRect();
     const offsetX = e.clientX - rect.left;
     const offsetY = e.clientY - rect.top;
     const onMove = (ev) => {
+      ev.preventDefault();
       setOverlayPos({ x: ev.clientX - offsetX, y: ev.clientY - offsetY });
     };
     const onUp = () => {
@@ -278,7 +280,7 @@ export default function MultiScoutPage() {
           </div>
 
           {activeTab === 'heatmap' && (
-            <CourtHeatmap actions={filteredActions} highlightZone={highlightZone} onZoneSelect={handleHeatmapZoneSelect} />
+            <CourtHeatmap actions={filteredActions} highlightZone={highlightZone} onZoneSelect={handleHeatmapZoneSelect} onActionClick={handleActionClick} />
           )}
 
           {activeTab === 'actions' && (
@@ -435,7 +437,7 @@ export default function MultiScoutPage() {
             width: 320, zIndex: 1000,
             background: 'var(--surface)', border: '1px solid var(--border)',
             borderRadius: 10, boxShadow: '0 8px 32px rgba(0,0,0,0.5)',
-            overflow: 'hidden'
+            overflow: 'hidden', userSelect: 'none'
           }}
         >
           <div
@@ -452,7 +454,7 @@ export default function MultiScoutPage() {
             }}>x</button>
           </div>
           <div style={{ padding: 8 }}>
-            <CourtHeatmap actions={filteredActions} highlightZone={highlightZone} onZoneSelect={handleHeatmapZoneSelect} compact />
+            <CourtHeatmap actions={filteredActions} highlightZone={highlightZone} onZoneSelect={handleHeatmapZoneSelect} onActionClick={handleActionClick} compact />
           </div>
         </div>
       )}
