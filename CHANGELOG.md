@@ -1,5 +1,9 @@
 # LVC Media Hub — Ändringslogg
 
+## v2.0.2 — 2026-04-02
+- Hemmalag-fält vid motståndaranalys: ange vilket lag som spelar hemma (t.ex. "Hästhagen vs Uppsala" istället för "LVC vs Uppsala")
+- Bortalag-label vid motståndaranalys istället för "Motståndare"
+
 ## v2.0.1 — 2026-04-02
 - Lagfilter i flermatchsvyn visar riktiga lagnamn istället för Hemma/Borta
 - Pre-roll och Skip i flermatchsvyn (samma som enskild matchvy)
