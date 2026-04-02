@@ -26,7 +26,7 @@ export default function VideosPage() {
   const [viewMode, setViewMode] = useState('grid');
   const [deleting, setDeleting] = useState(null);
   const [groupByOpponent, setGroupByOpponent] = useState(false);
-  const [filterMatchType, setFilterMatchType] = useState('all');
+  const [filterMatchType, setFilterMatchType] = useState('own');
   const [compareMode, setCompareMode] = useState(false);
   const [selectedIds, setSelectedIds] = useState(new Set());
 
