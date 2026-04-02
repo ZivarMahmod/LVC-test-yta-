@@ -202,11 +202,11 @@ export default function MultiScoutPage() {
       if (!vid) return;
       if (e.key === 'ArrowRight') { e.preventDefault(); vid.currentTime = Math.min(vid.currentTime + skipSeconds, vid.duration); }
       else if (e.key === 'ArrowLeft') { e.preventDefault(); vid.currentTime = Math.max(vid.currentTime - skipSeconds, 0); }
-      else if (e.key === 'n' || e.key === 'N') {
+      else if (e.key === 'ArrowDown') {
         e.preventDefault();
         const idx = filteredActions.findIndex(a => a.id === activeAction?.id && a.videoId === activeAction?.videoId);
         if (idx >= 0 && idx < filteredActions.length - 1) handleActionClick(filteredActions[idx + 1]);
-      } else if (e.key === 'p' || e.key === 'P') {
+      } else if (e.key === 'ArrowUp') {
         e.preventDefault();
         const idx = filteredActions.findIndex(a => a.id === activeAction?.id && a.videoId === activeAction?.videoId);
         if (idx > 0) handleActionClick(filteredActions[idx - 1]);
