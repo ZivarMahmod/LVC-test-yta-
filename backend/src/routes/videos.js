@@ -4,8 +4,10 @@
 import { Router } from 'express';
 import multer from 'multer';
 const thumbnailUpload = multer({ dest: '/tmp/uploads/', limits: { fileSize: 5 * 1024 * 1024 } });
+const docUpload = multer({ dest: '/tmp/uploads/', limits: { fileSize: 50 * 1024 * 1024 } });
 const videoUpload = multer({ dest: '/tmp/uploads/', limits: { fileSize: 15 * 1024 * 1024 * 1024 } });
 import { videoController, scoutController, playerStatsController } from '../controllers/videoController.js';
+import { documentController } from '../controllers/documentController.js';
 import { adminController } from '../controllers/adminController.js';
 import { authenticateToken, requireRole, requireViewer, requireAdmin, requireUploader } from '../middleware/auth.js';
 import { csrfProtection } from '../middleware/csrf.js';
@@ -163,6 +165,34 @@ router.post('/upload',
     { name: 'dvw', maxCount: 1 }
   ]),
   videoController.upload
+);
+
+// Dokument (PDF etc.)
+router.get('/:id/documents',
+  authenticateToken,
+  requireViewer,
+  documentController.list
+);
+
+router.post('/:id/documents',
+  authenticateToken,
+  requireRole('admin', 'uploader', 'coach'),
+  csrfProtection,
+  docUpload.single('file'),
+  documentController.upload
+);
+
+router.get('/documents/:docId/view',
+  authenticateToken,
+  requireViewer,
+  documentController.serve
+);
+
+router.delete('/documents/:docId',
+  authenticateToken,
+  requireRole('admin', 'coach'),
+  csrfProtection,
+  documentController.remove
 );
 
 // Ta bort video (admin permanent, uploader soft delete)

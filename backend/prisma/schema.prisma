@@ -116,6 +116,21 @@ model Video {
   @@index([filePath])
   @@index([createdAt])
   @@index([uploadedById])
+  documents MatchDocument[]
+}
+
+model MatchDocument {
+  id        String   @id @default(uuid())
+  name      String
+  type      String   @default("other")
+  filePath  String
+  fileSize  BigInt
+  videoId   String
+  video     Video    @relation(fields: [videoId], references: [id], onDelete: Cascade)
+  uploadedById String
+  createdAt DateTime @default(now())
+
+  @@index([videoId])
 }
 
 model LoginAttempt {

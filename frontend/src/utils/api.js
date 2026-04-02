@@ -405,6 +405,31 @@ export const playerStatsApi = {
   }
 };
 
+export const documentApi = {
+  async list(videoId) {
+    const res = await apiFetch(`/api/videos/${videoId}/documents`);
+    if (!res.ok) throw new Error('Kunde inte hämta dokument');
+    return res.json();
+  },
+  async upload(videoId, file, name, type) {
+    const formData = new FormData();
+    formData.append('file', file);
+    if (name) formData.append('name', name);
+    if (type) formData.append('type', type);
+    const res = await apiFetch(`/api/videos/${videoId}/documents`, {
+      method: 'POST',
+      body: formData
+    });
+    if (!res.ok) throw new Error('Kunde inte ladda upp dokument');
+    return res.json();
+  },
+  async remove(docId) {
+    const res = await apiFetch(`/api/videos/documents/${docId}`, { method: 'DELETE' });
+    if (!res.ok) throw new Error('Kunde inte ta bort dokument');
+    return res.json();
+  }
+};
+
 export const scoutApi = {
   async getScout(id) {
     const res = await apiFetch(`/api/videos/${id}/scout`);

@@ -3,7 +3,7 @@
 // ===========================================
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { useParams, Link, useNavigate, useSearchParams } from 'react-router-dom';
-import { videoApi, scoutApi, settingsApi } from '../utils/api.js';
+import { videoApi, scoutApi, settingsApi, documentApi } from '../utils/api.js';
 import { useAuth } from '../context/AuthContext.jsx';
 import { formatFileSize, formatDate, formatVideoTime } from '../utils/format.js';
 import MatchReport from '../components/player/MatchReport.jsx';
@@ -47,6 +47,11 @@ export default function VideoPlayerPage() {
       if (data?.letters) setSkillLetters(data.letters);
     }).catch(() => {});
   }, []);
+
+  // Documents
+  const [documents, setDocuments] = useState([]);
+  const [docUploading, setDocUploading] = useState(false);
+  const docFileRef = useRef(null);
 
   // Scout state
   const [scout, setScout] = useState(null);
@@ -130,6 +135,7 @@ export default function VideoPlayerPage() {
       }
     }
     load();
+    documentApi.list(id).then(d => setDocuments(d.documents || [])).catch(() => {});
   }, [id]);
 
   useEffect(() => {
@@ -653,6 +659,9 @@ export default function VideoPlayerPage() {
                   <button onClick={() => setScoutTab('actions')} style={{ padding: '0.25rem 0.6rem', fontSize: '0.78rem', borderRadius: '4px', border: scoutTab === 'actions' ? '1px solid var(--lvc-blue, #1a5fb4)' : '1px solid var(--border-default, #333)', background: scoutTab === 'actions' ? 'rgba(26,95,180,0.15)' : 'transparent', color: scoutTab === 'actions' ? 'var(--lvc-blue-light, #3584e4)' : 'var(--text-muted)', cursor: 'pointer' }}>Actions</button>
                   <button onClick={() => setScoutTab('rapport')} style={{ padding: '0.25rem 0.6rem', fontSize: '0.78rem', borderRadius: '4px', border: scoutTab === 'rapport' ? '1px solid var(--lvc-blue, #1a5fb4)' : '1px solid var(--border-default, #333)', background: scoutTab === 'rapport' ? 'rgba(26,95,180,0.15)' : 'transparent', color: scoutTab === 'rapport' ? 'var(--lvc-blue-light, #3584e4)' : 'var(--text-muted)', cursor: 'pointer' }}>Rapport</button>
                   {hasScout && <button onClick={() => setScoutTab('heatmap')} style={{ padding: '0.25rem 0.6rem', fontSize: '0.78rem', borderRadius: '4px', border: scoutTab === 'heatmap' ? '1px solid var(--lvc-blue, #1a5fb4)' : '1px solid var(--border-default, #333)', background: scoutTab === 'heatmap' ? 'rgba(26,95,180,0.15)' : 'transparent', color: scoutTab === 'heatmap' ? 'var(--lvc-blue-light, #3584e4)' : 'var(--text-muted)', cursor: 'pointer' }}>Heatmap</button>}
+                  <button onClick={() => setScoutTab('docs')} style={{ padding: '0.25rem 0.6rem', fontSize: '0.78rem', borderRadius: '4px', border: scoutTab === 'docs' ? '1px solid var(--lvc-blue, #1a5fb4)' : '1px solid var(--border-default, #333)', background: scoutTab === 'docs' ? 'rgba(26,95,180,0.15)' : 'transparent', color: scoutTab === 'docs' ? 'var(--lvc-blue-light, #3584e4)' : 'var(--text-muted)', cursor: 'pointer', position: 'relative' }}>
+                    Dok {documents.length > 0 && <span style={{ fontSize: '0.65rem', background: 'var(--lvc-blue)', color: '#fff', borderRadius: '50%', width: 16, height: 16, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', marginLeft: 2 }}>{documents.length}</span>}
+                  </button>
                   {hasScout && isAdmin && (
                     <a
                       href={`/api/videos/${id}/dvw/download`}
@@ -1116,6 +1125,74 @@ export default function VideoPlayerPage() {
                   onZoneSelect={(z) => setFilterStartZone(z ? String(z) : 'ALL')}
                   onActionClick={(a) => jumpToAction(a)}
                   onAutoPlay={(a, list) => jumpToAction(a, list)} />
+              </div>
+            )}
+
+            {scoutTab === 'docs' && (
+              <div style={{ padding: '0.75rem', overflowY: 'auto', flex: 1 }}>
+                {(isUploader || isCoach || isAdmin) && (
+                  <>
+                    <input ref={docFileRef} type="file" accept=".pdf,.png,.jpg,.jpeg" hidden onChange={async (e) => {
+                      const f = e.target.files[0];
+                      if (!f) return;
+                      setDocUploading(true);
+                      try {
+                        const res = await documentApi.upload(id, f, f.name.replace(/\.[^.]+$/, ''));
+                        setDocuments(prev => [res.document, ...prev]);
+                      } catch { alert('Kunde inte ladda upp dokumentet.'); }
+                      setDocUploading(false);
+                      if (docFileRef.current) docFileRef.current.value = '';
+                    }} />
+                    <button
+                      onClick={() => docFileRef.current?.click()}
+                      disabled={docUploading}
+                      style={{
+                        width: '100%', padding: '0.5rem', borderRadius: 6, fontSize: '0.8rem',
+                        border: '1px dashed var(--border)', background: 'var(--surface-2)',
+                        color: 'var(--text-muted)', cursor: 'pointer', marginBottom: '0.5rem'
+                      }}
+                    >{docUploading ? 'Laddar upp...' : '+ Ladda upp PDF / bild'}</button>
+                  </>
+                )}
+                {documents.length === 0 ? (
+                  <div style={{ textAlign: 'center', color: 'var(--text-muted)', fontSize: '0.8rem', padding: '1rem 0' }}>
+                    Inga dokument uppladdade.
+                  </div>
+                ) : (
+                  documents.map(doc => (
+                    <div key={doc.id} style={{
+                      display: 'flex', alignItems: 'center', gap: '0.4rem',
+                      padding: '0.4rem 0.5rem', marginBottom: 2, borderRadius: 6,
+                      background: 'var(--surface-2)', fontSize: '0.8rem'
+                    }}>
+                      <span style={{ color: '#f59e0b', fontSize: '0.9rem' }}>
+                        {doc.filePath?.endsWith('.pdf') ? '📄' : '🖼️'}
+                      </span>
+                      <a
+                        href={`/api/videos/documents/${doc.id}/view`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        style={{ flex: 1, color: 'var(--text)', textDecoration: 'none', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}
+                        title={doc.name}
+                      >{doc.name}</a>
+                      <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)', flexShrink: 0 }}>
+                        {Math.round(doc.fileSize / 1024)} KB
+                      </span>
+                      {isAdmin && (
+                        <button
+                          onClick={async () => {
+                            if (!confirm(`Ta bort "${doc.name}"?`)) return;
+                            try {
+                              await documentApi.remove(doc.id);
+                              setDocuments(prev => prev.filter(d => d.id !== doc.id));
+                            } catch { alert('Kunde inte ta bort.'); }
+                          }}
+                          style={{ background: 'none', border: 'none', color: '#f44336', cursor: 'pointer', fontSize: '0.75rem', flexShrink: 0 }}
+                        >x</button>
+                      )}
+                    </div>
+                  ))
+                )}
               </div>
             )}
           </div>
