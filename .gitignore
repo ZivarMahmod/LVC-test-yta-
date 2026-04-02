@@ -2,6 +2,7 @@ node_modules/
 dist/
 .env
 .env.*
+acme.env
 *.db
 *.db-journal
 logs/
