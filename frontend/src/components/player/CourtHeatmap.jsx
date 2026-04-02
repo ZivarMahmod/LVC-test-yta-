@@ -174,9 +174,14 @@ function ZoneDetail({ zone, actions, team, selectedSkill, onClose }) {
   );
 }
 
-export default function CourtHeatmap({ actions, team, teamName }) {
+export default function CourtHeatmap({ actions, team, teamName, highlightZone, onZoneSelect, compact }) {
   const [selectedSkill, setSelectedSkill] = useState('all');
   const [selectedZone, setSelectedZone] = useState(null);
+
+  // Synka highlightZone från parent (t.ex. zonfilter)
+  const effectiveSelectedZone = highlightZone
+    ? ZONES.find(z => z.id === highlightZone) || null
+    : selectedZone;
 
   const zoneData = useMemo(() => {
     if (!actions || actions.length === 0) return {};
@@ -212,8 +217,10 @@ export default function CourtHeatmap({ actions, team, teamName }) {
   const totalFiltered = Object.values(zoneData).reduce((sum, z) => sum + z.count, 0);
 
   const handleZoneClick = useCallback((zone) => {
-    setSelectedZone(prev => prev && prev.id === zone.id ? null : zone);
-  }, []);
+    const newZone = (effectiveSelectedZone && effectiveSelectedZone.id === zone.id) ? null : zone;
+    setSelectedZone(newZone);
+    if (onZoneSelect) onZoneSelect(newZone ? newZone.id : null);
+  }, [effectiveSelectedZone, onZoneSelect]);
 
   return (
     <div style={{ background: '#1e293b', borderRadius: 8, padding: 10 }}>
@@ -260,7 +267,7 @@ export default function CourtHeatmap({ actions, team, teamName }) {
           const zw = z.w * 3;
           const zh = z.h * 2;
           const color = getHeatColor(data.ratio);
-          const isSelected = selectedZone && selectedZone.id === z.id;
+          const isSelected = effectiveSelectedZone && effectiveSelectedZone.id === z.id;
 
           return (
             <g key={z.id} style={{ cursor: data.count > 0 ? 'pointer' : 'default' }} onClick={() => data.count > 0 && handleZoneClick(z)}>
@@ -292,13 +299,13 @@ export default function CourtHeatmap({ actions, team, teamName }) {
       </div>
 
       {/* Zone detail panel */}
-      {selectedZone && (
+      {effectiveSelectedZone && (
         <ZoneDetail
-          zone={selectedZone}
+          zone={effectiveSelectedZone}
           actions={actions}
           team={team}
           selectedSkill={selectedSkill}
-          onClose={() => setSelectedZone(null)}
+          onClose={() => { setSelectedZone(null); if (onZoneSelect) onZoneSelect(null); }}
         />
       )}
     </div>

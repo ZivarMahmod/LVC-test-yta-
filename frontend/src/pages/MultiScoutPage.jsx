@@ -58,6 +58,11 @@ export default function MultiScoutPage() {
   // Tab
   const [activeTab, setActiveTab] = useState('actions');
 
+  // Heatmap overlay (Ctrl+Z)
+  const [heatmapOverlay, setHeatmapOverlay] = useState(false);
+  const [overlayPos, setOverlayPos] = useState({ x: 20, y: 60 });
+  const dragRef = useRef(null);
+
   // Skill names
   const [SKILL_NAMES, setSkillNames] = useState(DEFAULT_SKILL_NAMES);
   const [SKILL_LETTERS, setSkillLetters] = useState({});
@@ -80,6 +85,47 @@ export default function MultiScoutPage() {
       setLoading(false);
     });
   }, [searchParams.get('ids')]);
+
+  // Ctrl+Z toggle heatmap overlay
+  useEffect(() => {
+    const handler = (e) => {
+      if (e.ctrlKey && e.key === 'z') {
+        e.preventDefault();
+        setHeatmapOverlay(prev => !prev);
+      }
+    };
+    window.addEventListener('keydown', handler);
+    return () => window.removeEventListener('keydown', handler);
+  }, []);
+
+  // Drag logic for overlay
+  const handleDragStart = (e) => {
+    const el = dragRef.current;
+    if (!el) return;
+    const rect = el.getBoundingClientRect();
+    const offsetX = e.clientX - rect.left;
+    const offsetY = e.clientY - rect.top;
+    const onMove = (ev) => {
+      setOverlayPos({ x: ev.clientX - offsetX, y: ev.clientY - offsetY });
+    };
+    const onUp = () => {
+      window.removeEventListener('mousemove', onMove);
+      window.removeEventListener('mouseup', onUp);
+    };
+    window.addEventListener('mousemove', onMove);
+    window.addEventListener('mouseup', onUp);
+  };
+
+  // Koppla zonfilter till heatmap highlight
+  const highlightZone = filterStartZone !== 'ALL' ? parseInt(filterStartZone, 10) : null;
+
+  const handleHeatmapZoneSelect = (zoneId) => {
+    if (zoneId) {
+      setFilterStartZone(String(zoneId));
+    } else {
+      setFilterStartZone('ALL');
+    }
+  };
 
   const getFilteredActions = useCallback(() => {
     if (!data) return [];
@@ -232,7 +278,7 @@ export default function MultiScoutPage() {
           </div>
 
           {activeTab === 'heatmap' && (
-            <CourtHeatmap actions={filteredActions} zonePositions={data.zonePositions} onZoneClick={() => {}} />
+            <CourtHeatmap actions={filteredActions} highlightZone={highlightZone} onZoneSelect={handleHeatmapZoneSelect} />
           )}
 
           {activeTab === 'actions' && (
@@ -379,6 +425,37 @@ export default function MultiScoutPage() {
           </div>
         </div>
       </div>
+
+      {/* Draggable heatmap overlay (Ctrl+Z) */}
+      {heatmapOverlay && (
+        <div
+          ref={dragRef}
+          style={{
+            position: 'fixed', left: overlayPos.x, top: overlayPos.y,
+            width: 320, zIndex: 1000,
+            background: 'var(--surface)', border: '1px solid var(--border)',
+            borderRadius: 10, boxShadow: '0 8px 32px rgba(0,0,0,0.5)',
+            overflow: 'hidden'
+          }}
+        >
+          <div
+            onMouseDown={handleDragStart}
+            style={{
+              padding: '6px 10px', background: 'var(--surface-2)', cursor: 'grab',
+              display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+              borderBottom: '1px solid var(--border)', fontSize: '0.8rem', fontWeight: 600
+            }}
+          >
+            <span>Heatmap</span>
+            <button onClick={() => setHeatmapOverlay(false)} style={{
+              background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', fontSize: '1rem'
+            }}>x</button>
+          </div>
+          <div style={{ padding: 8 }}>
+            <CourtHeatmap actions={filteredActions} highlightZone={highlightZone} onZoneSelect={handleHeatmapZoneSelect} compact />
+          </div>
+        </div>
+      )}
     </div>
   );
 }

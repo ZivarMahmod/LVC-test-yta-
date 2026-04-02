@@ -71,6 +71,11 @@ export default function VideoPlayerPage() {
   const [editingTitle, setEditingTitle] = useState(false);
   const [titleInput, setTitleInput] = useState('');
   const [titleSaving, setTitleSaving] = useState(false);
+
+  // Heatmap overlay (Ctrl+Z)
+  const [heatmapOverlay, setHeatmapOverlay] = useState(false);
+  const [overlayPos, setOverlayPos] = useState({ x: 20, y: 80 });
+  const heatmapDragRef = useRef(null);
   // DVW-kodsökning
   const [dvwSearchOpen, setDvwSearchOpen] = useState(false);
   const [dvwSearchQuery, setDvwSearchQuery] = useState('');
@@ -209,6 +214,12 @@ export default function VideoPlayerPage() {
       if (e.key === 'Escape' && dvwSearchOpen) {
         setDvwSearchOpen(false);
         setDvwSearchQuery('');
+        return;
+      }
+      // Ctrl+Z toggle heatmap overlay
+      if (e.ctrlKey && e.key === 'z') {
+        e.preventDefault();
+        setHeatmapOverlay(prev => !prev);
         return;
       }
       const tag = document.activeElement?.tagName;
@@ -1079,9 +1090,13 @@ export default function VideoPlayerPage() {
             {/* Heatmap-vy */}
             {scoutTab === 'heatmap' && scout?.actions && (
               <div style={{ padding: '0.75rem', overflowY: 'auto', flex: 1 }}>
-                <CourtHeatmap actions={scout.actions} team="H" teamName={scout.teams?.H} />
+                <CourtHeatmap actions={scout.actions} team="H" teamName={scout.teams?.H}
+                  highlightZone={filterStartZone !== 'ALL' ? parseInt(filterStartZone, 10) : null}
+                  onZoneSelect={(z) => setFilterStartZone(z ? String(z) : 'ALL')} />
                 <div style={{ height: 12 }} />
-                <CourtHeatmap actions={scout.actions} team="V" teamName={scout.teams?.V} />
+                <CourtHeatmap actions={scout.actions} team="V" teamName={scout.teams?.V}
+                  highlightZone={filterStartZone !== 'ALL' ? parseInt(filterStartZone, 10) : null}
+                  onZoneSelect={(z) => setFilterStartZone(z ? String(z) : 'ALL')} />
               </div>
             )}
           </div>
@@ -1108,6 +1123,51 @@ export default function VideoPlayerPage() {
         onSendReview={sendReview}
         reviewLoading={reviewLoading}
       />
+
+      {/* Draggable heatmap overlay (Ctrl+Z) */}
+      {heatmapOverlay && scout?.actions && (
+        <div
+          ref={heatmapDragRef}
+          style={{
+            position: 'fixed', left: overlayPos.x, top: overlayPos.y,
+            width: 320, zIndex: 1000,
+            background: 'var(--surface)', border: '1px solid var(--border)',
+            borderRadius: 10, boxShadow: '0 8px 32px rgba(0,0,0,0.5)',
+            overflow: 'hidden'
+          }}
+        >
+          <div
+            onMouseDown={(e) => {
+              const el = heatmapDragRef.current;
+              if (!el) return;
+              const rect = el.getBoundingClientRect();
+              const ox = e.clientX - rect.left;
+              const oy = e.clientY - rect.top;
+              const onMove = (ev) => setOverlayPos({ x: ev.clientX - ox, y: ev.clientY - oy });
+              const onUp = () => { window.removeEventListener('mousemove', onMove); window.removeEventListener('mouseup', onUp); };
+              window.addEventListener('mousemove', onMove);
+              window.addEventListener('mouseup', onUp);
+            }}
+            style={{
+              padding: '6px 10px', background: 'var(--surface-2)', cursor: 'grab',
+              display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+              borderBottom: '1px solid var(--border)', fontSize: '0.8rem', fontWeight: 600
+            }}
+          >
+            <span>Heatmap (Ctrl+Z)</span>
+            <button onClick={() => setHeatmapOverlay(false)} style={{
+              background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', fontSize: '1rem'
+            }}>x</button>
+          </div>
+          <div style={{ padding: 8 }}>
+            <CourtHeatmap actions={scout.actions} team={filterTeam !== 'ALL' ? filterTeam : undefined}
+              teamName={filterTeam === 'H' ? scout.teams?.H : filterTeam === 'V' ? scout.teams?.V : 'Alla'}
+              highlightZone={filterStartZone !== 'ALL' ? parseInt(filterStartZone, 10) : null}
+              onZoneSelect={(z) => setFilterStartZone(z ? String(z) : 'ALL')}
+              compact />
+          </div>
+        </div>
+      )}
     </div>
   );
 }
