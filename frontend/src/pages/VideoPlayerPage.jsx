@@ -252,10 +252,11 @@ export default function VideoPlayerPage() {
     ? scout.actions.filter(a => a.rawCode.toLowerCase().includes(dvwSearchQuery.toLowerCase()))
     : [];
 
-  // Auto-hoppa till nästa filtrerad action efter delay
+  // Auto-hoppa till nästa action efter delay
   const autoJumpTimer = useRef(null);
+  const autoPlayListRef = useRef(null); // custom action list for zone auto-play
 
-  const jumpToAction = useCallback((action) => {
+  const jumpToAction = useCallback((action, actionList) => {
     if (videoRef.current && action.videoTime !== null) {
       videoRef.current.currentTime = Math.max(0, action.videoTime - preRoll);
       videoRef.current.play().catch(() => {});
@@ -264,31 +265,45 @@ export default function VideoPlayerPage() {
       // Rensa eventuell tidigare timer
       if (autoJumpTimer.current) clearTimeout(autoJumpTimer.current);
 
-      // Hitta nästa action i filtrerad lista
-      const filtered = getFilteredActions();
-      const currentIdx = filtered.findIndex(a => a.id === action.id);
-      const next = filtered[currentIdx + 1];
+      // Om en specifik action-lista skickats (t.ex. från zon), spara den
+      if (actionList) autoPlayListRef.current = actionList;
 
-      if (autoAction && next && next.videoTime !== null) {
+      // Bestäm vilken lista att kedja igenom
+      const list = autoPlayListRef.current || (autoAction ? getFilteredActions() : null);
+      if (!list) return;
+
+      const currentIdx = list.findIndex(a => a.id === action.id);
+      const next = list[currentIdx + 1];
+
+      if (next && next.videoTime !== null) {
+        const delay = next.videoTime > action.videoTime
+          ? Math.min((next.videoTime - action.videoTime) * 1000, 8000)
+          : 5000;
         autoJumpTimer.current = setTimeout(() => {
           if (videoRef.current && !videoRef.current.paused) {
-            videoRef.current.currentTime = next.videoTime;
-            videoRef.current.play().catch(() => {});
-            setActiveActionId(next.id);
-            // Starta kedjan vidare
             jumpToAction(next);
           }
-        }, 5000);
+        }, delay);
+      } else {
+        // Sista actionen — rensa listan
+        autoPlayListRef.current = null;
       }
     }
   }, [scout, filterSkill, filterPlayer, filterSet, filterTeam, filterGrade, filterStartZone, filterEndZone, autoAction, preRoll]);
 
-  // Rensa timer vid unmount
+  // Rensa auto-play vid paus eller unmount
   useEffect(() => {
+    const vid = videoRef.current;
+    const handlePause = () => {
+      if (autoJumpTimer.current) clearTimeout(autoJumpTimer.current);
+      autoPlayListRef.current = null;
+    };
+    if (vid) vid.addEventListener('pause', handlePause);
     return () => {
+      if (vid) vid.removeEventListener('pause', handlePause);
       if (autoJumpTimer.current) clearTimeout(autoJumpTimer.current);
     };
-  }, []);
+  }, [video]);
 
   // Scrolla till aktiv action i listan
   useEffect(() => {
@@ -1093,12 +1108,14 @@ export default function VideoPlayerPage() {
                 <CourtHeatmap actions={scout.actions} team="H" teamName={scout.teams?.H}
                   highlightZone={filterStartZone !== 'ALL' ? parseInt(filterStartZone, 10) : null}
                   onZoneSelect={(z) => setFilterStartZone(z ? String(z) : 'ALL')}
-                  onActionClick={(a) => jumpToAction(a)} />
+                  onActionClick={(a) => jumpToAction(a)}
+                  onAutoPlay={(a, list) => jumpToAction(a, list)} />
                 <div style={{ height: 12 }} />
                 <CourtHeatmap actions={scout.actions} team="V" teamName={scout.teams?.V}
                   highlightZone={filterStartZone !== 'ALL' ? parseInt(filterStartZone, 10) : null}
                   onZoneSelect={(z) => setFilterStartZone(z ? String(z) : 'ALL')}
-                  onActionClick={(a) => jumpToAction(a)} />
+                  onActionClick={(a) => jumpToAction(a)}
+                  onAutoPlay={(a, list) => jumpToAction(a, list)} />
               </div>
             )}
           </div>
@@ -1172,6 +1189,7 @@ export default function VideoPlayerPage() {
               highlightZone={filterStartZone !== 'ALL' ? parseInt(filterStartZone, 10) : null}
               onZoneSelect={(z) => setFilterStartZone(z ? String(z) : 'ALL')}
               onActionClick={(a) => jumpToAction(a)}
+              onAutoPlay={(a, list) => jumpToAction(a, list)}
               compact />
           </div>
         </div>

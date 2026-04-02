@@ -55,7 +55,7 @@ const getHeatColor = (ratio) => {
 };
 
 // Zone detail panel with grade filters
-function ZoneDetail({ zone, actions, team, selectedSkill, onClose, onActionClick }) {
+function ZoneDetail({ zone, actions, team, selectedSkill, onClose, onActionClick, onAutoPlay }) {
   const [gradeFilter, setGradeFilter] = useState('all');
 
   const zoneActions = useMemo(() => {
@@ -155,7 +155,10 @@ function ZoneDetail({ zone, actions, team, selectedSkill, onClose, onActionClick
                 {acts.slice(0, 30).map((a, i) => {
                   const gradeInfo = GRADE_FILTERS.find(g => g.key === a.grade);
                   return (
-                    <span key={i} onClick={() => onActionClick && onActionClick(a)} style={{
+                    <span key={i} onClick={() => {
+                      if (onAutoPlay) onAutoPlay(a, filteredActions);
+                      else if (onActionClick) onActionClick(a);
+                    }} style={{
                       fontSize: 10, padding: '2px 5px', borderRadius: 3,
                       background: '#1e293b', border: `1px solid ${gradeInfo?.color || '#475569'}33`,
                       color: gradeInfo?.color || '#e2e8f0',
@@ -177,7 +180,7 @@ function ZoneDetail({ zone, actions, team, selectedSkill, onClose, onActionClick
   );
 }
 
-export default function CourtHeatmap({ actions, team, teamName, highlightZone, onZoneSelect, onActionClick, compact }) {
+export default function CourtHeatmap({ actions, team, teamName, highlightZone, onZoneSelect, onActionClick, onAutoPlay, compact }) {
   const [selectedSkill, setSelectedSkill] = useState('all');
   const [selectedZone, setSelectedZone] = useState(null);
 
@@ -321,6 +324,7 @@ export default function CourtHeatmap({ actions, team, teamName, highlightZone, o
           selectedSkill={selectedSkill}
           onClose={() => { setSelectedZone(null); if (onZoneSelect) onZoneSelect(null); }}
           onActionClick={onActionClick}
+          onAutoPlay={onAutoPlay}
         />
       )}
     </div>
