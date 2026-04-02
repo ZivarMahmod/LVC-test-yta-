@@ -368,6 +368,7 @@ export const videoController = {
           team: video.team,
           season: video.season,
           createdAt: video.createdAt,
+          updatedAt: video.updatedAt,
           hasDvw,
           streamUrl: fileStorageService.generateSignedUrl(video.id).url,
           thumbnailUrl: video.thumbnailPath ? `/api/videos/thumbnail/${video.thumbnailPath.replace('/local/', '')}` : null
