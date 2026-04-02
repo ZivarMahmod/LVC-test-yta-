@@ -267,7 +267,7 @@ export default function UploadPage() {
             {pdfFiles.length > 0 && !uploading && (
               <button type="button" className="drop-zone-remove" onClick={() => setPdfFiles([])} style={{marginLeft: 'auto'}}>×</button>
             )}
-            <input ref={pdfRef} type="file" accept=".pdf,.png,.jpg,.jpeg" multiple onChange={(e) => { setPdfFiles(prev => [...prev, ...e.target.files]); if (pdfRef.current) pdfRef.current.value = ''; }} hidden disabled={uploading} />
+            <input ref={pdfRef} type="file" accept=".pdf,.png,.jpg,.jpeg" multiple onChange={(e) => { const files = [...e.target.files]; if (files.length > 0) setPdfFiles(prev => [...prev, ...files]); if (pdfRef.current) pdfRef.current.value = ''; }} hidden disabled={uploading} />
           </div>
           {pdfFiles.length > 0 && (
             <div style={{ marginBottom: '0.5rem', paddingLeft: '0.5rem' }}>
