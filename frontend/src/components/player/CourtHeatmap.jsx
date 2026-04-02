@@ -199,6 +199,7 @@ export default function CourtHeatmap({ actions, team, teamName, highlightZone, o
     });
 
     const counts = {};
+    const good = {};
     let maxCount = 0;
 
     for (const a of filtered) {
@@ -206,15 +207,20 @@ export default function CourtHeatmap({ actions, team, teamName, highlightZone, o
       if (!rawZone || rawZone < 1 || rawZone > 9) continue;
       const zone = ZONE_MAP[rawZone];
       counts[zone] = (counts[zone] || 0) + 1;
+      if (a.grade === '#' || a.grade === '+') {
+        good[zone] = (good[zone] || 0) + 1;
+      }
       if (counts[zone] > maxCount) maxCount = counts[zone];
     }
 
     const result = {};
     for (const z of ZONES) {
       const count = counts[z.id] || 0;
+      const goodCount = good[z.id] || 0;
       result[z.id] = {
         count,
         ratio: maxCount > 0 ? count / maxCount : 0,
+        efficiency: count > 0 ? Math.round((goodCount / count) * 100) : 0,
       };
     }
     return result;
@@ -225,8 +231,8 @@ export default function CourtHeatmap({ actions, team, teamName, highlightZone, o
   const handleZoneClick = useCallback((zone) => {
     const newZone = (effectiveSelectedZone && effectiveSelectedZone.id === zone.id) ? null : zone;
     setSelectedZone(newZone);
-    if (onZoneSelect) onZoneSelect(newZone ? newZone.id : null);
-  }, [effectiveSelectedZone, onZoneSelect]);
+    // Klick öppnar bara detalj-panelen, sätter INTE zonfilter
+  }, [effectiveSelectedZone]);
 
   const displayName = teamName || (team === 'H' ? 'Hemmalag' : team === 'V' ? 'Bortalag' : '');
 
@@ -304,7 +310,7 @@ export default function CourtHeatmap({ actions, team, teamName, highlightZone, o
                 x={zx + zw / 2} y={zy + zh / 2 + 22}
                 textAnchor="middle" fill="#94a3b8" fontSize="11"
               >
-                {totalFiltered > 0 ? Math.round((data.count / totalFiltered) * 100) : 0}%
+                {data.efficiency}%
               </text>
             </g>
           );
