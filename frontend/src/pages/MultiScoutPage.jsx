@@ -52,6 +52,8 @@ export default function MultiScoutPage() {
   const [activeAction, setActiveAction] = useState(null);
   const [videoData, setVideoData] = useState(null); // { id, streamUrl, mimeType }
   const [videoLoading, setVideoLoading] = useState(false);
+  const [preRoll, setPreRoll] = useState(0);
+  const [skipSeconds, setSkipSeconds] = useState(5);
   const videoRef = useRef(null);
   const videoCache = useRef({}); // videoId → { streamUrl, mimeType }
 
@@ -159,7 +161,7 @@ export default function MultiScoutPage() {
       // Seek efter att video laddats
       requestAnimationFrame(() => {
         if (videoRef.current && action.videoTime != null) {
-          videoRef.current.currentTime = action.videoTime;
+          videoRef.current.currentTime = Math.max(0, action.videoTime - preRoll);
           videoRef.current.play().catch(() => {});
         }
       });
@@ -182,7 +184,7 @@ export default function MultiScoutPage() {
   useEffect(() => {
     if (videoRef.current && activeAction?.videoTime != null && videoData) {
       const seekAndPlay = () => {
-        videoRef.current.currentTime = activeAction.videoTime;
+        videoRef.current.currentTime = Math.max(0, activeAction.videoTime - preRoll);
         videoRef.current.play().catch(() => {});
       };
       if (videoRef.current.readyState >= 1) {
@@ -192,6 +194,27 @@ export default function MultiScoutPage() {
       }
     }
   }, [videoData, activeAction]);
+
+  // Keyboard: piltangenter skip, N/P nästa/föregående action
+  useEffect(() => {
+    const handler = (e) => {
+      const vid = videoRef.current;
+      if (!vid) return;
+      if (e.key === 'ArrowRight') { e.preventDefault(); vid.currentTime = Math.min(vid.currentTime + skipSeconds, vid.duration); }
+      else if (e.key === 'ArrowLeft') { e.preventDefault(); vid.currentTime = Math.max(vid.currentTime - skipSeconds, 0); }
+      else if (e.key === 'n' || e.key === 'N') {
+        e.preventDefault();
+        const idx = filteredActions.findIndex(a => a.id === activeAction?.id && a.videoId === activeAction?.videoId);
+        if (idx >= 0 && idx < filteredActions.length - 1) handleActionClick(filteredActions[idx + 1]);
+      } else if (e.key === 'p' || e.key === 'P') {
+        e.preventDefault();
+        const idx = filteredActions.findIndex(a => a.id === activeAction?.id && a.videoId === activeAction?.videoId);
+        if (idx > 0) handleActionClick(filteredActions[idx - 1]);
+      } else if (e.key === ' ') { e.preventDefault(); vid.paused ? vid.play() : vid.pause(); }
+    };
+    window.addEventListener('keydown', handler);
+    return () => window.removeEventListener('keydown', handler);
+  }, [skipSeconds, activeAction, filteredActions]);
 
   // Unika spelare & skills
   const uniquePlayers = data ? [...new Map(data.actions
@@ -378,6 +401,20 @@ export default function MultiScoutPage() {
               <select value={filterEndZone} onChange={e => setFilterEndZone(e.target.value)} style={selectStyle}>
                 <option value="ALL">Till</option>
                 {[1,2,3,4,5,6,7,8,9].map(z => <option key={z} value={String(z)}>Z{z}</option>)}
+              </select>
+            </div>
+
+            {/* Pre/Skip */}
+            <div style={{ display: 'flex', gap: '0.3rem', marginBottom: '0.4rem', alignItems: 'center' }}>
+              <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>Pre</span>
+              <select value={preRoll} onChange={e => setPreRoll(Number(e.target.value))}
+                style={{ ...selectStyle, flex: 'none', width: 'auto', padding: '0.15rem 0.3rem', fontSize: '0.75rem' }}>
+                {[0,2,3,5].map(s => <option key={s} value={s}>{s}s</option>)}
+              </select>
+              <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>Skip</span>
+              <select value={skipSeconds} onChange={e => setSkipSeconds(Number(e.target.value))}
+                style={{ ...selectStyle, flex: 'none', width: 'auto', padding: '0.15rem 0.3rem', fontSize: '0.75rem' }}>
+                {[1,2,5,10,30].map(s => <option key={s} value={s}>{s}s</option>)}
               </select>
             </div>
 
