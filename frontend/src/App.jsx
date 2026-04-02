@@ -7,9 +7,8 @@ import { useAuth } from './context/AuthContext.jsx';
 import Layout from './components/layout/Layout.jsx';
 import LoginPage from './pages/LoginPage.jsx';
 import RegisterPage from './pages/RegisterPage.jsx';
-import TeamsPage from './pages/TeamsPage.jsx';
-
 // Lazy-laddade sidor — laddas först när användaren navigerar dit
+const TeamsPage = React.lazy(() => import('./pages/TeamsPage.jsx'));
 const SeasonsPage = React.lazy(() => import('./pages/SeasonsPage.jsx'));
 const VideosPage = React.lazy(() => import('./pages/VideosPage.jsx'));
 const VideoPlayerPage = React.lazy(() => import('./pages/VideoPlayerPage.jsx'));

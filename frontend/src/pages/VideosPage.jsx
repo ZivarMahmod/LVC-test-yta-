@@ -5,14 +5,8 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { Link, useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { videoApi, teamApi } from '../utils/api.js';
 import { useAuth } from '../context/AuthContext.jsx';
-import { formatFileSize } from '../utils/format.js';
+import { formatFileSize, formatDate } from '../utils/format.js';
 import './VideosPage.css';
-
-function formatDate(dateStr) {
-  return new Date(dateStr).toLocaleDateString('sv-SE', {
-    year: 'numeric', month: 'long', day: 'numeric'
-  });
-}
 
 export default function VideosPage() {
   const { isAdmin } = useAuth();
@@ -174,7 +168,7 @@ export default function VideosPage() {
                 </div>
                 {!compareMode && isAdmin && (
                   <>
-                    <button className="video-card-delete" onClick={(e) => { e.preventDefault(); handleDelete(video.id, video.title); }} disabled={deleting === video.id} title="Ta bort">x</button>
+                    <button className="video-card-delete" onClick={(e) => { e.preventDefault(); handleDelete(video.id, video.title); }} disabled={deleting === video.id} title="Ta bort" aria-label="Ta bort video">x</button>
                     <button className="video-card-thumb-btn" onClick={(e) => { e.preventDefault(); setThumbnailVideoId(video.id); thumbnailInputRef.current?.click(); }} title="Byt thumbnail">📷</button>
                   </>
                 )}
@@ -209,7 +203,7 @@ export default function VideosPage() {
               <div className="video-list-date">{formatDate(video.matchDate)}</div>
             </div>
             {!compareMode && isAdmin && (
-              <button className="video-list-delete" onClick={(e) => { e.preventDefault(); handleDelete(video.id, video.title); }} disabled={deleting === video.id}>x</button>
+              <button className="video-list-delete" onClick={(e) => { e.preventDefault(); handleDelete(video.id, video.title); }} disabled={deleting === video.id} aria-label="Ta bort video">x</button>
             )}
           </Link>
         ))}

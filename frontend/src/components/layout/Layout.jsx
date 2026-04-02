@@ -265,7 +265,7 @@ export default function Layout() {
             )}
           </div>
 
-          <button className="hamburger" onClick={() => setMenuOpen(!menuOpen)}>
+          <button className="hamburger" onClick={() => setMenuOpen(!menuOpen)} aria-label="Meny" aria-expanded={menuOpen}>
             {menuOpen ? '✕' : '☰'}
           </button>
         </div>

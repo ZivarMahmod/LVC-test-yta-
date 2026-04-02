@@ -70,7 +70,7 @@ export const startFolderScanner = async () => {
         const title = formatVideoTitle(opponent, matchDate);
 
         // Kolla om det finns en .dvw scout-fil med samma namn
-        const dvwRelPath = file.relativePath.replace(/.[^.]+$/, '.dvw');
+        const dvwRelPath = file.relativePath.replace(/\.[^.]+$/, '.dvw');
         const dvwAbsPath = path.join(STORAGE_PATH, dvwRelPath);
         let dvwPath = null;
         try {

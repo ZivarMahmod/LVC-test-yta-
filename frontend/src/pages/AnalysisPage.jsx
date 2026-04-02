@@ -5,13 +5,8 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { videoApi, teamApi } from '../utils/api.js';
+import { formatDate } from '../utils/format.js';
 import './VideosPage.css';
-
-function formatDate(dateStr) {
-  return new Date(dateStr).toLocaleDateString('sv-SE', {
-    year: 'numeric', month: 'short', day: 'numeric'
-  });
-}
 
 export default function AnalysisPage() {
   const navigate = useNavigate();

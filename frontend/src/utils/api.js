@@ -204,7 +204,7 @@ export const videoApi = {
     const res = await apiFetch(`/api/videos/${id}/restore`, { method: 'PATCH' });
     if (!res.ok) {
       const data = await res.json();
-      throw new Error(data.error || 'Kunde inte aterstalla videon');
+      throw new Error(data.error || 'Kunde inte återställa videon');
     }
     return res.json();
   },
@@ -223,7 +223,7 @@ export const videoApi = {
 export const adminApi = {
   async getActiveUsers() {
     const res = await apiFetch('/api/admin/active-users');
-    if (!res.ok) throw new Error('Kunde inte hämta');
+    if (!res.ok) throw new Error('Kunde inte hämta aktiva användare');
     return res.json();
   },
   async listUsers() {
@@ -327,7 +327,7 @@ export const adminApi = {
 export const changelogApi = {
   async list() {
     const res = await apiFetch('/api/changelog');
-    if (!res.ok) throw new Error('Kunde inte hamta andringslogg');
+    if (!res.ok) throw new Error('Kunde inte hämta ändringslogg');
     return res.json();
   },
   async create(version, title, content) {

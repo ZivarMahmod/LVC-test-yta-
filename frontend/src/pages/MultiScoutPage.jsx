@@ -4,30 +4,15 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useSearchParams, Link } from 'react-router-dom';
 import { multiScoutApi, videoApi, settingsApi } from '../utils/api.js';
+import { SKILL_COLORS, DEFAULT_SKILL_NAMES, GRADE_SYMBOLS } from '../utils/scoutConstants.js';
 import CourtHeatmap from '../components/player/CourtHeatmap.jsx';
 import './VideoPlayerPage.css';
-
-const SKILL_COLORS = {
-  S: '#4CAF50', R: '#2196F3', P: '#FF9800',
-  A: '#F44336', B: '#9C27B0', D: '#00BCD4',
-  G: '#607D8B', O: '#795548'
-};
-
-const DEFAULT_SKILL_NAMES = {
-  S: 'Serve', R: 'Mottagning', P: 'Pass',
-  A: 'Anfall', B: 'Block', D: 'Försvar',
-  G: 'Gratisboll', O: 'Övrigt'
-};
-
-const GRADE_SYMBOLS = {
-  '#': '●', '+': '▲', '!': '■', '-': '▼', '/': '✕', '=': '✕'
-};
 
 const GRADE_COLORS = {
   '#': '#4CAF50', '+': '#8BC34A', '!': '#FF9800', '-': '#FF5722', '/': '#f44336', '=': '#f44336'
 };
 
-function formatDate(dateStr) {
+function formatDateShort(dateStr) {
   return new Date(dateStr).toLocaleDateString('sv-SE', { month: 'short', day: 'numeric' });
 }
 
@@ -266,7 +251,7 @@ export default function MultiScoutPage() {
                 background: 'rgba(0,0,0,0.7)', borderRadius: 6, padding: '2px 8px',
                 fontSize: '0.75rem', color: '#fff'
               }}>
-                {activeAction.matchOpponent} — {formatDate(activeAction.matchDate)}
+                {activeAction.matchOpponent} — {formatDateShort(activeAction.matchDate)}
               </div>
             </div>
           ) : videoLoading ? (
@@ -293,7 +278,7 @@ export default function MultiScoutPage() {
                 <option value="ALL">Alla matcher</option>
                 {data.matches.map(m => (
                   <option key={m.videoId} value={m.videoId}>
-                    {m.opponent} {formatDate(m.matchDate)}
+                    {m.opponent} {formatDateShort(m.matchDate)}
                   </option>
                 ))}
               </select>
