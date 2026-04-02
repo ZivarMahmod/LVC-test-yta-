@@ -360,6 +360,7 @@ export const videoController = {
         team: video.team,
         season: video.season,
         createdAt: video.createdAt,
+        hasDvw: !!video.dvwPath,
         streamUrl: fileStorageService.generateSignedUrl(video.id).url,
         thumbnailUrl: video.thumbnailPath ? `/api/videos/thumbnail/${video.thumbnailPath.replace('/local/', '')}` : null
       }));
