@@ -227,9 +227,9 @@ export default function MultiScoutPage() {
   const skills = ['S', 'R', 'P', 'A', 'B', 'D', 'G', 'O'].filter(s => uniqueSkills.includes(s));
 
   const selectStyle = {
-    flex: 1, padding: '0.3rem 0.4rem', borderRadius: '6px',
+    flex: 1, padding: '0.25rem 0.3rem', borderRadius: '5px',
     border: '1px solid var(--border)', background: 'var(--surface-2)',
-    color: 'var(--text)', fontSize: '0.78rem'
+    color: 'var(--text)', fontSize: '0.75rem'
   };
 
   if (loading) return <div className="loading-container"><div className="spinner" /></div>;
@@ -284,61 +284,58 @@ export default function MultiScoutPage() {
         </div>
 
         {/* Höger: Filter + Actions */}
-        <div style={{ width: 280, flexShrink: 0, display: 'flex', flexDirection: 'column', maxHeight: '85vh' }}>
-          <div style={{ background: 'var(--surface)', borderRadius: 8, padding: '0.75rem', border: '1px solid var(--border)', display: 'flex', flexDirection: 'column', flex: 1, overflow: 'hidden' }}>
-            <div style={{ fontWeight: 600, fontSize: '0.85rem', marginBottom: '0.5rem' }}>Filter</div>
+        <div style={{ width: 260, flexShrink: 0, display: 'flex', flexDirection: 'column', maxHeight: '85vh' }}>
+          <div style={{ background: 'var(--surface)', borderRadius: 8, padding: '0.6rem', border: '1px solid var(--border)', display: 'flex', flexDirection: 'column', flex: 1, overflow: 'hidden' }}>
 
-            {/* Match */}
-            <select value={filterMatch} onChange={e => setFilterMatch(e.target.value)} style={{ ...selectStyle, width: '100%', marginBottom: '0.4rem' }}>
-              <option value="ALL">Alla matcher</option>
-              {data.matches.map(m => (
-                <option key={m.videoId} value={m.videoId}>
-                  {m.opponent} {formatDate(m.matchDate)}
-                </option>
-              ))}
-            </select>
+            {/* Match + Lag */}
+            <div style={{ display: 'flex', gap: '0.25rem', marginBottom: '0.3rem' }}>
+              <select value={filterMatch} onChange={e => setFilterMatch(e.target.value)} style={selectStyle}>
+                <option value="ALL">Alla matcher</option>
+                {data.matches.map(m => (
+                  <option key={m.videoId} value={m.videoId}>
+                    {m.opponent} {formatDate(m.matchDate)}
+                  </option>
+                ))}
+              </select>
+              <select value={filterTeam} onChange={e => setFilterTeam(e.target.value)} style={selectStyle}>
+                <option value="ALL">Lag</option>
+                {[...new Map(data.actions.map(a => [a.teamName, a.team])).entries()]
+                  .sort(([a], [b]) => a.localeCompare(b, 'sv'))
+                  .map(([name, code]) => (
+                    <option key={code + '-' + name} value={name}>{name}</option>
+                  ))
+                }
+              </select>
+            </div>
 
-            {/* Lag */}
-            <select value={filterTeam} onChange={e => setFilterTeam(e.target.value)} style={{ ...selectStyle, width: '100%', marginBottom: '0.4rem' }}>
-              <option value="ALL">Lag</option>
-              {[...new Map(data.actions.map(a => [a.teamName, a.team])).entries()]
-                .sort(([a], [b]) => a.localeCompare(b, 'sv'))
-                .map(([name, code]) => (
-                  <option key={code + '-' + name} value={name}>{name}</option>
-                ))
-              }
-            </select>
-
-            {/* Spelare */}
-            <select value={filterPlayer} onChange={e => setFilterPlayer(e.target.value)} style={{ ...selectStyle, width: '100%', marginBottom: '0.4rem' }}>
-              <option value="ALL">Spelare</option>
-              {uniquePlayers.map(({ number, name }) => (
-                <option key={number + '-' + name} value={number + '-' + name}>#{number} {name}</option>
-              ))}
-            </select>
-
-            {/* Zoner */}
-            <div style={{ display: 'flex', gap: '0.3rem', marginBottom: '0.4rem' }}>
-              <select value={filterStartZone} onChange={e => setFilterStartZone(e.target.value)} style={selectStyle}>
+            {/* Spelare + Från/Till */}
+            <div style={{ display: 'flex', gap: '0.25rem', marginBottom: '0.3rem' }}>
+              <select value={filterPlayer} onChange={e => setFilterPlayer(e.target.value)} style={selectStyle}>
+                <option value="ALL">Spelare</option>
+                {uniquePlayers.map(({ number, name }) => (
+                  <option key={number + '-' + name} value={number + '-' + name}>#{number} {name}</option>
+                ))}
+              </select>
+              <select value={filterStartZone} onChange={e => setFilterStartZone(e.target.value)} style={{ ...selectStyle, flex: 'none', width: 52 }}>
                 <option value="ALL">Från</option>
                 {[1,2,3,4,5,6,7,8,9].map(z => <option key={z} value={String(z)}>Z{z}</option>)}
               </select>
-              <select value={filterEndZone} onChange={e => setFilterEndZone(e.target.value)} style={selectStyle}>
+              <select value={filterEndZone} onChange={e => setFilterEndZone(e.target.value)} style={{ ...selectStyle, flex: 'none', width: 48 }}>
                 <option value="ALL">Till</option>
                 {[1,2,3,4,5,6,7,8,9].map(z => <option key={z} value={String(z)}>Z{z}</option>)}
               </select>
             </div>
 
-            {/* Pre/Skip */}
-            <div style={{ display: 'flex', gap: '0.3rem', marginBottom: '0.4rem', alignItems: 'center' }}>
-              <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>Pre</span>
+            {/* Pre/Skip + Skills on same area */}
+            <div style={{ display: 'flex', gap: '0.25rem', marginBottom: '0.3rem', alignItems: 'center', flexWrap: 'wrap' }}>
+              <span style={{ fontSize: '0.65rem', color: 'var(--text-muted)' }}>Pre</span>
               <select value={preRoll} onChange={e => setPreRoll(Number(e.target.value))}
-                style={{ ...selectStyle, flex: 'none', width: 'auto', padding: '0.15rem 0.3rem', fontSize: '0.75rem' }}>
+                style={{ padding: '0.1rem 0.2rem', borderRadius: '4px', border: '1px solid var(--border)', background: 'var(--surface-2)', color: 'var(--text)', fontSize: '0.7rem' }}>
                 {[0,2,3,5].map(s => <option key={s} value={s}>{s}s</option>)}
               </select>
-              <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>Skip</span>
+              <span style={{ fontSize: '0.65rem', color: 'var(--text-muted)' }}>Skip</span>
               <select value={skipSeconds} onChange={e => setSkipSeconds(Number(e.target.value))}
-                style={{ ...selectStyle, flex: 'none', width: 'auto', padding: '0.15rem 0.3rem', fontSize: '0.75rem' }}>
+                style={{ padding: '0.1rem 0.2rem', borderRadius: '4px', border: '1px solid var(--border)', background: 'var(--surface-2)', color: 'var(--text)', fontSize: '0.7rem' }}>
                 {[1,2,5,10,30].map(s => <option key={s} value={s}>{s}s</option>)}
               </select>
             </div>
