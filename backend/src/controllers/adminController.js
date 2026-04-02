@@ -369,6 +369,16 @@ export const adminController = {
       if (!team) return res.status(404).json({ error: 'Laget hittades inte.' });
       if (!req.file) return res.status(400).json({ error: 'Ingen bild bifogad.' });
 
+      // Validera filtyp — endast bilder tillåtna
+      const allowedImageExts = ['.jpg', '.jpeg', '.png', '.gif', '.webp'];
+      const fileExt = path.extname(req.file.originalname).toLowerCase();
+      const allowedImageMimes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+      if (!allowedImageExts.includes(fileExt) || !allowedImageMimes.includes(req.file.mimetype)) {
+        const fs0 = await import('fs/promises');
+        await fs0.unlink(req.file.path).catch(() => {});
+        return res.status(400).json({ error: 'Endast bildfiler tillåtna (jpg, jpeg, png, gif, webp).' });
+      }
+
       const fs = await import('fs/promises');
 
       // Radera gamla thumbnails (alla extensions)

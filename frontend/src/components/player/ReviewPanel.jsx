@@ -117,6 +117,7 @@ export default function ReviewPanel({
             <button
               onMouseDown={e => e.stopPropagation()}
               onClick={onClose}
+              aria-label="Stäng panel"
               style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-secondary)', fontSize: 16, padding: '0 4px' }}
             >x</button>
           </div>

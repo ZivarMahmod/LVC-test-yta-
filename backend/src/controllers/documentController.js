@@ -29,6 +29,15 @@ export const documentController = {
       const file = req.file;
       if (!file) return res.status(400).json({ error: 'Ingen fil bifogad.' });
 
+      // Validera filtyp — endast PDF och bilder tillåtna
+      const allowedDocExts = ['.pdf', '.jpg', '.jpeg', '.png', '.gif', '.webp'];
+      const allowedDocMimes = ['application/pdf', 'image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+      const docExt = path.extname(file.originalname).toLowerCase();
+      if (!allowedDocExts.includes(docExt) || !allowedDocMimes.includes(file.mimetype)) {
+        await unlink(file.path).catch(() => {});
+        return res.status(400).json({ error: 'Endast PDF och bildfiler tillåtna (pdf, jpg, jpeg, png, gif, webp).' });
+      }
+
       const video = await prisma.video.findUnique({ where: { id: req.params.id } });
       if (!video) return res.status(404).json({ error: 'Videon hittades inte.' });
 

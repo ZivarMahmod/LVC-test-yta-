@@ -6,27 +6,12 @@ import { useParams, Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { videoApi, scoutApi, settingsApi, documentApi } from '../utils/api.js';
 import { useAuth } from '../context/AuthContext.jsx';
 import { formatFileSize, formatDate, formatVideoTime } from '../utils/format.js';
+import { SKILL_COLORS, DEFAULT_SKILL_NAMES, GRADE_SYMBOLS } from '../utils/scoutConstants.js';
 import MatchReport from '../components/player/MatchReport.jsx';
 import CourtHeatmap from '../components/player/CourtHeatmap.jsx';
 import ReviewPanel from '../components/player/ReviewPanel.jsx';
 import DvwSearchPanel from '../components/player/DvwSearchPanel.jsx';
 import './VideoPlayerPage.css';
-
-const SKILL_COLORS = {
-  S: '#4CAF50', R: '#2196F3', P: '#FF9800',
-  A: '#F44336', B: '#9C27B0', D: '#00BCD4',
-  G: '#607D8B', O: '#795548'
-};
-
-const DEFAULT_SKILL_NAMES = {
-  S: 'Serve', R: 'Mottagning', P: 'Pass',
-  A: 'Anfall', B: 'Block', D: 'Försvar',
-  G: 'Gratisboll', O: 'Övrigt'
-};
-
-const GRADE_SYMBOLS = {
-  '#': '●', '+': '▲', '!': '■', '-': '▼', '/': '✕', '=': '✕'
-};
 
 export default function VideoPlayerPage() {
   const { id } = useParams();
@@ -174,12 +159,15 @@ export default function VideoPlayerPage() {
   }, [user, id]);
 
   // Bygg map: actionIndex → reviews (filtrera bort bekräftade om toggle är av)
-  const reviewsByAction = {};
-  for (const r of myReviews) {
-    if (r.acknowledgedAt && !showAcknowledged) continue;
-    if (!reviewsByAction[r.actionIndex]) reviewsByAction[r.actionIndex] = [];
-    reviewsByAction[r.actionIndex].push(r);
-  }
+  const reviewsByAction = useMemo(() => {
+    const map = {};
+    for (const r of myReviews) {
+      if (r.acknowledgedAt && !showAcknowledged) continue;
+      if (!map[r.actionIndex]) map[r.actionIndex] = [];
+      map[r.actionIndex].push(r);
+    }
+    return map;
+  }, [myReviews, showAcknowledged]);
 
   const handleAcknowledge = async (reviewId) => {
     if (!ackPassword.trim()) return setAckError('Ange ditt lösenord');
@@ -445,7 +433,7 @@ export default function VideoPlayerPage() {
     }
   }
 
-  const getFilteredActions = () => {
+  const getFilteredActions = useCallback(() => {
     if (!scout) return [];
     return scout.actions.filter(a => {
       if (filterSkill !== 'ALL' && a.skill !== filterSkill) return false;
@@ -460,9 +448,11 @@ export default function VideoPlayerPage() {
       if (filterEndZone !== 'ALL' && String(a.endZone) !== filterEndZone) return false;
       return true;
     });
-  };
+  }, [scout, filterSkill, filterPlayer, filterSet, filterTeam, filterGrade, filterStartZone, filterEndZone]);
 
-  const getMatchStats = () => {
+  const filteredActionsMemo = useMemo(() => getFilteredActions(), [getFilteredActions]);
+
+  const matchStats = useMemo(() => {
     if (!scout || !scout.actions.length) return null;
     const stats = { H: { name: scout.teams?.H || 'Hemma', serve: { total: 0, err: 0, pts: 0 }, attack: { total: 0, err: 0, blocked: 0, pts: 0 }, reception: { total: 0, pos: 0, exc: 0, err: 0 }, block: { pts: 0 }, dig: { total: 0, pos: 0, err: 0 }, totalPts: 0, players: {} }, V: { name: scout.teams?.V || 'Borta', serve: { total: 0, err: 0, pts: 0 }, attack: { total: 0, err: 0, blocked: 0, pts: 0 }, reception: { total: 0, pos: 0, exc: 0, err: 0 }, block: { pts: 0 }, dig: { total: 0, pos: 0, err: 0 }, totalPts: 0, players: {} } };
 
@@ -496,7 +486,7 @@ export default function VideoPlayerPage() {
       }
     }
     return stats;
-  };
+  }, [scout]);
 
   const handleDelete = async () => {
     if (!confirm(`Är du säker på att du vill ta bort "${video.title}"?`)) return;
@@ -534,7 +524,7 @@ export default function VideoPlayerPage() {
     );
   }
 
-  const filteredActions = getFilteredActions();
+  const filteredActions = filteredActionsMemo;
   const uniqueSkills = scout ? [...new Set(scout.actions.map(a => a.skill))] : [];
   const uniquePlayers = scout ? [...new Map(scout.actions.filter(a => filterTeam === 'ALL' || a.team === filterTeam).map(a => [a.team + '-' + a.playerNumber, { number: a.playerNumber, team: a.team }])).values()].sort((a, b) => a.number - b.number) : [];
   const uniqueSets = scout ? [...new Set(scout.actions.map(a => a.set))].sort() : [];
@@ -1113,7 +1103,7 @@ export default function VideoPlayerPage() {
 
             {/* Rapport-vy */}
             {scoutTab === 'rapport' && (
-              <MatchReport stats={getMatchStats()} onJumpToActions={jumpToPlayerActions} />
+              <MatchReport stats={matchStats} onJumpToActions={jumpToPlayerActions} />
             )}
 
             {/* Heatmap-vy */}
