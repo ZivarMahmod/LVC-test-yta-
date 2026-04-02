@@ -471,6 +471,20 @@ export default function VideoPlayerPage() {
     }
   };
 
+  // Scoreboard — nuvarande ställning baserat på aktiv action (måste vara före early returns)
+  const currentScore = useMemo(() => {
+    if (!scout?.scoreboard || !activeActionId) {
+      if (scout?.finalScore) return { setScore: scout.finalSetScores?.[scout.finalSetScores.length - 1] || { H: 0, V: 0 }, totalScore: scout.finalScore, set: scout.finalSetScores?.length || 1 };
+      return null;
+    }
+    const entry = scout.scoreboard.find(s => s.id === activeActionId);
+    if (entry) return entry;
+    for (let i = scout.scoreboard.length - 1; i >= 0; i--) {
+      if (scout.scoreboard[i].id <= activeActionId) return scout.scoreboard[i];
+    }
+    return null;
+  }, [scout, activeActionId]);
+
   if (loading) return <div className="loading-container"><div className="spinner" /></div>;
   if (error || !video) {
     return (
@@ -487,22 +501,6 @@ export default function VideoPlayerPage() {
   const uniqueSets = scout ? [...new Set(scout.actions.map(a => a.set))].sort() : [];
 
   const hasScout = scout && scout.actions.length > 0;
-
-  // Scoreboard — nuvarande ställning baserat på aktiv action
-  const currentScore = useMemo(() => {
-    if (!scout?.scoreboard || !activeActionId) {
-      // Visa slutresultat om ingen action är aktiv
-      if (scout?.finalScore) return { setScore: scout.finalSetScores?.[scout.finalSetScores.length - 1] || { H: 0, V: 0 }, totalScore: scout.finalScore, set: scout.finalSetScores?.length || 1, setScores: scout.finalSetScores || [] };
-      return null;
-    }
-    const entry = scout.scoreboard.find(s => s.id === activeActionId);
-    if (entry) return entry;
-    // Fallback: hitta närmaste
-    for (let i = scout.scoreboard.length - 1; i >= 0; i--) {
-      if (scout.scoreboard[i].id <= activeActionId) return scout.scoreboard[i];
-    }
-    return null;
-  }, [scout, activeActionId]);
 
   return (
     <div className="player-page">
