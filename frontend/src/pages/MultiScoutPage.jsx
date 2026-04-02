@@ -85,7 +85,7 @@ export default function MultiScoutPage() {
     if (!data) return [];
     return data.actions.filter(a => {
       if (filterSkill !== 'ALL' && a.skill !== filterSkill) return false;
-      if (filterPlayer !== 'ALL' && (a.team + '-' + a.playerNumber) !== filterPlayer) return false;
+      if (filterPlayer !== 'ALL' && (a.playerNumber + '-' + a.playerName) !== filterPlayer) return false;
       if (filterTeam !== 'ALL' && a.team !== filterTeam) return false;
       if (filterGrade !== 'ALL') {
         if (filterGrade === 'ERR') { if (a.grade !== '/' && a.grade !== '=') return false; }
@@ -148,7 +148,7 @@ export default function MultiScoutPage() {
   // Unika spelare & skills
   const uniquePlayers = data ? [...new Map(data.actions
     .filter(a => filterTeam === 'ALL' || a.team === filterTeam)
-    .map(a => [a.team + '-' + a.playerNumber, { number: a.playerNumber, team: a.team, name: a.playerName }])
+    .map(a => [a.playerNumber + '-' + a.playerName, { number: a.playerNumber, team: a.team, name: a.playerName }])
   ).values()].sort((a, b) => a.number - b.number) : [];
 
   const uniqueSkills = data ? [...new Set(data.actions.map(a => a.skill))] : [];
@@ -312,8 +312,8 @@ export default function MultiScoutPage() {
             {/* Spelare */}
             <select value={filterPlayer} onChange={e => setFilterPlayer(e.target.value)} style={{ ...selectStyle, width: '100%', marginBottom: '0.4rem' }}>
               <option value="ALL">Spelare</option>
-              {uniquePlayers.map(({ number, team, name }) => (
-                <option key={team + '-' + number} value={team + '-' + number}>#{number} {name}</option>
+              {uniquePlayers.map(({ number, name }) => (
+                <option key={number + '-' + name} value={number + '-' + name}>#{number} {name}</option>
               ))}
             </select>
 
