@@ -1,7 +1,7 @@
 // ===========================================
 // LVC Media Hub — Videospelare med Scout-panel
 // ===========================================
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { useParams, Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { videoApi, scoutApi, settingsApi } from '../utils/api.js';
 import { useAuth } from '../context/AuthContext.jsx';
@@ -488,6 +488,22 @@ export default function VideoPlayerPage() {
 
   const hasScout = scout && scout.actions.length > 0;
 
+  // Scoreboard — nuvarande ställning baserat på aktiv action
+  const currentScore = useMemo(() => {
+    if (!scout?.scoreboard || !activeActionId) {
+      // Visa slutresultat om ingen action är aktiv
+      if (scout?.finalScore) return { setScore: scout.finalSetScores?.[scout.finalSetScores.length - 1] || { H: 0, V: 0 }, totalScore: scout.finalScore, set: scout.finalSetScores?.length || 1, setScores: scout.finalSetScores || [] };
+      return null;
+    }
+    const entry = scout.scoreboard.find(s => s.id === activeActionId);
+    if (entry) return entry;
+    // Fallback: hitta närmaste
+    for (let i = scout.scoreboard.length - 1; i >= 0; i--) {
+      if (scout.scoreboard[i].id <= activeActionId) return scout.scoreboard[i];
+    }
+    return null;
+  }, [scout, activeActionId]);
+
   return (
     <div className="player-page">
       <button onClick={() => navigate(-1)} className="back-link">← Tillbaka</button>
@@ -561,6 +577,43 @@ export default function VideoPlayerPage() {
               <source src={video.streamUrl} type={video.mimeType} />
               Din webbläsare stöder inte videouppspelning.
             </video>
+
+            {/* Scoreboard overlay */}
+            {currentScore && scout?.teams && (
+              <div style={{
+                position: 'absolute', top: 8, left: '50%', transform: 'translateX(-50%)',
+                background: 'rgba(15, 23, 42, 0.85)', backdropFilter: 'blur(8px)',
+                borderRadius: 8, padding: '4px 12px', display: 'flex', alignItems: 'center', gap: 10,
+                border: '1px solid rgba(71, 85, 105, 0.5)', zIndex: 10, fontSize: '0.8rem',
+                pointerEvents: 'none', userSelect: 'none'
+              }}>
+                {/* Set-ställning */}
+                {currentScore.setScores && currentScore.setScores.length > 0 && (
+                  <div style={{ display: 'flex', gap: 4, fontSize: '0.65rem', color: '#94a3b8', marginRight: 4 }}>
+                    {currentScore.setScores.map((s, i) => (
+                      <span key={i} style={{
+                        padding: '1px 4px', borderRadius: 3,
+                        background: s.H > s.V ? 'rgba(34, 197, 94, 0.2)' : s.V > s.H ? 'rgba(239, 68, 68, 0.2)' : 'transparent'
+                      }}>
+                        {s.H}-{s.V}
+                      </span>
+                    ))}
+                  </div>
+                )}
+                <span style={{ color: '#93c5fd', fontWeight: 600, minWidth: 40, textAlign: 'right' }}>
+                  {scout.teams.H}
+                </span>
+                <span style={{ color: '#f1f5f9', fontWeight: 700, fontSize: '1.1rem', minWidth: 45, textAlign: 'center' }}>
+                  {currentScore.setScore?.H ?? 0} - {currentScore.setScore?.V ?? 0}
+                </span>
+                <span style={{ color: '#fbbf24', fontWeight: 600, minWidth: 40 }}>
+                  {scout.teams.V}
+                </span>
+                <span style={{ color: '#64748b', fontSize: '0.65rem', marginLeft: 2 }}>
+                  Set {currentScore.set || '?'}
+                </span>
+              </div>
+            )}
           </div>
         </div>
 
