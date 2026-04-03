@@ -13,7 +13,10 @@ const CHUNK_SIZE = 95 * 1024 * 1024;
 
 export default function UploadPage() {
   const navigate = useNavigate();
-  const generateId = () => Math.random().toString(36).substring(2) + Date.now().toString(36);
+  const generateId = () => 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c => {
+    const r = Math.random() * 16 | 0;
+    return (c === 'x' ? r : (r & 0x3 | 0x8)).toString(16);
+  });
   const fileRef = useRef(null);
   const dvwRef = useRef(null);
   const [file, setFile] = useState(null);

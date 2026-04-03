@@ -105,6 +105,10 @@ export const startFolderScanner = async () => {
 
 
         const adminUser = await prisma.user.findFirst({ where: { role: 'admin' } });
+        if (!adminUser) {
+          logger.error('Ingen admin-användare hittades — kan inte skapa video via mappskanning');
+          continue;
+        }
 
         await prisma.video.create({
           data: {
