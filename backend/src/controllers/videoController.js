@@ -185,7 +185,6 @@ export const videoController = {
       // Skapa datum och titel
       const date = new Date(matchDate);
       const title = formatVideoTitle(opponent, matchDate, homeTeam || 'LVC');
-      const mimeType = ext === '.mp4' ? 'video/mp4' : ext === '.mov' ? 'video/quicktime' : 'video/x-matroska';
 
       const video = await prisma.video.create({
         data: {
