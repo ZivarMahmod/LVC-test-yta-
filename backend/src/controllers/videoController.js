@@ -90,6 +90,12 @@ export const videoController = {
         return res.status(400).json({ error: 'uploadId, chunkIndex och totalChunks kravs.' });
       }
 
+      // Validera uploadId-format (UUID) för att förhindra path traversal
+      const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+      if (!uuidRegex.test(uploadId)) {
+        return res.status(400).json({ error: 'Ogiltigt uploadId-format.' });
+      }
+
       const chunkDir = path.join('/tmp/uploads', uploadId);
       await mkdir(chunkDir, { recursive: true });
 
@@ -112,6 +118,12 @@ export const videoController = {
       const { uploadId, fileName, opponent, matchDate, description, teamId, seasonId, thumbnailId, matchType, homeTeam } = req.body;
       if (!uploadId || !fileName || !opponent || !matchDate) {
         return res.status(400).json({ error: 'Saknar obligatoriska falt.' });
+      }
+
+      // Validera uploadId-format (UUID) för att förhindra path traversal
+      const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+      if (!uuidRegex.test(uploadId)) {
+        return res.status(400).json({ error: 'Ogiltigt uploadId-format.' });
       }
 
       const chunkDir = path.join('/tmp/uploads', uploadId);
@@ -153,14 +165,20 @@ export const videoController = {
       const { rmdir } = await import('fs/promises');
       await rmdir(chunkDir).catch(() => {});
 
+      // Validera den ihopsatta filen (magic bytes + extension)
+      const ext = path.extname(fileName).toLowerCase();
+      const validation = await fileValidator.validateFile(absPath, fileName, ext === '.mp4' ? 'video/mp4' : ext === '.mov' ? 'video/quicktime' : 'video/x-matroska');
+      if (!validation.valid) {
+        await unlink(absPath).catch(() => {});
+        return res.status(400).json({ error: validation.error || 'Ogiltig videofil.' });
+      }
+
       // Filstorlek
       const fileStat = await fsStat(absPath);
 
       // Skapa datum och titel
       const date = new Date(matchDate);
       const title = formatVideoTitle(opponent, matchDate, homeTeam || 'LVC');
-
-      const ext = path.extname(fileName).toLowerCase();
       const mimeType = ext === '.mp4' ? 'video/mp4' : ext === '.mov' ? 'video/quicktime' : 'video/x-matroska';
 
       const video = await prisma.video.create({
