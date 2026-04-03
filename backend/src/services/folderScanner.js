@@ -87,9 +87,6 @@ export const startFolderScanner = async () => {
           thumbnailPath = thumbRelPath;
         } catch {}
 
-        // Hoppa över sekundära vinklar — hanteras av secondaryFilePath
-        if (file.fileName.includes('_vinkel2')) continue;
-
         const existing = await prisma.video.findFirst({
           where: { filePath: file.relativePath }
         });
