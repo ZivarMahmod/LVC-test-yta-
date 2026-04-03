@@ -1,11 +1,11 @@
 // ===========================================
 // LVC Media Hub — Videospelare med Scout-panel
 // ===========================================
-import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { useParams, Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { videoApi, scoutApi, settingsApi, documentApi, reviewApi } from '../utils/api.js';
 import { useAuth } from '../context/AuthContext.jsx';
-import { formatFileSize, formatDate, formatVideoTime } from '../utils/format.js';
+import { formatVideoTime } from '../utils/format.js';
 import { SKILL_COLORS, DEFAULT_SKILL_NAMES, GRADE_SYMBOLS } from '../utils/scoutConstants.js';
 import MatchReport from '../components/player/MatchReport.jsx';
 import CourtHeatmap from '../components/player/CourtHeatmap.jsx';
@@ -49,7 +49,7 @@ export default function VideoPlayerPage() {
   const [filterGrade, setFilterGrade] = useState('ALL');
   const [filterStartZone, setFilterStartZone] = useState('ALL');
   const [filterEndZone, setFilterEndZone] = useState('ALL');
-  const [offset, setOffset] = useState(0);
+  const [_offset, setOffset] = useState(0);
   const [offsetInput, setOffsetInput] = useState('0');
   const [activeActionId, setActiveActionId] = useState(null);
   const [skipSeconds, setSkipSeconds] = useState(5);
@@ -104,6 +104,7 @@ export default function VideoPlayerPage() {
     if (filtered.length > 0) {
       jumpToAction(filtered[0]);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [filterTeam, filterPlayer, filterSkill]);
   const actionListRef = useRef(null);
 
@@ -147,6 +148,7 @@ export default function VideoPlayerPage() {
       }
     }
     loadScout();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [video, id]);
 
   // Hämta spelarens reviews för denna video
@@ -231,6 +233,7 @@ export default function VideoPlayerPage() {
     };
     window.addEventListener('keydown', handleKeyDown, true);
     return () => window.removeEventListener('keydown', handleKeyDown, true);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [skipSeconds, activeActionId, dvwSearchOpen]);
 
   const dvwSearchResults = dvwSearchOpen && dvwSearchQuery.length > 0 && scout
@@ -274,6 +277,7 @@ export default function VideoPlayerPage() {
         autoPlayListRef.current = null;
       }
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [scout, filterSkill, filterPlayer, filterSet, filterTeam, filterGrade, filterStartZone, filterEndZone, autoAction, preRoll]);
 
   // Rensa auto-play vid paus eller unmount
@@ -322,6 +326,7 @@ export default function VideoPlayerPage() {
       }
     }, 500);
     return () => clearInterval(interval);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [scout, activeActionId, filterSkill, filterPlayer, filterSet, filterTeam, filterGrade, filterStartZone, filterEndZone]);
 
   const handleSaveOffset = async () => {

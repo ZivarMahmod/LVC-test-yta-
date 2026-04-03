@@ -1,7 +1,7 @@
 // ===========================================
 // LVC Media Hub — Flermatchsvy (Multi-Scout)
 // ===========================================
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { useSearchParams, Link } from 'react-router-dom';
 import { multiScoutApi, videoApi, settingsApi } from '../utils/api.js';
 import { SKILL_COLORS, DEFAULT_SKILL_NAMES, GRADE_SYMBOLS } from '../utils/scoutConstants.js';
@@ -18,7 +18,8 @@ function formatDateShort(dateStr) {
 
 export default function MultiScoutPage() {
   const [searchParams] = useSearchParams();
-  const ids = (searchParams.get('ids') || '').split(',').filter(Boolean);
+  const idsParam = searchParams.get('ids') || '';
+  const ids = idsParam.split(',').filter(Boolean);
 
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -71,7 +72,7 @@ export default function MultiScoutPage() {
       setError(e.message);
       setLoading(false);
     });
-  }, [searchParams.get('ids')]);
+  }, [idsParam]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Ctrl+Z toggle heatmap overlay
   useEffect(() => {
@@ -178,7 +179,7 @@ export default function MultiScoutPage() {
         videoRef.current.addEventListener('loadedmetadata', seekAndPlay, { once: true });
       }
     }
-  }, [videoData, activeAction]);
+  }, [videoData, activeAction, preRoll]);
 
   // Keyboard: piltangenter skip, N/P nästa/föregående action
   useEffect(() => {
@@ -199,6 +200,7 @@ export default function MultiScoutPage() {
     };
     window.addEventListener('keydown', handler);
     return () => window.removeEventListener('keydown', handler);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [skipSeconds, activeAction, filteredActions]);
 
   // Unika spelare & skills

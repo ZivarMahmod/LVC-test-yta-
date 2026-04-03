@@ -35,7 +35,7 @@ export default function TeamsPage() {
       try {
         const data = await teamApi.listTeams();
         setTeams(data.teams);
-      } catch (err) {
+      } catch {
         setError('Kunde inte hämta lag.');
       } finally {
         setLoading(false);

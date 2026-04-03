@@ -2,7 +2,7 @@
 // LVC Media Hub — Registreringssida
 // ===========================================
 import { useState, useEffect } from 'react';
-import { useParams, useNavigate, Navigate, Link } from 'react-router-dom';
+import { useParams, Navigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext.jsx';
 import { authApi } from '../utils/api.js';
 import './LoginPage.css';
@@ -10,7 +10,6 @@ import './LoginPage.css';
 export default function RegisterPage() {
   const { token } = useParams();
   const { isAuthenticated } = useAuth();
-  const navigate = useNavigate();
   const [invite, setInvite] = useState(null);
   const [checking, setChecking] = useState(true);
   const [username, setUsername] = useState('');

@@ -65,7 +65,7 @@ export function AuthProvider({ children }) {
     isUploader: user?.role === 'admin' || user?.role === 'uploader' || user?.role === 'coach',
     isCoach: user?.role === 'admin' || user?.role === 'coach',
     isAuthenticated: !!user
-  }), [user, loading]);
+  }), [user, loading, logout]);
 
   return (
     <AuthContext.Provider value={value}>

@@ -2,7 +2,7 @@
 // LVC Media Hub — ReviewPanel
 // Draggbar panel för att skicka coach-reviews
 // ===========================================
-import React, { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef } from 'react';
 
 export default function ReviewPanel({
   reviewModal,

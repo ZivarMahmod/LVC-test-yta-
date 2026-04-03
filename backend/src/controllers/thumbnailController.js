@@ -88,7 +88,7 @@ export const thumbnailController = {
       res.set('Content-Type', MIMES[ext] || 'image/jpeg');
       res.set('Cache-Control', 'public, max-age=86400');
       fs.createReadStream(thumbPath).pipe(res);
-    } catch (err) {
+    } catch {
       res.status(500).json({ error: 'Serverfel' });
     }
   },

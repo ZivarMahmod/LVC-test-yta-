@@ -40,7 +40,7 @@ export const fileStorageService = {
     }
   },
 
-  async uploadFileFromDisk(remotePath, localDiskPath, contentType) {
+  async uploadFileFromDisk(remotePath, localDiskPath, _contentType) {
     const dirsOk = await this.ensureDirectoryTree(remotePath);
     if (!dirsOk) return false;
     const destPath = this.getAbsolutePath(remotePath);

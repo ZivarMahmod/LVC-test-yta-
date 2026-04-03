@@ -615,7 +615,7 @@ export const adminController = {
         include: { uploadedBy: { select: { id: true, name: true } } }
       });
       res.json({ videos: videos.map(v => ({ ...v, fileSize: Number(v.fileSize) })) });
-    } catch (err) {
+    } catch {
       res.status(500).json({ error: 'Kunde inte hamta borttagna videor' });
     }
   },
@@ -651,7 +651,7 @@ export const adminController = {
         }
       });
       res.json({ message: 'Lag borttaget från användare' });
-    } catch (err) {
+    } catch {
       res.status(500).json({ error: 'Kunde inte ta bort lag' });
     }
   },
@@ -670,7 +670,7 @@ export const adminController = {
       });
       await auditService.log({ action: 'role_change', entity: 'user', entityId: req.params.id, req, details: { newRole: role } });
       res.json({ user });
-    } catch (err) {
+    } catch {
       res.status(500).json({ error: 'Kunde inte uppdatera roll' });
     }
   },

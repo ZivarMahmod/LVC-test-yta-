@@ -59,7 +59,7 @@ export const settingsController = {
       }
       await Promise.all(ops);
       res.json({ ok: true });
-    } catch (err) {
+    } catch {
       res.status(500).json({ error: 'Kunde inte spara' });
     }
   }

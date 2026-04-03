@@ -22,7 +22,7 @@ router.get('/', async (req, res) => {
       return 0;
     });
     res.json({ entries });
-  } catch (err) {
+  } catch {
     res.status(500).json({ error: 'Kunde inte h\u00e4mta \u00e4ndringslogg' });
   }
 });
@@ -34,7 +34,7 @@ router.post('/', authenticateToken, requireAdmin, csrfProtection, async (req, re
     if (!version || !title || !body) return res.status(400).json({ error: 'Version, titel och inneh\u00e5ll kr\u00e4vs' });
     const entry = await prisma.changelogEntry.create({ data: { version, title, content: body } });
     res.status(201).json({ entry });
-  } catch (err) {
+  } catch {
     res.status(500).json({ error: 'Kunde inte skapa post' });
   }
 });
@@ -45,7 +45,7 @@ router.put('/:id', authenticateToken, requireAdmin, csrfProtection, async (req, 
     const { version, title, content: body } = req.body;
     const entry = await prisma.changelogEntry.update({ where: { id: req.params.id }, data: { version, title, content: body } });
     res.json({ entry });
-  } catch (err) {
+  } catch {
     res.status(500).json({ error: 'Kunde inte uppdatera post' });
   }
 });
@@ -55,7 +55,7 @@ router.delete('/:id', authenticateToken, requireAdmin, csrfProtection, async (re
   try {
     await prisma.changelogEntry.delete({ where: { id: req.params.id } });
     res.json({ message: 'Post borttagen' });
-  } catch (err) {
+  } catch {
     res.status(500).json({ error: 'Kunde inte ta bort post' });
   }
 });

@@ -38,10 +38,10 @@ export default function Layout() {
   }
 
   // Beräkna effektiv roll baserat på viewAsRole
-  const effectiveRole = viewAsRole || user?.role;
+  const _effectiveRole = viewAsRole || user?.role;
   const effectiveIsAdmin = !viewAsRole && isAdmin;
   const effectiveIsUploader = !viewAsRole ? isUploader : ['admin', 'uploader', 'coach'].includes(viewAsRole);
-  const effectiveIsCoach = !viewAsRole ? isCoach : ['admin', 'coach'].includes(viewAsRole);
+  const _effectiveIsCoach = !viewAsRole ? isCoach : ['admin', 'coach'].includes(viewAsRole);
 
   const handleLogout = async () => {
     setMenuOpen(false);

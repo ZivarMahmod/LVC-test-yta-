@@ -1,7 +1,7 @@
 // ===========================================
 // LVC Media Hub — Ändringslogg
 // ===========================================
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { changelogApi } from '../utils/api.js';
 import { useAuth } from '../context/AuthContext.jsx';
 

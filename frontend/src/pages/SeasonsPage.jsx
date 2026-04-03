@@ -29,7 +29,7 @@ export default function SeasonsPage() {
         }
         setTeam(foundTeam);
         setSeasons(seasonsData.seasons);
-      } catch (err) {
+      } catch {
         setError('Kunde inte hämta säsonger.');
       } finally {
         setLoading(false);
