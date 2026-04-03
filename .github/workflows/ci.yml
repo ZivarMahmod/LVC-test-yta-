@@ -1,0 +1,71 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  backend:
+    name: Backend — test & lint
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: backend/package-lock.json
+
+      - name: Installera beroenden
+        run: npm ci
+        working-directory: backend
+
+      - name: Generera Prisma-klient
+        run: npx prisma generate
+        working-directory: backend
+
+      - name: Kör tester
+        run: npm test
+        working-directory: backend
+        env:
+          NODE_ENV: test
+          DATABASE_URL: file:./test.db
+          JWT_ACCESS_SECRET: test-access-secret-ci
+          JWT_REFRESH_SECRET: test-refresh-secret-ci
+          CSRF_SECRET: test-csrf-secret-ci
+          BCRYPT_ROUNDS: 4
+
+      - name: Kör lint
+        run: npm run lint
+        working-directory: backend
+        continue-on-error: true
+
+  frontend:
+    name: Frontend — build & lint
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Installera beroenden
+        run: npm ci
+        working-directory: frontend
+
+      - name: Kör lint
+        run: npm run lint
+        working-directory: frontend
+        continue-on-error: true
+
+      - name: Bygge
+        run: npm run build
+        working-directory: frontend
