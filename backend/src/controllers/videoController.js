@@ -80,79 +80,6 @@ export const videoController = {
 
 
 
-  async uploadSecondaryChunk(req, res) {
-    try {
-      const chunk = req.file;
-      if (!chunk) return res.status(400).json({ error: 'Ingen chunk bifogad.' });
-      const { uploadId, chunkIndex, totalChunks } = req.body;
-      if (!uploadId || chunkIndex === undefined || !totalChunks) {
-        return res.status(400).json({ error: 'uploadId, chunkIndex och totalChunks kravs.' });
-      }
-      const chunkDir = path.join('/tmp/uploads', uploadId + '_secondary');
-      await mkdir(chunkDir, { recursive: true });
-      const chunkPath = path.join(chunkDir, `chunk_${String(chunkIndex).padStart(5, '0')}`);
-      const { createReadStream: crs, createWriteStream: cws } = await import('fs');
-      const { pipeline: pl } = await import('stream/promises');
-      await pl(crs(chunk.path), cws(chunkPath));
-      await unlink(chunk.path).catch(() => {});
-      res.json({ received: parseInt(chunkIndex) });
-    } catch (error) {
-      logger.error('Secondary chunk upload-fel:', error);
-      res.status(500).json({ error: 'Chunk-uppladdning misslyckades.' });
-    }
-  },
-
-  async finalizeSecondaryUpload(req, res) {
-    try {
-      const { id } = req.params;
-      const { uploadId, fileName } = req.body;
-      if (!uploadId || !fileName) {
-        return res.status(400).json({ error: 'Saknar uploadId eller fileName.' });
-      }
-      const video = await prisma.video.findUnique({ where: { id } });
-      if (!video) return res.status(404).json({ error: 'Videon kunde inte hittas.' });
-
-      const chunkDir = path.join('/tmp/uploads', uploadId + '_secondary');
-      const { readdir: rd, rmdir } = await import('fs/promises');
-      const chunks = (await rd(chunkDir)).filter(f => f.startsWith('chunk_')).sort();
-      if (chunks.length === 0) {
-        return res.status(400).json({ error: 'Inga chunks hittades.' });
-      }
-
-      const ext = path.extname(fileName) || '.mp4';
-      const primaryBase = path.basename(video.filePath, path.extname(video.filePath));
-      const filePath = path.dirname(video.filePath) + '/' + primaryBase + '_vinkel2' + ext;
-      const absPath = fileStorageService.getAbsolutePath(filePath);
-      await mkdir(path.dirname(absPath), { recursive: true });
-
-      const { createReadStream: crs, createWriteStream: cws } = await import('fs');
-      const writeStream = cws(absPath);
-      for (const chunkFile of chunks) {
-        const chunkPath = path.join(chunkDir, chunkFile);
-        await new Promise((resolve, reject) => {
-          const readStream = crs(chunkPath);
-          readStream.pipe(writeStream, { end: false });
-          readStream.on('end', resolve);
-          readStream.on('error', reject);
-        });
-      }
-      writeStream.end();
-      await new Promise((resolve) => writeStream.on('finish', resolve));
-
-      for (const chunkFile of chunks) {
-        await unlink(path.join(chunkDir, chunkFile)).catch(() => {});
-      }
-      await rmdir(chunkDir).catch(() => {});
-
-      await prisma.video.update({ where: { id }, data: { secondaryFilePath: filePath } });
-      logger.info('Sekundär video ihopsatt och sparad', { videoId: id, filePath });
-      res.json({ message: 'Vinkel 2 uppladdad.', secondaryFilePath: filePath });
-    } catch (error) {
-      logger.error('finalizeSecondaryUpload misslyckades:', error);
-      res.status(500).json({ error: 'Kunde inte slutföra uppladdning av vinkel 2.' });
-    }
-  },
-
   async uploadChunk(req, res) {
     try {
       const chunk = req.file;
@@ -404,8 +331,6 @@ export const videoController = {
           streamUrl: streamUrl.url,
           streamUrlExpires: streamUrl.expiresAt,
           thumbnailUrl: video.thumbnailPath ? `/api/videos/thumbnail/${video.thumbnailPath.replace('/local/', '')}` : null,
-          secondaryFilePath: null,
-          secondaryStreamUrl: null // Vinkel 2 pausad
         }
       });
     } catch (error) {
@@ -507,9 +432,7 @@ export const videoController = {
       const video = await prisma.video.findUnique({ where: { id } });
       if (!video) return res.status(404).json({ error: 'Videon kunde inte hittas.' });
       const rangeHeader = req.headers.range || null;
-      const useSecondary = req.query.secondary === 'true';
-      const streamPath = useSecondary && video.secondaryFilePath ? video.secondaryFilePath : video.filePath;
-      const result = await fileStorageService.streamFile(streamPath, rangeHeader);
+      const result = await fileStorageService.streamFile(video.filePath, rangeHeader);
       if (!result) return res.status(500).json({ error: 'Kunde inte streama videon.' });
       res.status(result.status);
       if (result.headers['content-type']) res.set('Content-Type', result.headers['content-type']);

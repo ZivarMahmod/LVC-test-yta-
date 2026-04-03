@@ -176,7 +176,7 @@ export default function PlayerStatsPage() {
         <h2>Matcher</h2>
         <div className="psp-match-list">
           {matches.map(m => (
-            <div key={m.videoId} className="psp-match-row" onClick={() => navigate(`/videos/${m.videoId}`)}>
+            <div key={m.videoId} className="psp-match-row" onClick={() => navigate(`/video/${m.videoId}`)}>
               <div className="psp-match-info">
                 <span className="psp-match-date">{new Date(m.matchDate).toLocaleDateString('sv-SE')}</span>
                 <span className="psp-match-opponent">vs {m.opponent}</span>

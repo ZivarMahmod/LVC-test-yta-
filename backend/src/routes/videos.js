@@ -139,22 +139,6 @@ router.post('/:id/dvw',
   videoController.uploadDvw
 );
 
-// Secondary video chunk upload
-router.post('/:id/secondary/chunk',
-  authenticateToken,
-  requireAdmin,
-  csrfProtection,
-  videoUpload.single('chunk'),
-  videoController.uploadSecondaryChunk
-);
-
-router.post('/:id/secondary/complete',
-  authenticateToken,
-  requireAdmin,
-  csrfProtection,
-  videoController.finalizeSecondaryUpload
-);
-
 // Ladda upp video (uploader+)
 router.post('/upload',
   authenticateToken,

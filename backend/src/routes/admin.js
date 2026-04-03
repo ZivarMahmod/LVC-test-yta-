@@ -85,9 +85,6 @@ router.delete('/invites/:id', csrfProtection, adminController.deleteInvite);
 
 // Tilldela video till lag/säsong
 router.patch('/videos/:id/assign', csrfProtection, adminController.assignVideo);
-router.patch('/videos/:id/secondary', csrfProtection, adminController.setSecondaryVideo);
-router.post('/videos/:id/secondary-upload', csrfProtection, upload.single('video'), adminController.uploadSecondaryVideo);
-
 // Inställningar
 router.put('/settings/skill-names', csrfProtection, settingsController.updateSkillNames);
 

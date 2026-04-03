@@ -95,7 +95,6 @@ model Video {
   mimeType      String
   thumbnailPath String?
   dvwPath       String?
-  secondaryFilePath String?
   videoOffset   Int      @default(0)
   deletedAt    DateTime?
   deletedById  String?

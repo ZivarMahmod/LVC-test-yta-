@@ -96,7 +96,6 @@ model Video {
   thumbnailPath String?
   dvwPath       String?
   matchType     String   @default("own")
-  secondaryFilePath String?
   videoOffset   Int      @default(0)
   deletedAt    DateTime?
   deletedById  String?

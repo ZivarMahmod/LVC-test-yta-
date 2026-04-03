@@ -566,48 +566,6 @@ export const adminController = {
 
 
 
-  async uploadSecondaryVideo(req, res) {
-    try {
-      const { id } = req.params;
-      if (!req.file) return res.status(400).json({ error: 'Ingen fil uppladdad.' });
-      const video = await prisma.video.findUnique({ where: { id } });
-      if (!video) return res.status(404).json({ error: 'Videon kunde inte hittas.' });
-
-      const filePath = fileStorageService.buildFilePath(video.matchDate, video.opponent, req.file.originalname.replace(/[^a-zA-Z0-9._-]/g, '_') + '_vinkel2' + path.extname(req.file.originalname));
-      const absPath = fileStorageService.getAbsolutePath(filePath);
-
-      const fs = await import('fs/promises');
-      await fs.mkdir(path.dirname(absPath), { recursive: true });
-      await fs.copyFile(req.file.path, absPath);
-      await fs.unlink(req.file.path).catch(() => {});
-
-      await prisma.video.update({ where: { id }, data: { secondaryFilePath: filePath } });
-      logger.info('Sekundär video uppladdad', { videoId: id, filePath });
-      res.json({ message: 'Vinkel 2 uppladdad.', secondaryFilePath: filePath });
-    } catch (error) {
-      logger.error('uploadSecondaryVideo misslyckades:', error);
-      res.status(500).json({ error: 'Kunde inte ladda upp vinkel 2.' });
-    }
-  },
-
-  async setSecondaryVideo(req, res) {
-    try {
-      const { id } = req.params;
-      const { secondaryFilePath } = req.body;
-      const video = await prisma.video.findUnique({ where: { id } });
-      if (!video) return res.status(404).json({ error: 'Videon kunde inte hittas.' });
-      const updated = await prisma.video.update({
-        where: { id },
-        data: { secondaryFilePath: secondaryFilePath || null }
-      });
-      logger.info('Sekundär videovinkel satt', { videoId: id, secondaryFilePath });
-      res.json({ message: 'Sekundär vinkel sparad.', secondaryFilePath: updated.secondaryFilePath });
-    } catch (error) {
-      logger.error('setSecondaryVideo misslyckades:', error);
-      res.status(500).json({ error: 'Kunde inte spara sekundär vinkel.' });
-    }
-  },
-
   // -------------------------------------------
   // GET /api/admin/switch-users
   // -------------------------------------------
