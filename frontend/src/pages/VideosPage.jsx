@@ -5,7 +5,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { Link, useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { videoApi, teamApi } from '../utils/api.js';
 import { useAuth } from '../context/AuthContext.jsx';
-import { formatFileSize, formatDate } from '../utils/format.js';
+import { formatDate } from '../utils/format.js';
 import './VideosPage.css';
 
 export default function VideosPage() {
@@ -27,7 +27,7 @@ export default function VideosPage() {
     if (type === 'own') { searchParams.delete('type'); } else { searchParams.set('type', type); }
     setSearchParams(searchParams, { replace: true });
   };
-  const [compareMode, setCompareMode] = useState(false);
+  const [compareMode, _setCompareMode] = useState(false);
   const [selectedIds, setSelectedIds] = useState(new Set());
 
   useEffect(() => {

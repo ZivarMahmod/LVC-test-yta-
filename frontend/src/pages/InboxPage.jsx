@@ -4,8 +4,7 @@ import { useAuth } from "../context/AuthContext";
 import { reviewApi } from "../utils/api.js";
 
 export default function InboxPage() {
-  const { user, isCoach } = useAuth();
-  const navigate = useNavigate();
+  const { isCoach } = useAuth();
 
   return isCoach ? <CoachInbox /> : <PlayerInbox />;
 }

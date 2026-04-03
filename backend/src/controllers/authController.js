@@ -154,7 +154,7 @@ export const authController = {
       }
 
       res.json({ valid: true, role: invite.role });
-    } catch (error) {
+    } catch {
       res.status(500).json({ valid: false, error: 'Kunde inte validera inbjudan.' });
     }
   },

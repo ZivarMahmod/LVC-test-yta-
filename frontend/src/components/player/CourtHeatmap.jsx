@@ -180,7 +180,7 @@ function ZoneDetail({ zone, actions, team, selectedSkill, onClose, onActionClick
   );
 }
 
-export default function CourtHeatmap({ actions, team, teamName, highlightZone, onZoneSelect, onActionClick, onAutoPlay, compact }) {
+export default function CourtHeatmap({ actions, team, teamName, highlightZone, onZoneSelect, onActionClick, onAutoPlay, compact: _compact }) {
   const [selectedSkill, setSelectedSkill] = useState('all');
   const [selectedZone, setSelectedZone] = useState(null);
 

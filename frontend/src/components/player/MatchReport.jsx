@@ -29,7 +29,7 @@ function StatRow({ label, value }) {
   );
 }
 
-function PlayerStatsCard({ player, team, teamName, color, onJumpToActions, onShowHistory }) {
+function PlayerStatsCard({ player, team, teamName: _teamName, color, onJumpToActions, onShowHistory }) {
   return (
     <div style={{ background: `rgba(${color}, 0.08)`, borderRadius: '6px', padding: '0.4rem', marginBottom: '0.3rem' }}>
       {team === 'H' && (

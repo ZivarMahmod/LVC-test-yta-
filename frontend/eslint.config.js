@@ -44,7 +44,8 @@ export default [
         location: 'readonly',
         crypto: 'readonly',
         prompt: 'readonly',
-        Image: 'readonly'
+        Image: 'readonly',
+        requestAnimationFrame: 'readonly'
       }
     },
     settings: {
@@ -54,6 +55,7 @@ export default [
       // React
       'react/react-in-jsx-scope': 'off',
       'react/prop-types': 'off',
+      'react/jsx-uses-vars': 'error',
       'react-hooks/rules-of-hooks': 'error',
       'react-hooks/exhaustive-deps': 'warn',
 

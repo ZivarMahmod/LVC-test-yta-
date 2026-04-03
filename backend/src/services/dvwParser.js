@@ -114,7 +114,7 @@ const parseMatchStart = (lines) => {
   return null;
 };
 
-const parseScout = (lines, players, teams, matchStartSeconds, videoOffset) => {
+const parseScout = (lines, players, teams, _matchStartSeconds, _videoOffset) => {
   const actions = [];
   const scoreEvents = []; // { afterActionIndex, set, scoreH, scoreV }
   let inSection = false;

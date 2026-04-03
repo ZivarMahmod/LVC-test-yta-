@@ -25,7 +25,7 @@ import settingsRoutes from './routes/settings.js';
 import { thumbnailController } from './controllers/thumbnailController.js';
 import { adminController } from './controllers/adminController.js';
 import { authenticateToken, requireAdmin } from './middleware/auth.js';
-import { trackActivity, getActiveUsers } from './middleware/activityTracker.js';
+import { trackActivity } from './middleware/activityTracker.js';
 import { csrfProtection } from './middleware/csrf.js';
 import { startFolderScanner } from './services/folderScanner.js';
 

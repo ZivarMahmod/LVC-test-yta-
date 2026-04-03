@@ -2,7 +2,7 @@
 // LVC Media Hub — Analyssida
 // Välj matcher att analysera i flermatchsvy
 // ===========================================
-import React, { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { videoApi, teamApi } from '../utils/api.js';
 import { formatDate } from '../utils/format.js';

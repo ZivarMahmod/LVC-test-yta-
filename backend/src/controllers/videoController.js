@@ -5,7 +5,7 @@ import prisma from '../config/database.js';
 import { fileStorageService } from '../services/fileStorage.js';
 import { fileValidator } from '../utils/fileValidator.js';
 import path from 'path';
-import { mkdir, unlink, rename, copyFile, stat as fsStat } from 'fs/promises';
+import { mkdir, unlink, stat as fsStat } from 'fs/promises';
 import logger from '../utils/logger.js';
 import { formatVideoTitle } from '../utils/formatTitle.js';
 
@@ -85,7 +85,7 @@ export const videoController = {
       const chunk = req.file;
       if (!chunk) return res.status(400).json({ error: 'Ingen chunk bifogad.' });
 
-      const { uploadId, chunkIndex, totalChunks, fileName } = req.body;
+      const { uploadId, chunkIndex, totalChunks, _fileName } = req.body;
       if (!uploadId || chunkIndex === undefined || !totalChunks) {
         return res.status(400).json({ error: 'uploadId, chunkIndex och totalChunks kravs.' });
       }
@@ -667,7 +667,7 @@ export const scoutController = {
         if (key.startsWith(req.params.id + ':')) scoutCache.delete(key);
       }
       res.json({ videoOffset: video.videoOffset });
-    } catch (error) {
+    } catch {
       res.status(500).json({ error: 'Kunde inte uppdatera offset.' });
     }
   }
