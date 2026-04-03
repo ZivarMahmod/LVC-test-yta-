@@ -40,6 +40,7 @@ export default function MultiScoutPage() {
   const [videoLoading, setVideoLoading] = useState(false);
   const [preRoll, setPreRoll] = useState(0);
   const [skipSeconds, setSkipSeconds] = useState(5);
+  const [autoPlay, setAutoPlay] = useState(false);
   const videoRef = useRef(null);
   const videoCache = useRef({}); // videoId → { streamUrl, mimeType }
 
@@ -180,6 +181,29 @@ export default function MultiScoutPage() {
       }
     }
   }, [videoData, activeAction, preRoll]);
+
+  // Auto-play: hoppa till nästa action efter ~5 sek från actionens starttid
+  useEffect(() => {
+    if (!autoPlay || !activeAction || !videoRef.current) return;
+    const vid = videoRef.current;
+    const actionStart = activeAction.videoTime || 0;
+    const actionEnd = actionStart + 5; // Visa ~5 sek per action
+
+    const onTimeUpdate = () => {
+      if (vid.currentTime >= actionEnd && !vid.paused) {
+        const idx = filteredActions.findIndex(a => a.id === activeAction.id && a.videoId === activeAction.videoId);
+        if (idx >= 0 && idx < filteredActions.length - 1) {
+          handleActionClick(filteredActions[idx + 1]);
+        } else {
+          setAutoPlay(false); // Sista action — stäng av auto-play
+        }
+      }
+    };
+
+    vid.addEventListener('timeupdate', onTimeUpdate);
+    return () => vid.removeEventListener('timeupdate', onTimeUpdate);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [autoPlay, activeAction, filteredActions]);
 
   // Keyboard: piltangenter skip, N/P nästa/föregående action
   useEffect(() => {
@@ -325,6 +349,18 @@ export default function MultiScoutPage() {
                 style={{ ...selectStyle, flex: 'none', width: 'auto', padding: '0.1rem 0.2rem', fontSize: '0.7rem' }}>
                 {[1,2,5,10,30].map(s => <option key={s} value={s}>{s}s</option>)}
               </select>
+              <button
+                onClick={() => { setAutoPlay(prev => !prev); if (!autoPlay && filteredActions.length > 0 && !activeAction) handleActionClick(filteredActions[0]); }}
+                style={{
+                  marginLeft: '0.25rem', padding: '0.1rem 0.5rem', fontSize: '0.7rem', borderRadius: 4,
+                  border: autoPlay ? '1px solid var(--lvc-blue, #1a5fb4)' : '1px solid var(--border-default, #333)',
+                  background: autoPlay ? 'rgba(26,95,180,0.2)' : 'transparent',
+                  color: autoPlay ? 'var(--lvc-blue-light, #3584e4)' : 'var(--text-muted)',
+                  cursor: 'pointer', fontWeight: autoPlay ? 600 : 400
+                }}
+              >
+                {autoPlay ? '⏸ Auto' : '▶ Auto'}
+              </button>
             </div>
 
             {/* Skills */}
