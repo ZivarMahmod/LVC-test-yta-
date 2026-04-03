@@ -165,16 +165,22 @@ export const videoController = {
       const { rmdir } = await import('fs/promises');
       await rmdir(chunkDir).catch(() => {});
 
-      // Validera den ihopsatta filen (magic bytes + extension)
-      const ext = path.extname(fileName).toLowerCase();
-      const validation = await fileValidator.validateFile(absPath, fileName, ext === '.mp4' ? 'video/mp4' : ext === '.mov' ? 'video/quicktime' : 'video/x-matroska');
-      if (!validation.valid) {
-        await unlink(absPath).catch(() => {});
-        return res.status(400).json({ error: validation.error || 'Ogiltig videofil.' });
-      }
-
       // Filstorlek
       const fileStat = await fsStat(absPath);
+
+      // Validera den ihopsatta filen (magic bytes + extension)
+      const ext = path.extname(fileName).toLowerCase();
+      const mimeType = ext === '.mp4' ? 'video/mp4' : ext === '.mov' ? 'video/quicktime' : 'video/x-matroska';
+      const validation = await fileValidator.validateFile({
+        originalname: fileName,
+        mimetype: mimeType,
+        size: fileStat.size,
+        path: absPath
+      });
+      if (!validation.valid) {
+        await unlink(absPath).catch(() => {});
+        return res.status(400).json({ error: validation.errors?.[0] || 'Ogiltig videofil.' });
+      }
 
       // Skapa datum och titel
       const date = new Date(matchDate);
