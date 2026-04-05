@@ -317,7 +317,7 @@ export default function Layout() {
 
       <main className="main-content">
         <div className="container">
-          <Outlet />
+          <Outlet context={{ scoreboardSettings, updateScoreboardSettings }} />
         </div>
       </main>
 

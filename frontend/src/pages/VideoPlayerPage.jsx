@@ -2,7 +2,7 @@
 // LVC Media Hub — Videospelare med Scout-panel
 // ===========================================
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
-import { useParams, Link, useNavigate, useSearchParams } from 'react-router-dom';
+import { useParams, Link, useNavigate, useSearchParams, useOutletContext } from 'react-router-dom';
 import { videoApi, scoutApi, settingsApi, documentApi, reviewApi } from '../utils/api.js';
 import { useAuth } from '../context/AuthContext.jsx';
 import { formatVideoTime } from '../utils/format.js';
@@ -13,7 +13,6 @@ import CourtHeatmap from '../components/player/CourtHeatmap.jsx';
 import ReviewPanel from '../components/player/ReviewPanel.jsx';
 import DvwSearchPanel from '../components/player/DvwSearchPanel.jsx';
 import DraggableScoreboard from '../components/player/DraggableScoreboard.jsx';
-import { useScoreboardSettings } from '../hooks/useScoreboardSettings.js';
 import './VideoPlayerPage.css';
 
 export default function VideoPlayerPage() {
@@ -27,7 +26,7 @@ export default function VideoPlayerPage() {
   const [error, setError] = useState('');
   const videoRef = useRef(null);
   const playerWrapperRef = useRef(null);
-  const { settings: scoreboardSettings, updateSettings: updateScoreboardSettings } = useScoreboardSettings();
+  const { scoreboardSettings, updateScoreboardSettings } = useOutletContext();
 
   // Skill-namn och bokstäver från inställningar
   const [SKILL_NAMES, setSkillNames] = useState(DEFAULT_SKILL_NAMES);
