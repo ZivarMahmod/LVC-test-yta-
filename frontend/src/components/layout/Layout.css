@@ -62,23 +62,25 @@
   font-weight: 500;
   padding: 0.5rem 1rem;
   border-radius: 0.5em;
-  background: var(--lvc-navy-light);
+  background: transparent;
   border: 1px solid var(--border-default);
   transition: all 0.3s;
   text-decoration: none;
-  box-shadow: 6px 6px 12px rgba(0, 0, 0, 0.5), -6px -6px 12px rgba(25, 40, 70, 0.4);
+  box-shadow: 3px 3px 6px rgba(0, 0, 0, 0.3), -2px -2px 5px rgba(25, 40, 70, 0.2);
 }
 
 .nav-link:hover {
   color: var(--text-primary);
-  background: var(--lvc-gray-800);
-  box-shadow: 8px 8px 16px rgba(0, 0, 0, 0.6), -8px -8px 16px rgba(30, 50, 80, 0.4);
+  background: rgba(255, 255, 255, 0.04);
+  border-color: var(--border-hover);
+  box-shadow: 4px 4px 8px rgba(0, 0, 0, 0.4), -3px -3px 6px rgba(30, 50, 80, 0.25);
 }
 
 .nav-link.active {
   color: var(--text-primary);
-  background: var(--lvc-navy);
-  box-shadow: inset 4px 4px 12px rgba(0, 0, 0, 0.5), inset -4px -4px 12px rgba(20, 35, 65, 0.3);
+  background: rgba(26, 95, 180, 0.1);
+  border-color: rgba(26, 95, 180, 0.25);
+  box-shadow: inset 2px 2px 6px rgba(0, 0, 0, 0.3), inset -2px -2px 5px rgba(20, 35, 65, 0.2);
 }
 
 /* User section */
