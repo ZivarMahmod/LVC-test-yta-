@@ -416,7 +416,7 @@ export default function Layout() {
                       step="0.05"
                       value={scoreboardSettings.opacity}
                       onChange={e => updateScoreboardSettings({ opacity: parseFloat(e.target.value) })}
-                      style={{ width: '100px' }}
+                      style={{ width: '120px', cursor: 'pointer' }}
                     />
                   </div>
 

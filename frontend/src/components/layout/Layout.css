@@ -408,6 +408,35 @@
   color: var(--lvc-blue);
 }
 
+/* Range slider */
+.symbol-settings-modal input[type="range"] {
+  -webkit-appearance: none;
+  appearance: none;
+  height: 6px;
+  background: var(--border-default);
+  border-radius: 3px;
+  outline: none;
+}
+
+.symbol-settings-modal input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--lvc-blue);
+  cursor: pointer;
+}
+
+.symbol-settings-modal input[type="range"]::-moz-range-thumb {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--lvc-blue);
+  cursor: pointer;
+  border: none;
+}
+
 /* === MOBIL === */
 @media (max-width: 768px) {
   .topbar-inner {
