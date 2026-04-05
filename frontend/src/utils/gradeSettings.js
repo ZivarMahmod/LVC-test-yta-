@@ -1,20 +1,24 @@
 import { GRADE_SYMBOLS } from './scoutConstants.js';
 
-const STORAGE_KEY = 'gradeSymbolSettings';
+const BASE_KEY = 'gradeSymbolSettings';
 
-export function getGradeSymbols() {
+function storageKey(userId) {
+  return userId ? `${BASE_KEY}_${userId}` : BASE_KEY;
+}
+
+export function getGradeSymbols(userId) {
   try {
-    const saved = localStorage.getItem(STORAGE_KEY);
+    const saved = localStorage.getItem(storageKey(userId));
     if (saved) return { ...GRADE_SYMBOLS, ...JSON.parse(saved) };
   } catch { /* ignore */ }
   return { ...GRADE_SYMBOLS };
 }
 
-export function saveGradeSymbols(symbols) {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(symbols));
+export function saveGradeSymbols(symbols, userId) {
+  localStorage.setItem(storageKey(userId), JSON.stringify(symbols));
 }
 
-export function resetGradeSymbols() {
-  localStorage.removeItem(STORAGE_KEY);
+export function resetGradeSymbols(userId) {
+  localStorage.removeItem(storageKey(userId));
   return { ...GRADE_SYMBOLS };
 }

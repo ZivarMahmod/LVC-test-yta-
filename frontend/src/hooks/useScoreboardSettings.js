@@ -1,35 +1,40 @@
 import { useState, useEffect } from 'react';
 import { getScoreboardSettings, saveScoreboardSettings, resetScoreboardSettings } from '../utils/scoreboardSettings.js';
+import { useAuth } from '../context/AuthContext.jsx';
 import { userApi } from '../utils/api.js';
 
 export function useScoreboardSettings() {
-  const [settings, setSettings] = useState(getScoreboardSettings);
+  const { user } = useAuth();
+  const userId = user?.id;
+  const [settings, setSettings] = useState(() => getScoreboardSettings(userId));
 
   useEffect(() => {
+    // Update local state when user changes
+    setSettings(getScoreboardSettings(userId));
+
     userApi.getPreferences().then(prefs => {
       if (prefs?.scoreboardSettings) {
-        const merged = { ...getScoreboardSettings(), ...prefs.scoreboardSettings };
+        const merged = { ...getScoreboardSettings(userId), ...prefs.scoreboardSettings };
         setSettings(merged);
-        saveScoreboardSettings(merged);
+        saveScoreboardSettings(merged, userId);
       } else {
-        // Användaren har inga sparade inställningar — återställ till default
-        const defaults = resetScoreboardSettings();
+        const defaults = resetScoreboardSettings(userId);
         setSettings(defaults);
       }
     }).catch(() => {});
-  }, []);
+  }, [userId]);
 
   function updateSettings(partial) {
     setSettings(prev => {
       const updated = { ...prev, ...partial };
-      saveScoreboardSettings(updated);
+      saveScoreboardSettings(updated, userId);
       userApi.updatePreferences({ scoreboardSettings: updated }).catch(() => {});
       return updated;
     });
   }
 
   function resetSettings() {
-    const defaults = resetScoreboardSettings();
+    const defaults = resetScoreboardSettings(userId);
     setSettings(defaults);
     userApi.updatePreferences({ scoreboardSettings: null }).catch(() => {});
   }

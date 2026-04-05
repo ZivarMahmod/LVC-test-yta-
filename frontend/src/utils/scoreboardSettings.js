@@ -1,4 +1,4 @@
-const STORAGE_KEY = 'scoreboardSettings';
+const BASE_KEY = 'scoreboardSettings';
 
 const DEFAULTS = {
   visible: true,
@@ -8,20 +8,24 @@ const DEFAULTS = {
   pinned: false,
 };
 
-export function getScoreboardSettings() {
+function storageKey(userId) {
+  return userId ? `${BASE_KEY}_${userId}` : BASE_KEY;
+}
+
+export function getScoreboardSettings(userId) {
   try {
-    const saved = localStorage.getItem(STORAGE_KEY);
+    const saved = localStorage.getItem(storageKey(userId));
     if (saved) return { ...DEFAULTS, ...JSON.parse(saved) };
   } catch { /* ignore */ }
   return { ...DEFAULTS };
 }
 
-export function saveScoreboardSettings(settings) {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(settings));
+export function saveScoreboardSettings(settings, userId) {
+  localStorage.setItem(storageKey(userId), JSON.stringify(settings));
 }
 
-export function resetScoreboardSettings() {
-  localStorage.removeItem(STORAGE_KEY);
+export function resetScoreboardSettings(userId) {
+  localStorage.removeItem(storageKey(userId));
   return { ...DEFAULTS };
 }
 
