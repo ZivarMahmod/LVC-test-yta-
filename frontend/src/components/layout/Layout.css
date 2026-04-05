@@ -57,23 +57,28 @@
 }
 
 .nav-link {
-  color: var(--text-muted);
+  color: #fff;
   font-size: 0.9rem;
   font-weight: 500;
   padding: 0.5rem 1rem;
-  border-radius: var(--radius-sm);
-  transition: all 0.15s;
+  border-radius: 0.5em;
+  background: #212121;
+  border: 1px solid #212121;
+  transition: all 0.3s;
   text-decoration: none;
+  box-shadow: 6px 6px 12px #000, -6px -6px 12px #2f2f2f;
 }
 
 .nav-link:hover {
-  color: var(--text-primary);
-  background: rgba(255, 255, 255, 0.04);
+  color: var(--lvc-gold-light);
+  background: #2a2a2a;
+  box-shadow: 8px 8px 16px #000, -8px -8px 16px #333;
 }
 
 .nav-link.active {
-  color: var(--text-primary);
-  background: rgba(26, 95, 180, 0.12);
+  color: #fff;
+  background: #1a1a1a;
+  box-shadow: inset 4px 4px 12px #000, inset -4px -4px 12px #1f1f1f;
 }
 
 /* User section */
