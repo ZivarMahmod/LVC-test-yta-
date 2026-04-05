@@ -160,10 +160,6 @@ export default function Layout() {
             </NavLink>
           </nav>
 
-          <button className="symbol-settings-btn" onClick={() => setShowSymbolSettings(true)} title="Symbolinställningar">
-            ⚙
-          </button>
-
           <div className="user-section" ref={dropdownRef}>
             <button
               className="user-dropdown-btn"
@@ -214,6 +210,9 @@ export default function Layout() {
                         </div>
                       </div>
                     )}
+                    <button className="dropdown-item" onClick={() => { setShowSymbolSettings(true); setDropdownOpen(false); }}>
+                      Ändra actions
+                    </button>
                     <button className="dropdown-item" onClick={() => setShowPassword(true)}>
                       Ändra lösenord
                     </button>
@@ -295,8 +294,8 @@ export default function Layout() {
             <NavLink to="/changelog" className="mobile-nav-link" onClick={closeMenu}>
               Logg
             </NavLink>
-            <button className="mobile-nav-link symbol-settings-btn" onClick={() => { setShowSymbolSettings(true); closeMenu(); }} style={{ textAlign: 'left', border: 'none', background: 'none', cursor: 'pointer' }}>
-              ⚙ Symbolinställningar
+            <button className="mobile-nav-link" onClick={() => { setShowSymbolSettings(true); closeMenu(); }} style={{ textAlign: 'left', border: 'none', background: 'none', cursor: 'pointer', width: '100%', color: 'inherit', font: 'inherit' }}>
+              Ändra actions
             </button>
           </nav>
           <div className="mobile-menu-footer">
@@ -326,7 +325,7 @@ export default function Layout() {
               <h3>Symbolinställningar</h3>
               <button className="symbol-settings-close" onClick={() => setShowSymbolSettings(false)}>✕</button>
             </div>
-            <p className="symbol-settings-desc">Anpassa hur betyg visas i hela appen. Ändringarna sparas lokalt i din webbläsare.</p>
+            <p className="symbol-settings-desc">Anpassa hur betyg visas i hela appen. Ändringarna sparas på ditt konto.</p>
             <div className="symbol-settings-grid">
               {[
                 { code: '#', name: 'Perfekt', color: '#4CAF50' },
