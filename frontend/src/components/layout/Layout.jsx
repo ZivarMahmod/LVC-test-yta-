@@ -412,9 +412,9 @@ export default function Layout() {
                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                       <input
                         type="range"
-                        min="30"
+                        min="0"
                         max="100"
-                        step="5"
+                        step="1"
                         value={Math.round(scoreboardSettings.opacity * 100)}
                         onChange={e => updateScoreboardSettings({ opacity: parseInt(e.target.value) / 100 })}
                         className="opacity-slider"

@@ -54,7 +54,7 @@ export default function DraggableScoreboard({
     }
   }, [dragging, dragPos, onUpdateSettings]);
 
-  if (!settings.visible || !currentScore) return null;
+  if (!settings.visible || !currentScore || settings.opacity === 0) return null;
 
   const pos = dragPos || settings.position;
   const computedStyle = {
