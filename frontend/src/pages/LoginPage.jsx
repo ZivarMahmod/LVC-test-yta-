@@ -35,8 +35,36 @@ export default function LoginPage() {
     }
   };
 
+  // ── Bakgrundsbilder ──
+  // Lägg till/ta bort bilder här. Varje objekt har:
+  //   src: sökväg till bilden
+  //   style: position, storlek, rotation etc. för kaotisk collage-känsla
+  const bgImages = [
+    // Exempel — byt ut mot egna bilder:
+    // { src: '/images/login/match1.jpg', style: { top: '5%', left: '10%', width: '35%', transform: 'rotate(-8deg)' } },
+    // { src: '/images/login/match2.jpg', style: { top: '20%', right: '5%', width: '30%', transform: 'rotate(5deg)' } },
+    // { src: '/images/login/team.jpg', style: { bottom: '10%', left: '15%', width: '40%', transform: 'rotate(3deg)' } },
+    // { src: '/images/login/action.jpg', style: { bottom: '5%', right: '10%', width: '28%', transform: 'rotate(-4deg)' } },
+    // { src: '/images/login/lejon.png', style: { top: '50%', left: '50%', width: '50%', transform: 'translate(-50%, -50%)', opacity: 0.12 } },
+  ];
+
   return (
     <div className="login-page">
+      {bgImages.length > 0 && (
+        <div className="login-bg-collage">
+          {bgImages.map((img, i) => (
+            <img
+              key={i}
+              src={img.src}
+              alt=""
+              className="login-bg-img"
+              style={img.style}
+              loading="lazy"
+            />
+          ))}
+          <div className="login-bg-overlay" />
+        </div>
+      )}
       <div className="login-card">
         <div className="login-header">
           <div className="login-logo">
