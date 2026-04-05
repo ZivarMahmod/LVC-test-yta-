@@ -18,16 +18,23 @@ backend/src/services/      — dvwParser.js, fileStorage.js, folderScanner.js
 backend/src/routes/        — Express routes
 backend/prisma/            — schema.prisma + migrations
 frontend/src/pages/        — React-sidor (VideoPlayerPage, MultiScoutPage, AnalysisPage, etc.)
-frontend/src/components/   — Återanvändbara komponenter (CourtHeatmap, Layout)
-frontend/src/utils/api.js  — Alla API-anrop (videoApi, documentApi, multiScoutApi, etc.)
+frontend/src/components/   — Återanvändbara komponenter (CourtHeatmap, DraggableScoreboard, Layout)
+frontend/src/hooks/        — Custom hooks (useGradeSymbols, useScoreboardSettings)
+frontend/src/utils/api.js  — Alla API-anrop (videoApi, documentApi, multiScoutApi, userApi, etc.)
 ```
 
 ## Utvecklingsflöde
-1. Gör ändringar
-2. Committa till `main`
-3. Testa i dev: `cd /opt/lvcmediahub && git pull origin main && docker compose -f docker-compose.dev.yml up -d --build`
-4. Pusha live: `docker compose up -d --build`
+1. Gör ändringar på en **feature branch** (inte direkt på main)
+2. Testa i dev: `cd /opt/lvcmediahub && git pull origin <branch> --rebase && docker compose -f docker-compose.dev.yml up -d --build`
+3. Skapa PR → merga till main
+4. Pusha live: `git pull origin main && docker compose up -d --build`
 5. Dev och live delar samma NAS-storage men har **separata databaser** (Docker volumes `lvc-data` vs `lvc-data-dev`)
+
+## Per-user inställningar
+- Sparas i `User.preferences` (JSON-sträng i SQLite)
+- API: `GET/PUT /api/auth/user/preferences`
+- Frontend: custom hooks (`useGradeSymbols`, `useScoreboardSettings`) synkar localStorage (keyed per userId) + backend
+- Mönster för nya inställningar: skapa utility i `utils/`, hook i `hooks/`, lägg till i Layout.jsx inställningsmodal
 
 ## DVW-format (DataVolley)
 - Scout-filer (.dvw) innehåller matchdata: spelare, actions, zoner, score
@@ -40,13 +47,13 @@ frontend/src/utils/api.js  — Alla API-anrop (videoApi, documentApi, multiScout
 - `Video` — matchvideor med opponent, matchDate, dvwPath, matchType (own/opponent)
 - `MatchDocument` — PDF:er/bilder kopplade till en video
 - `Team`, `Season` — lagstruktur
-- `User` — roller: admin, coach, uploader, viewer
+- `User` — roller: admin, coach, uploader, viewer. `preferences` (JSON-sträng) för per-user inställningar
 - `CoachReview` — coach-feedback på actions
 
 ## Konventioner
 - Språk i UI: **svenska** (labels, knappar, meddelanden)
 - Språk i kod: **engelska** (variabelnamn, funktioner, kommentarer OK på engelska)
-- Alla API-routes under `/api/videos/` eller `/api/admin/`
+- Alla API-routes under `/api/videos/`, `/api/admin/` eller `/api/auth/`
 - CSRF-skydd på alla POST/PUT/PATCH/DELETE
 - Helmet för säkerhetsheaders (CSP tillåter frame-src 'self' för PDF-visning)
 - Chunked upload för stora videofiler (95 MB chunks)
