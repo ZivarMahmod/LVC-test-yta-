@@ -409,15 +409,20 @@ export default function Layout() {
 
                   <div className="symbol-settings-row">
                     <span className="symbol-settings-name" style={{ flex: 1 }}>Genomskinlighet</span>
-                    <input
-                      type="range"
-                      min="0.3"
-                      max="1"
-                      step="0.05"
-                      value={scoreboardSettings.opacity}
-                      onChange={e => updateScoreboardSettings({ opacity: parseFloat(e.target.value) })}
-                      style={{ width: '120px', cursor: 'pointer' }}
-                    />
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <input
+                        type="range"
+                        min="30"
+                        max="100"
+                        step="5"
+                        value={Math.round(scoreboardSettings.opacity * 100)}
+                        onChange={e => updateScoreboardSettings({ opacity: parseInt(e.target.value) / 100 })}
+                        className="opacity-slider"
+                      />
+                      <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)', minWidth: '32px', textAlign: 'right' }}>
+                        {Math.round(scoreboardSettings.opacity * 100)}%
+                      </span>
+                    </div>
                   </div>
 
                   <div className="symbol-settings-row">

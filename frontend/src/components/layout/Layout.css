@@ -409,28 +409,32 @@
 }
 
 /* Range slider */
-.symbol-settings-modal input[type="range"] {
+.opacity-slider {
   -webkit-appearance: none;
   appearance: none;
+  width: 100px;
   height: 6px;
   background: var(--border-default);
   border-radius: 3px;
   outline: none;
+  cursor: pointer;
+  margin: 0;
+  padding: 0;
 }
 
-.symbol-settings-modal input[type="range"]::-webkit-slider-thumb {
+.opacity-slider::-webkit-slider-thumb {
   -webkit-appearance: none;
   appearance: none;
-  width: 18px;
-  height: 18px;
+  width: 16px;
+  height: 16px;
   border-radius: 50%;
   background: var(--lvc-blue);
   cursor: pointer;
 }
 
-.symbol-settings-modal input[type="range"]::-moz-range-thumb {
-  width: 18px;
-  height: 18px;
+.opacity-slider::-moz-range-thumb {
+  width: 16px;
+  height: 16px;
   border-radius: 50%;
   background: var(--lvc-blue);
   cursor: pointer;
