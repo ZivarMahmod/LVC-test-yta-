@@ -20,6 +20,7 @@ model User {
   passwordHash  String
   role          String         @default("viewer")
   jerseyNumber  Int?
+  preferences   String?
   isActive      Boolean        @default(true)
   createdAt     DateTime       @default(now())
   updatedAt     DateTime       @updatedAt

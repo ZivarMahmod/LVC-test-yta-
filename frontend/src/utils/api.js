@@ -523,6 +523,22 @@ export const settingsApi = {
   }
 };
 
+export const userApi = {
+  async getPreferences() {
+    const res = await apiFetch('/api/auth/user/preferences');
+    if (!res.ok) return {};
+    return res.json();
+  },
+  async updatePreferences(prefs) {
+    const res = await apiFetch('/api/auth/user/preferences', {
+      method: 'PUT',
+      body: JSON.stringify(prefs)
+    });
+    if (!res.ok) throw new Error('Kunde inte spara inställningar');
+    return res.json();
+  }
+};
+
 export const playerStatsApi = {
   async getHistory(playerId, teamId = null) {
     const params = teamId ? `?teamId=${teamId}` : '';
