@@ -11,6 +11,10 @@ export function useScoreboardSettings() {
         const merged = { ...getScoreboardSettings(), ...prefs.scoreboardSettings };
         setSettings(merged);
         saveScoreboardSettings(merged);
+      } else {
+        // Användaren har inga sparade inställningar — återställ till default
+        const defaults = resetScoreboardSettings();
+        setSettings(defaults);
       }
     }).catch(() => {});
   }, []);

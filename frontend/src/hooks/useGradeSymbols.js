@@ -13,6 +13,10 @@ export function useGradeSymbols() {
         const merged = { ...GRADE_SYMBOLS, ...prefs.gradeSymbols };
         setGradeSymbols(merged);
         saveGradeSymbols(prefs.gradeSymbols);
+      } else {
+        // Användaren har inga sparade symboler — återställ till default
+        const defaults = resetGradeSymbols();
+        setGradeSymbols(defaults);
       }
     }).catch(() => {});
   }, []);
