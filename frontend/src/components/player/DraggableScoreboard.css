@@ -1,0 +1,100 @@
+.draggable-scoreboard {
+  background: rgba(15, 23, 42, 0.85);
+  backdrop-filter: blur(8px);
+  border-radius: 8px;
+  padding: 4px 14px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border: 1px solid rgba(71, 85, 105, 0.5);
+  white-space: nowrap;
+}
+
+.draggable-scoreboard .scoreboard-set {
+  color: #64748b;
+  font-size: 0.85em;
+}
+
+.draggable-scoreboard .scoreboard-home {
+  color: #93c5fd;
+  font-weight: 600;
+}
+
+.draggable-scoreboard .scoreboard-score {
+  color: #f1f5f9;
+  font-weight: 700;
+  font-size: 1.3em;
+}
+
+.draggable-scoreboard .scoreboard-away {
+  color: #fbbf24;
+  font-weight: 600;
+}
+
+/* Controls - hover to show */
+.scoreboard-controls {
+  display: flex;
+  gap: 2px;
+  opacity: 0;
+  transition: opacity 0.2s;
+  margin-right: 4px;
+}
+
+.draggable-scoreboard:hover .scoreboard-controls {
+  opacity: 1;
+}
+
+.scoreboard-controls button {
+  background: rgba(255, 255, 255, 0.1);
+  border: none;
+  color: #94a3b8;
+  cursor: pointer;
+  border-radius: 4px;
+  padding: 2px 5px;
+  font-size: 0.8em;
+  line-height: 1;
+}
+
+.scoreboard-controls button:hover {
+  background: rgba(255, 255, 255, 0.2);
+  color: #e2e8f0;
+}
+
+/* Minimized state */
+.draggable-scoreboard-minimized {
+  padding: 3px 10px;
+  gap: 6px;
+}
+
+.scoreboard-score-mini {
+  color: #f1f5f9;
+  font-weight: 700;
+  font-size: 1em;
+}
+
+.draggable-scoreboard-minimized button {
+  background: rgba(255, 255, 255, 0.1);
+  border: none;
+  color: #94a3b8;
+  cursor: pointer;
+  border-radius: 4px;
+  padding: 1px 5px;
+  font-size: 0.85em;
+  line-height: 1;
+}
+
+.draggable-scoreboard-minimized button:hover {
+  background: rgba(255, 255, 255, 0.2);
+  color: #e2e8f0;
+}
+
+/* Mobile: always show controls */
+@media (max-width: 768px) {
+  .scoreboard-controls {
+    opacity: 1;
+  }
+  .draggable-scoreboard {
+    padding: 3px 10px;
+    gap: 5px;
+  }
+}

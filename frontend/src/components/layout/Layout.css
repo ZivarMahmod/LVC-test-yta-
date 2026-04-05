@@ -343,6 +343,104 @@
   font-weight: 600;
 }
 
+/* Settings tabs */
+.settings-tabs {
+  display: flex;
+  gap: 4px;
+  margin-bottom: 12px;
+  border-bottom: 1px solid var(--border-default);
+  padding-bottom: 8px;
+}
+
+.settings-tab {
+  padding: 6px 14px;
+  border: none;
+  border-radius: 6px 6px 0 0;
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+  font-size: 0.85rem;
+  font-weight: 500;
+  transition: all 0.2s;
+}
+
+.settings-tab:hover {
+  color: var(--text-primary);
+}
+
+.settings-tab-active {
+  background: rgba(99, 102, 241, 0.15);
+  color: var(--lvc-blue);
+  font-weight: 600;
+}
+
+/* Toggle button */
+.toggle-btn {
+  padding: 4px 12px;
+  border: 1px solid var(--border-default);
+  border-radius: 6px;
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+  font-size: 0.8rem;
+}
+
+.toggle-active {
+  background: rgba(99, 102, 241, 0.15);
+  border-color: var(--lvc-blue);
+  color: var(--lvc-blue);
+}
+
+/* Size buttons */
+.size-btn {
+  padding: 4px 10px;
+  border: 1px solid var(--border-default);
+  border-radius: 6px;
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+  font-size: 0.75rem;
+}
+
+.size-btn-active {
+  background: rgba(99, 102, 241, 0.15);
+  border-color: var(--lvc-blue);
+  color: var(--lvc-blue);
+}
+
+/* Range slider */
+.opacity-slider {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100px;
+  height: 6px;
+  background: var(--border-default);
+  border-radius: 3px;
+  outline: none;
+  cursor: pointer;
+  margin: 0;
+  padding: 0;
+}
+
+.opacity-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--lvc-blue);
+  cursor: pointer;
+}
+
+.opacity-slider::-moz-range-thumb {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--lvc-blue);
+  cursor: pointer;
+  border: none;
+}
+
 /* === MOBIL === */
 @media (max-width: 768px) {
   .topbar-inner {
