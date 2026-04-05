@@ -60,4 +60,16 @@ router.get('/me',
   authController.me
 );
 
+// Användarpreferenser
+router.get('/user/preferences',
+  authenticateToken,
+  authController.getPreferences
+);
+
+router.put('/user/preferences',
+  authenticateToken,
+  csrfProtection,
+  authController.updatePreferences
+);
+
 export default router;

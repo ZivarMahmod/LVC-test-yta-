@@ -255,14 +255,50 @@ export const authController = {
   // GET /api/auth/me
   // -------------------------------------------
   async me(req, res) {
+    const user = await prisma.user.findUnique({ where: { id: req.user.id }, select: { preferences: true } });
+    const prefs = user?.preferences ? JSON.parse(user.preferences) : {};
     res.json({
       user: {
         id: req.user.id,
         email: req.user.email,
         username: req.user.username,
         name: req.user.name,
-        role: req.user.role
+        role: req.user.role,
+        preferences: prefs
       }
     });
+  },
+
+  // -------------------------------------------
+  // GET /api/auth/user/preferences
+  // -------------------------------------------
+  async getPreferences(req, res) {
+    try {
+      const user = await prisma.user.findUnique({ where: { id: req.user.id }, select: { preferences: true } });
+      const prefs = user?.preferences ? JSON.parse(user.preferences) : {};
+      res.json(prefs);
+    } catch (error) {
+      logger.error('Hämta preferences misslyckades:', error);
+      res.status(500).json({ error: 'Kunde inte hämta inställningar.' });
+    }
+  },
+
+  // -------------------------------------------
+  // PUT /api/auth/user/preferences
+  // -------------------------------------------
+  async updatePreferences(req, res) {
+    try {
+      const current = await prisma.user.findUnique({ where: { id: req.user.id }, select: { preferences: true } });
+      const existing = current?.preferences ? JSON.parse(current.preferences) : {};
+      const merged = { ...existing, ...req.body };
+      await prisma.user.update({
+        where: { id: req.user.id },
+        data: { preferences: JSON.stringify(merged) }
+      });
+      res.json(merged);
+    } catch (error) {
+      logger.error('Uppdatera preferences misslyckades:', error);
+      res.status(500).json({ error: 'Kunde inte spara inställningar.' });
+    }
   }
 };

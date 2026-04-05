@@ -3,6 +3,7 @@
 // 9 zoner (DVW standard), klickbara
 // ===========================================
 import { useState, useMemo, useCallback } from 'react';
+import { GRADE_SYMBOLS } from '../../utils/scoutConstants.js';
 
 // DVW 9-zoners layout:
 // 4 | 3 | 2    (framrad, nät)
@@ -36,7 +37,7 @@ const SKILL_OPTIONS = [
 
 const SKILL_LABELS = { S: 'Serve', A: 'Anfall', R: 'Mottagning', B: 'Block', D: 'Försvar', P: 'Pass', G: 'Gratisboll' };
 
-const GRADE_FILTERS = [
+const GRADE_FILTERS_BASE = [
   { key: 'all', label: 'Alla', color: '#f1f5f9', symbol: '' },
   { key: '#', label: 'Perfekt', color: '#22c55e', symbol: '●' },
   { key: '+', label: 'Positiv', color: '#22c55e', symbol: '▲' },
@@ -55,7 +56,7 @@ const getHeatColor = (ratio) => {
 };
 
 // Zone detail panel with grade filters
-function ZoneDetail({ zone, actions, team, selectedSkill, onClose, onActionClick, onAutoPlay }) {
+function ZoneDetail({ zone, actions, team, selectedSkill, onClose, onActionClick, onAutoPlay, gradeFilters }) {
   const [gradeFilter, setGradeFilter] = useState('all');
 
   const zoneActions = useMemo(() => {
@@ -115,7 +116,7 @@ function ZoneDetail({ zone, actions, team, selectedSkill, onClose, onActionClick
 
       {/* Grade filters */}
       <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap', marginBottom: 8 }}>
-        {GRADE_FILTERS.map(gf => (
+        {gradeFilters.map(gf => (
           <button
             key={gf.key}
             onClick={() => setGradeFilter(gf.key)}
@@ -153,7 +154,7 @@ function ZoneDetail({ zone, actions, team, selectedSkill, onClose, onActionClick
               </div>
               <div style={{ display: 'flex', gap: 3, flexWrap: 'wrap' }}>
                 {acts.slice(0, 30).map((a, i) => {
-                  const gradeInfo = GRADE_FILTERS.find(g => g.key === a.grade);
+                  const gradeInfo = gradeFilters.find(g => g.key === a.grade);
                   return (
                     <span key={i} onClick={() => {
                       if (onAutoPlay) onAutoPlay(a, filteredActions);
@@ -180,9 +181,17 @@ function ZoneDetail({ zone, actions, team, selectedSkill, onClose, onActionClick
   );
 }
 
-export default function CourtHeatmap({ actions, team, teamName, highlightZone, onZoneSelect, onActionClick, onAutoPlay, compact: _compact }) {
+export default function CourtHeatmap({ actions, team, teamName, highlightZone, onZoneSelect, onActionClick, onAutoPlay, gradeSymbols = GRADE_SYMBOLS, compact: _compact }) {
   const [selectedSkill, setSelectedSkill] = useState('all');
   const [selectedZone, setSelectedZone] = useState(null);
+
+  const gradeFilters = useMemo(() =>
+    GRADE_FILTERS_BASE.map(gf => ({
+      ...gf,
+      symbol: gf.key === 'all' ? '' : (gradeSymbols[gf.key] || gf.symbol)
+    })),
+    [gradeSymbols]
+  );
 
   // Synka highlightZone från parent (t.ex. zonfilter)
   const effectiveSelectedZone = highlightZone
@@ -331,6 +340,7 @@ export default function CourtHeatmap({ actions, team, teamName, highlightZone, o
           onClose={() => { setSelectedZone(null); if (onZoneSelect) onZoneSelect(null); }}
           onActionClick={onActionClick}
           onAutoPlay={onAutoPlay}
+          gradeFilters={gradeFilters}
         />
       )}
     </div>

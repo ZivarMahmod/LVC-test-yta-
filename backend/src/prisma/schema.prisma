@@ -20,6 +20,7 @@ model User {
   passwordHash  String
   role          String         @default("viewer")
   jerseyNumber  Int?
+  preferences   String?
   isActive      Boolean        @default(true)
   createdAt     DateTime       @default(now())
   updatedAt     DateTime       @updatedAt
@@ -95,6 +96,7 @@ model Video {
   mimeType      String
   thumbnailPath String?
   dvwPath       String?
+  matchType     String   @default("own")
   videoOffset   Int      @default(0)
   deletedAt    DateTime?
   deletedById  String?
@@ -112,6 +114,23 @@ model Video {
   @@index([teamId])
   @@index([seasonId])
   @@index([filePath])
+  @@index([createdAt])
+  @@index([uploadedById])
+  documents MatchDocument[]
+}
+
+model MatchDocument {
+  id        String   @id @default(uuid())
+  name      String
+  type      String   @default("other")
+  filePath  String
+  fileSize  BigInt
+  videoId   String
+  video     Video    @relation(fields: [videoId], references: [id], onDelete: Cascade)
+  uploadedById String
+  createdAt DateTime @default(now())
+
+  @@index([videoId])
 }
 
 model LoginAttempt {
@@ -172,4 +191,28 @@ model CoachReview {
   @@index([coachId])
   @@index([playerId])
   @@index([videoId])
+  @@index([createdAt])
+}
+
+model Setting {
+  key       String   @id
+  value     String
+  updatedAt DateTime @updatedAt
+}
+
+model AuditLog {
+  id        String   @id @default(uuid())
+  action    String
+  entity    String
+  entityId  String?
+  userId    String
+  userName  String
+  details   String?
+  ipAddress String?
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+  @@index([action])
+  @@index([entity])
+  @@index([createdAt])
 }
