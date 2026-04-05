@@ -269,11 +269,9 @@ export default function VideoPlayerPage() {
       const next = list[currentIdx + 1];
 
       if (next && next.videoTime !== null) {
-        const rate = videoRef.current.playbackRate || 1;
-        const baseDelay = next.videoTime > action.videoTime
+        const delay = next.videoTime > action.videoTime
           ? Math.min((next.videoTime - action.videoTime) * 1000, 8000)
           : 5000;
-        const delay = baseDelay / rate;
         autoJumpTimer.current = setTimeout(() => {
           if (videoRef.current && !videoRef.current.paused) {
             jumpToAction(next);
