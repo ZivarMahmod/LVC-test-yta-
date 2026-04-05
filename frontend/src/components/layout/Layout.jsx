@@ -211,7 +211,7 @@ export default function Layout() {
                       </div>
                     )}
                     <button className="dropdown-item" onClick={() => { setShowSymbolSettings(true); setDropdownOpen(false); }}>
-                      Ändra actions
+                      Ändra symboler
                     </button>
                     <button className="dropdown-item" onClick={() => setShowPassword(true)}>
                       Ändra lösenord
@@ -295,7 +295,7 @@ export default function Layout() {
               Logg
             </NavLink>
             <button className="mobile-nav-link" onClick={() => { setShowSymbolSettings(true); closeMenu(); }} style={{ textAlign: 'left', border: 'none', background: 'none', cursor: 'pointer', width: '100%', color: 'inherit', font: 'inherit' }}>
-              Ändra actions
+              Ändra symboler
             </button>
           </nav>
           <div className="mobile-menu-footer">
