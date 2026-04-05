@@ -33,14 +33,19 @@ export default function DraggableScoreboard({
   const handlePointerMove = useCallback((e) => {
     if (!dragging) return;
     const container = containerRef?.current;
-    if (!container) return;
+    const el = e.currentTarget;
+    if (!container || !el) return;
 
     const containerRect = container.getBoundingClientRect();
+    const elRect = el.getBoundingClientRect();
+    const maxX = ((containerRect.width - elRect.width) / containerRect.width) * 100;
+    const maxY = ((containerRect.height - elRect.height) / containerRect.height) * 100;
+
     let x = ((e.clientX - containerRect.left - offsetRef.current.x) / containerRect.width) * 100;
     let y = ((e.clientY - containerRect.top - offsetRef.current.y) / containerRect.height) * 100;
 
-    x = Math.max(0, Math.min(90, x));
-    y = Math.max(0, Math.min(90, y));
+    x = Math.max(0, Math.min(maxX, x));
+    y = Math.max(0, Math.min(maxY, y));
 
     setDragPos({ x, y });
   }, [dragging, containerRef]);
