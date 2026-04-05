@@ -12,6 +12,8 @@ import MatchReport from '../components/player/MatchReport.jsx';
 import CourtHeatmap from '../components/player/CourtHeatmap.jsx';
 import ReviewPanel from '../components/player/ReviewPanel.jsx';
 import DvwSearchPanel from '../components/player/DvwSearchPanel.jsx';
+import DraggableScoreboard from '../components/player/DraggableScoreboard.jsx';
+import { useScoreboardSettings } from '../hooks/useScoreboardSettings.js';
 import './VideoPlayerPage.css';
 
 export default function VideoPlayerPage() {
@@ -24,6 +26,8 @@ export default function VideoPlayerPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const videoRef = useRef(null);
+  const playerWrapperRef = useRef(null);
+  const { settings: scoreboardSettings, updateSettings: updateScoreboardSettings } = useScoreboardSettings();
 
   // Skill-namn och bokstäver från inställningar
   const [SKILL_NAMES, setSkillNames] = useState(DEFAULT_SKILL_NAMES);
@@ -556,7 +560,7 @@ export default function VideoPlayerPage() {
               <button className="btn-danger btn-sm" onClick={handleDelete}>Ta bort</button>
             )}
           </div>
-          <div className="player-wrapper">
+          <div className="player-wrapper" ref={playerWrapperRef}>
             <video
               ref={videoRef}
               controls
@@ -572,23 +576,14 @@ export default function VideoPlayerPage() {
               Din webbläsare stöder inte videouppspelning.
             </video>
 
-            {/* Scoreboard overlay */}
-            {currentScore && scout?.teams && (
-              <div className="scoreboard-overlay">
-                <span className="scoreboard-set">
-                  Set {currentScore.set || '?'}
-                </span>
-                <span className="scoreboard-home">
-                  {scout.teams.H}
-                </span>
-                <span className="scoreboard-score">
-                  {currentScore.setScore?.H ?? 0} - {currentScore.setScore?.V ?? 0}
-                </span>
-                <span className="scoreboard-away">
-                  {scout.teams.V}
-                </span>
-              </div>
-            )}
+            <DraggableScoreboard
+              currentScore={currentScore}
+              homeTeam={scout?.teams?.H}
+              awayTeam={scout?.teams?.V}
+              containerRef={playerWrapperRef}
+              settings={scoreboardSettings}
+              onUpdateSettings={updateScoreboardSettings}
+            />
           </div>
         </div>
 

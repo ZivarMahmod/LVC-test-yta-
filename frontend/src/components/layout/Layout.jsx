@@ -6,6 +6,7 @@ import { Outlet, NavLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext.jsx';
 import { authApi, reviewApi } from '../../utils/api.js';
 import { useGradeSymbols } from '../../hooks/useGradeSymbols.js';
+import { useScoreboardSettings } from '../../hooks/useScoreboardSettings.js';
 import './Layout.css';
 
 export default function Layout() {
@@ -24,6 +25,8 @@ export default function Layout() {
   const [pwLoading, setPwLoading] = useState(false);
   const { gradeSymbols, updateSymbol, reset: resetGradeSymbols } = useGradeSymbols();
   const [showSymbolSettings, setShowSymbolSettings] = useState(false);
+  const { settings: scoreboardSettings, updateSettings: updateScoreboardSettings, resetSettings: resetScoreboardSettings2 } = useScoreboardSettings();
+  const [settingsTab, setSettingsTab] = useState('symbols');
   const dropdownRef = useRef(null);
 
   useEffect(() => {
@@ -211,7 +214,7 @@ export default function Layout() {
                       </div>
                     )}
                     <button className="dropdown-item" onClick={() => { setShowSymbolSettings(true); setDropdownOpen(false); }}>
-                      Ändra symboler
+                      Inställningar
                     </button>
                     <button className="dropdown-item" onClick={() => setShowPassword(true)}>
                       Ändra lösenord
@@ -295,7 +298,7 @@ export default function Layout() {
               Logg
             </NavLink>
             <button className="mobile-nav-link" onClick={() => { setShowSymbolSettings(true); closeMenu(); }} style={{ textAlign: 'left', border: 'none', background: 'none', cursor: 'pointer', width: '100%', color: 'inherit', font: 'inherit' }}>
-              Ändra symboler
+              Inställningar
             </button>
           </nav>
           <div className="mobile-menu-footer">
@@ -322,40 +325,122 @@ export default function Layout() {
         <div className="symbol-settings-overlay" onClick={() => setShowSymbolSettings(false)}>
           <div className="symbol-settings-modal" onClick={e => e.stopPropagation()}>
             <div className="symbol-settings-header">
-              <h3>Symbolinställningar</h3>
+              <h3>Inställningar</h3>
               <button className="symbol-settings-close" onClick={() => setShowSymbolSettings(false)}>✕</button>
             </div>
-            <p className="symbol-settings-desc">Anpassa hur betyg visas i hela appen. Ändringarna sparas på ditt konto.</p>
-            <div className="symbol-settings-grid">
-              {[
-                { code: '#', name: 'Perfekt', color: '#4CAF50' },
-                { code: '+', name: 'Bra', color: '#8BC34A' },
-                { code: '!', name: 'OK', color: '#FF9800' },
-                { code: '-', name: 'Dålig', color: '#FF5722' },
-                { code: '/', name: 'Fel', color: '#f44336' },
-                { code: '=', name: 'Boll borta', color: '#f44336' },
-              ].map(g => (
-                <div key={g.code} className="symbol-settings-row">
-                  <span className="symbol-settings-code" style={{ color: g.color }}>{g.code}</span>
-                  <span className="symbol-settings-name">{g.name}</span>
-                  <input
-                    type="text"
-                    className="symbol-settings-input"
-                    value={gradeSymbols[g.code] || ''}
-                    onChange={e => updateSymbol(g.code, e.target.value)}
-                    maxLength={3}
-                  />
+            <div className="settings-tabs">
+              <button
+                className={`settings-tab ${settingsTab === 'symbols' ? 'settings-tab-active' : ''}`}
+                onClick={() => setSettingsTab('symbols')}
+              >
+                Symboler
+              </button>
+              <button
+                className={`settings-tab ${settingsTab === 'scoreboard' ? 'settings-tab-active' : ''}`}
+                onClick={() => setSettingsTab('scoreboard')}
+              >
+                Scoreboard
+              </button>
+            </div>
+            {settingsTab === 'symbols' && (
+              <>
+                <p className="symbol-settings-desc">Anpassa hur betyg visas i hela appen. Ändringarna sparas på ditt konto.</p>
+                <div className="symbol-settings-grid">
+                  {[
+                    { code: '#', name: 'Perfekt', color: '#4CAF50' },
+                    { code: '+', name: 'Bra', color: '#8BC34A' },
+                    { code: '!', name: 'OK', color: '#FF9800' },
+                    { code: '-', name: 'Dålig', color: '#FF5722' },
+                    { code: '/', name: 'Fel', color: '#f44336' },
+                    { code: '=', name: 'Boll borta', color: '#f44336' },
+                  ].map(g => (
+                    <div key={g.code} className="symbol-settings-row">
+                      <span className="symbol-settings-code" style={{ color: g.color }}>{g.code}</span>
+                      <span className="symbol-settings-name">{g.name}</span>
+                      <input
+                        type="text"
+                        className="symbol-settings-input"
+                        value={gradeSymbols[g.code] || ''}
+                        onChange={e => updateSymbol(g.code, e.target.value)}
+                        maxLength={3}
+                      />
+                    </div>
+                  ))}
                 </div>
-              ))}
-            </div>
-            <div className="symbol-settings-actions">
-              <button className="symbol-settings-reset" onClick={resetGradeSymbols}>
-                Återställ standard
-              </button>
-              <button className="symbol-settings-done" onClick={() => setShowSymbolSettings(false)}>
-                Klar
-              </button>
-            </div>
+                <div className="symbol-settings-actions">
+                  <button className="symbol-settings-reset" onClick={resetGradeSymbols}>
+                    Återställ standard
+                  </button>
+                  <button className="symbol-settings-done" onClick={() => setShowSymbolSettings(false)}>
+                    Klar
+                  </button>
+                </div>
+              </>
+            )}
+            {settingsTab === 'scoreboard' && (
+              <div className="scoreboard-settings-panel">
+                <p className="symbol-settings-desc">Anpassa scoreboardets utseende i videospelaren.</p>
+
+                <div className="symbol-settings-grid">
+                  <div className="symbol-settings-row">
+                    <span className="symbol-settings-name" style={{ flex: 1 }}>Visa scoreboard</span>
+                    <button
+                      className={`toggle-btn ${scoreboardSettings.visible ? 'toggle-active' : ''}`}
+                      onClick={() => updateScoreboardSettings({ visible: !scoreboardSettings.visible })}
+                    >
+                      {scoreboardSettings.visible ? 'På' : 'Av'}
+                    </button>
+                  </div>
+
+                  <div className="symbol-settings-row">
+                    <span className="symbol-settings-name" style={{ flex: 1 }}>Textstorlek</span>
+                    <div style={{ display: 'flex', gap: '4px' }}>
+                      {[{ key: 'small', label: 'Liten' }, { key: 'medium', label: 'Medium' }, { key: 'large', label: 'Stor' }].map(s => (
+                        <button
+                          key={s.key}
+                          className={`size-btn ${scoreboardSettings.fontSize === s.key ? 'size-btn-active' : ''}`}
+                          onClick={() => updateScoreboardSettings({ fontSize: s.key })}
+                        >
+                          {s.label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="symbol-settings-row">
+                    <span className="symbol-settings-name" style={{ flex: 1 }}>Genomskinlighet</span>
+                    <input
+                      type="range"
+                      min="0.3"
+                      max="1"
+                      step="0.05"
+                      value={scoreboardSettings.opacity}
+                      onChange={e => updateScoreboardSettings({ opacity: parseFloat(e.target.value) })}
+                      style={{ width: '100px' }}
+                    />
+                  </div>
+
+                  <div className="symbol-settings-row">
+                    <span className="symbol-settings-name" style={{ flex: 1 }}>Låst position</span>
+                    <button
+                      className={`toggle-btn ${scoreboardSettings.pinned ? 'toggle-active' : ''}`}
+                      onClick={() => updateScoreboardSettings({ pinned: !scoreboardSettings.pinned })}
+                    >
+                      {scoreboardSettings.pinned ? '🔒 Låst' : '🔓 Olåst'}
+                    </button>
+                  </div>
+                </div>
+
+                <div className="symbol-settings-actions">
+                  <button className="symbol-settings-reset" onClick={() => { resetScoreboardSettings2(); }}>
+                    Återställ standard
+                  </button>
+                  <button className="symbol-settings-done" onClick={() => setShowSymbolSettings(false)}>
+                    Klar
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       )}
