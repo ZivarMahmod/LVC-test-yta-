@@ -39,7 +39,15 @@ export default function LoginPage() {
     <div className="login-page">
       <div className="login-card">
         <div className="login-header">
-          <div className="login-logo">🏐</div>
+          <div className="login-logo">
+            <svg width="56" height="56" viewBox="0 0 56 56" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <circle cx="28" cy="28" r="26" stroke="rgba(91,163,245,0.6)" strokeWidth="2" fill="rgba(26,95,180,0.15)" />
+              <path d="M28 2C28 2 20 14 20 28C20 42 28 54 28 54" stroke="rgba(91,163,245,0.4)" strokeWidth="1.5" fill="none" />
+              <path d="M28 2C28 2 36 14 36 28C36 42 28 54 28 54" stroke="rgba(91,163,245,0.4)" strokeWidth="1.5" fill="none" />
+              <path d="M4 20C4 20 16 24 28 24C40 24 52 20 52 20" stroke="rgba(91,163,245,0.4)" strokeWidth="1.5" fill="none" />
+              <path d="M4 36C4 36 16 32 28 32C40 32 52 36 52 36" stroke="rgba(91,163,245,0.4)" strokeWidth="1.5" fill="none" />
+            </svg>
+          </div>
           <h1>LVC Media Hub</h1>
           <p>Linköpings Volleybollklubb</p>
         </div>
