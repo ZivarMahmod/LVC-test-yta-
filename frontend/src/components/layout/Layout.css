@@ -62,18 +62,44 @@
   font-weight: 500;
   padding: 0.5rem 1rem;
   border-radius: var(--radius-sm);
-  transition: all 0.15s;
+  background: transparent;
+  border: none;
+  transition: all 0.25s;
   text-decoration: none;
+  position: relative;
+}
+
+.nav-link::after {
+  content: '';
+  position: absolute;
+  bottom: -2px;
+  left: 50%;
+  width: 0;
+  height: 2px;
+  background: var(--lvc-blue-light);
+  border-radius: 1px;
+  transition: all 0.25s;
+  transform: translateX(-50%);
 }
 
 .nav-link:hover {
   color: var(--text-primary);
-  background: rgba(255, 255, 255, 0.04);
+  text-shadow: 0 0 12px rgba(53, 132, 228, 0.3);
+}
+
+.nav-link:hover::after {
+  width: 60%;
 }
 
 .nav-link.active {
   color: var(--text-primary);
-  background: rgba(26, 95, 180, 0.12);
+  font-weight: 600;
+}
+
+.nav-link.active::after {
+  width: 80%;
+  background: var(--lvc-blue-glow);
+  box-shadow: 0 0 8px rgba(91, 163, 245, 0.4);
 }
 
 /* User section */
