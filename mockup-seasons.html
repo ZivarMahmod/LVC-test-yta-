@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Seasons Page — Mockup</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: 'DM Sans', system-ui, -apple-system, sans-serif;
+    background: #0a1628;
+    color: #f4f5f7;
+    min-height: 100vh;
+    padding: 2rem;
+  }
+
+  .container { max-width: 900px; margin: 0 auto; }
+
+  /* Breadcrumb */
+  .breadcrumb {
+    font-size: 0.85rem;
+    color: #7c8294;
+    margin-bottom: 1.5rem;
+  }
+  .breadcrumb a { color: #3584e4; text-decoration: none; }
+  .breadcrumb a:hover { color: #5ba3f5; }
+
+  /* Team header */
+  .team-header {
+    display: flex;
+    align-items: center;
+    gap: 1.25rem;
+    margin-bottom: 2.5rem;
+    padding-bottom: 1.5rem;
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+  }
+  .team-icon {
+    width: 56px;
+    height: 56px;
+    background: rgba(26, 95, 180, 0.15);
+    border: 1px solid rgba(91, 163, 245, 0.3);
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.6rem;
+  }
+  .team-info h1 {
+    font-size: 1.5rem;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+  }
+  .team-meta {
+    display: flex;
+    gap: 1.5rem;
+    margin-top: 0.3rem;
+    font-size: 0.82rem;
+    color: #7c8294;
+  }
+  .team-meta span { display: flex; align-items: center; gap: 0.35rem; }
+
+  /* Section label */
+  .section-label {
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: #7c8294;
+    margin-bottom: 1rem;
+    font-weight: 600;
+  }
+
+  /* Timeline */
+  .seasons-timeline {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+  }
+
+  /* Season card */
+  .season-card {
+    display: flex;
+    align-items: center;
+    gap: 1.25rem;
+    background: #111f3a;
+    border: 1px solid rgba(255,255,255,0.06);
+    border-radius: 12px;
+    padding: 1.25rem 1.5rem;
+    cursor: pointer;
+    transition: all 0.25s;
+    text-decoration: none;
+    color: inherit;
+    position: relative;
+  }
+  .season-card:hover {
+    transform: translateX(4px);
+    border-color: rgba(26, 95, 180, 0.3);
+    background: rgba(17, 31, 58, 0.9);
+    box-shadow: 0 4px 24px rgba(0,0,0,0.3), 0 0 30px rgba(26, 95, 180, 0.06);
+  }
+  .season-card.active {
+    border-color: rgba(26, 95, 180, 0.4);
+    background: rgba(26, 95, 180, 0.08);
+  }
+  .season-card.active::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 3px;
+    height: 60%;
+    background: #3584e4;
+    border-radius: 0 3px 3px 0;
+    box-shadow: 0 0 10px rgba(53, 132, 228, 0.5);
+  }
+
+  .season-badge {
+    width: 52px;
+    height: 52px;
+    background: linear-gradient(135deg, rgba(26, 95, 180, 0.2), rgba(91, 163, 245, 0.1));
+    border: 1px solid rgba(91, 163, 245, 0.2);
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 1rem;
+    flex-shrink: 0;
+    color: #5ba3f5;
+  }
+  .season-card.active .season-badge {
+    background: linear-gradient(135deg, rgba(26, 95, 180, 0.3), rgba(91, 163, 245, 0.15));
+    border-color: rgba(91, 163, 245, 0.35);
+    box-shadow: 0 0 15px rgba(53, 132, 228, 0.15);
+  }
+
+  .season-details {
+    flex: 1;
+    min-width: 0;
+  }
+  .season-name {
+    font-size: 1.05rem;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+  .season-name .current-tag {
+    font-size: 0.65rem;
+    background: rgba(26, 95, 180, 0.2);
+    color: #5ba3f5;
+    padding: 0.15rem 0.5rem;
+    border-radius: 20px;
+    font-weight: 500;
+    letter-spacing: 0.03em;
+  }
+  .season-stats {
+    display: flex;
+    gap: 1.25rem;
+    margin-top: 0.35rem;
+    font-size: 0.8rem;
+    color: #7c8294;
+  }
+
+  .season-arrow {
+    color: #7c8294;
+    font-size: 1.1rem;
+    transition: all 0.25s;
+    flex-shrink: 0;
+  }
+  .season-card:hover .season-arrow {
+    color: #3584e4;
+    transform: translateX(3px);
+  }
+
+  /* Past seasons - slightly dimmed */
+  .season-card.past {
+    opacity: 0.7;
+  }
+  .season-card.past:hover {
+    opacity: 1;
+  }
+
+  /* Divider */
+  .season-divider {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin: 0.5rem 0;
+  }
+  .season-divider span {
+    font-size: 0.7rem;
+    color: #7c8294;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    white-space: nowrap;
+  }
+  .season-divider::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: rgba(255,255,255,0.06);
+  }
+</style>
+</head>
+<body>
+  <div class="container">
+    <div class="breadcrumb">
+      <a href="#">Lag</a> &rsaquo; LVC Herr
+    </div>
+
+    <div class="team-header">
+      <div class="team-icon">&#127951;</div>
+      <div class="team-info">
+        <h1>LVC Herr</h1>
+        <div class="team-meta">
+          <span>&#128197; 3 sasonger</span>
+          <span>&#127909; 22 matcher totalt</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="section-label">Sasonger</div>
+
+    <div class="seasons-timeline">
+      <!-- Active season -->
+      <a class="season-card active" href="#">
+        <div class="season-badge">25/26</div>
+        <div class="season-details">
+          <div class="season-name">
+            Sasong 2025/26
+            <span class="current-tag">PAGAENDE</span>
+          </div>
+          <div class="season-stats">
+            <span>8 matcher</span>
+            <span>5 med scout</span>
+          </div>
+        </div>
+        <div class="season-arrow">&rarr;</div>
+      </a>
+
+      <div class="season-divider">
+        <span>Tidigare</span>
+      </div>
+
+      <!-- Past seasons -->
+      <a class="season-card past" href="#">
+        <div class="season-badge">24/25</div>
+        <div class="season-details">
+          <div class="season-name">Sasong 2024/25</div>
+          <div class="season-stats">
+            <span>10 matcher</span>
+            <span>8 med scout</span>
+          </div>
+        </div>
+        <div class="season-arrow">&rarr;</div>
+      </a>
+
+      <a class="season-card past" href="#">
+        <div class="season-badge">23/24</div>
+        <div class="season-details">
+          <div class="season-name">Sasong 2023/24</div>
+          <div class="season-stats">
+            <span>4 matcher</span>
+            <span>2 med scout</span>
+          </div>
+        </div>
+        <div class="season-arrow">&rarr;</div>
+      </a>
+    </div>
+  </div>
+</body>
+</html>
