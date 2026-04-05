@@ -5,6 +5,7 @@ import { useState, useRef, useEffect } from 'react';
 import { Outlet, NavLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext.jsx';
 import { authApi, reviewApi } from '../../utils/api.js';
+import { useGradeSymbols } from '../../hooks/useGradeSymbols.js';
 import './Layout.css';
 
 export default function Layout() {
@@ -21,6 +22,8 @@ export default function Layout() {
   const [pwError, setPwError] = useState('');
   const [pwSuccess, setPwSuccess] = useState('');
   const [pwLoading, setPwLoading] = useState(false);
+  const { gradeSymbols, updateSymbol, reset: resetGradeSymbols } = useGradeSymbols();
+  const [showSymbolSettings, setShowSymbolSettings] = useState(false);
   const dropdownRef = useRef(null);
 
   useEffect(() => {
@@ -157,6 +160,10 @@ export default function Layout() {
             </NavLink>
           </nav>
 
+          <button className="symbol-settings-btn" onClick={() => setShowSymbolSettings(true)} title="Symbolinställningar">
+            ⚙
+          </button>
+
           <div className="user-section" ref={dropdownRef}>
             <button
               className="user-dropdown-btn"
@@ -288,6 +295,9 @@ export default function Layout() {
             <NavLink to="/changelog" className="mobile-nav-link" onClick={closeMenu}>
               Logg
             </NavLink>
+            <button className="mobile-nav-link symbol-settings-btn" onClick={() => { setShowSymbolSettings(true); closeMenu(); }} style={{ textAlign: 'left', border: 'none', background: 'none', cursor: 'pointer' }}>
+              ⚙ Symbolinställningar
+            </button>
           </nav>
           <div className="mobile-menu-footer">
             <span className="mobile-user">{user?.name} <span className={`badge badge-${user?.role}`}>{user?.role}</span></span>
@@ -308,6 +318,48 @@ export default function Layout() {
           <Outlet />
         </div>
       </main>
+
+      {showSymbolSettings && (
+        <div className="symbol-settings-overlay" onClick={() => setShowSymbolSettings(false)}>
+          <div className="symbol-settings-modal" onClick={e => e.stopPropagation()}>
+            <div className="symbol-settings-header">
+              <h3>Symbolinställningar</h3>
+              <button className="symbol-settings-close" onClick={() => setShowSymbolSettings(false)}>✕</button>
+            </div>
+            <p className="symbol-settings-desc">Anpassa hur betyg visas i hela appen. Ändringarna sparas lokalt i din webbläsare.</p>
+            <div className="symbol-settings-grid">
+              {[
+                { code: '#', name: 'Perfekt', color: '#4CAF50' },
+                { code: '+', name: 'Bra', color: '#8BC34A' },
+                { code: '!', name: 'OK', color: '#FF9800' },
+                { code: '-', name: 'Dålig', color: '#FF5722' },
+                { code: '/', name: 'Fel', color: '#f44336' },
+                { code: '=', name: 'Boll borta', color: '#f44336' },
+              ].map(g => (
+                <div key={g.code} className="symbol-settings-row">
+                  <span className="symbol-settings-code" style={{ color: g.color }}>{g.code}</span>
+                  <span className="symbol-settings-name">{g.name}</span>
+                  <input
+                    type="text"
+                    className="symbol-settings-input"
+                    value={gradeSymbols[g.code] || ''}
+                    onChange={e => updateSymbol(g.code, e.target.value)}
+                    maxLength={3}
+                  />
+                </div>
+              ))}
+            </div>
+            <div className="symbol-settings-actions">
+              <button className="symbol-settings-reset" onClick={resetGradeSymbols}>
+                Återställ standard
+              </button>
+              <button className="symbol-settings-done" onClick={() => setShowSymbolSettings(false)}>
+                Klar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

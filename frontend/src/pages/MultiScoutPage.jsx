@@ -4,7 +4,8 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useSearchParams, Link } from 'react-router-dom';
 import { multiScoutApi, videoApi, settingsApi } from '../utils/api.js';
-import { SKILL_COLORS, DEFAULT_SKILL_NAMES, GRADE_SYMBOLS } from '../utils/scoutConstants.js';
+import { SKILL_COLORS, DEFAULT_SKILL_NAMES } from '../utils/scoutConstants.js';
+import { useGradeSymbols } from '../hooks/useGradeSymbols.js';
 import CourtHeatmap from '../components/player/CourtHeatmap.jsx';
 import './VideoPlayerPage.css';
 
@@ -17,6 +18,7 @@ function formatDateShort(dateStr) {
 }
 
 export default function MultiScoutPage() {
+  const { gradeSymbols } = useGradeSymbols();
   const [searchParams] = useSearchParams();
   const idsParam = searchParams.get('ids') || '';
   const ids = idsParam.split(',').filter(Boolean);
@@ -387,11 +389,11 @@ export default function MultiScoutPage() {
             {/* Grades */}
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.25rem' }}>
               {[
-                { key: '#', symbol: '●', label: 'Perfekt', color: '#4CAF50' },
-                { key: '+', symbol: '▲', label: 'Positiv', color: '#8BC34A' },
-                { key: '!', symbol: '■', label: 'OK', color: '#FF9800' },
-                { key: '-', symbol: '▼', label: 'Negativ', color: '#FF5722' },
-                { key: 'ERR', symbol: '✕', label: 'Error', color: '#f44336' }
+                { key: '#', symbol: gradeSymbols['#'], label: 'Perfekt', color: '#4CAF50' },
+                { key: '+', symbol: gradeSymbols['+'], label: 'Positiv', color: '#8BC34A' },
+                { key: '!', symbol: gradeSymbols['!'], label: 'OK', color: '#FF9800' },
+                { key: '-', symbol: gradeSymbols['-'], label: 'Negativ', color: '#FF5722' },
+                { key: 'ERR', symbol: gradeSymbols['/'], label: 'Error', color: '#f44336' }
               ].map(g => {
                 const isActive = filterGrade === g.key;
                 return (
@@ -435,7 +437,7 @@ export default function MultiScoutPage() {
             {/* Actions / Heatmap */}
             {activeTab === 'heatmap' ? (
               <div style={{ overflowY: 'auto', flex: 1 }}>
-                <CourtHeatmap actions={filteredActions} highlightZone={highlightZone} onZoneSelect={handleHeatmapZoneSelect} onActionClick={handleActionClick} />
+                <CourtHeatmap actions={filteredActions} highlightZone={highlightZone} onZoneSelect={handleHeatmapZoneSelect} onActionClick={handleActionClick} gradeSymbols={gradeSymbols} />
               </div>
             ) : (
               <div style={{ overflowY: 'auto', flex: 1 }}>
@@ -465,7 +467,7 @@ export default function MultiScoutPage() {
                           fontSize: '0.72rem',
                           color: GRADE_COLORS[action.grade] || 'var(--text-muted)'
                         }}>
-                          {GRADE_SYMBOLS[action.grade] || action.grade}
+                          {gradeSymbols[action.grade] || action.grade}
                         </span>
                         <span style={{ fontSize: '0.75rem', color: 'var(--text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', flex: 1 }}>
                           #{action.playerNumber} {action.playerName.split(' ').pop()}
@@ -508,7 +510,7 @@ export default function MultiScoutPage() {
             }}>x</button>
           </div>
           <div style={{ padding: '0 8px 8px' }}>
-            <CourtHeatmap actions={filteredActions} teamName="" highlightZone={highlightZone} onZoneSelect={handleHeatmapZoneSelect} onActionClick={handleActionClick} compact />
+            <CourtHeatmap actions={filteredActions} teamName="" highlightZone={highlightZone} onZoneSelect={handleHeatmapZoneSelect} onActionClick={handleActionClick} gradeSymbols={gradeSymbols} compact />
           </div>
         </div>
       )}

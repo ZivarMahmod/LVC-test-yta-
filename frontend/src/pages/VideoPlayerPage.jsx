@@ -6,7 +6,8 @@ import { useParams, Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { videoApi, scoutApi, settingsApi, documentApi, reviewApi } from '../utils/api.js';
 import { useAuth } from '../context/AuthContext.jsx';
 import { formatVideoTime } from '../utils/format.js';
-import { SKILL_COLORS, DEFAULT_SKILL_NAMES, GRADE_SYMBOLS } from '../utils/scoutConstants.js';
+import { SKILL_COLORS, DEFAULT_SKILL_NAMES } from '../utils/scoutConstants.js';
+import { useGradeSymbols } from '../hooks/useGradeSymbols.js';
 import MatchReport from '../components/player/MatchReport.jsx';
 import CourtHeatmap from '../components/player/CourtHeatmap.jsx';
 import ReviewPanel from '../components/player/ReviewPanel.jsx';
@@ -18,6 +19,7 @@ export default function VideoPlayerPage() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const { user, isAdmin, isUploader, isCoach } = useAuth();
+  const { gradeSymbols } = useGradeSymbols();
   const [video, setVideo] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -818,11 +820,11 @@ export default function VideoPlayerPage() {
               <div style={{ display: 'flex', gap: '0.35rem', flexWrap: 'wrap', marginTop: '0.4rem', alignItems: 'center' }}>
                 <button onClick={() => setFilterGrade('ALL')} style={{...filterBtnStyle(filterGrade === 'ALL'), minWidth: 'auto', padding: '0.25rem 0.4rem'}} title="Alla">◆{filterGrade === 'ALL' ? ' Alla' : ''}</button>
                 {[
-                  { key: '#', symbol: '●', label: 'Perfekt', color: '#4CAF50' },
-                  { key: '+', symbol: '▲', label: 'Positiv', color: '#4CAF50' },
-                  { key: '!', symbol: '■', label: 'OK', color: '#FF9800' },
-                  { key: '-', symbol: '▼', label: 'Negativ', color: '#F44336' },
-                  { key: 'ERR', symbol: '✕', label: 'Error', color: '#F44336' },
+                  { key: '#', symbol: gradeSymbols['#'], label: 'Perfekt', color: '#4CAF50' },
+                  { key: '+', symbol: gradeSymbols['+'], label: 'Positiv', color: '#4CAF50' },
+                  { key: '!', symbol: gradeSymbols['!'], label: 'OK', color: '#FF9800' },
+                  { key: '-', symbol: gradeSymbols['-'], label: 'Negativ', color: '#F44336' },
+                  { key: 'ERR', symbol: gradeSymbols['/'], label: 'Error', color: '#F44336' },
                 ].map(g => (
                   <button
                     key={g.key}
@@ -915,7 +917,7 @@ export default function VideoPlayerPage() {
 
                     {/* Grade */}
                     <span style={{ fontSize: '0.85rem', width: '16px', textAlign: 'center', color: gradeColor(action.grade) }}>
-                      {GRADE_SYMBOLS[action.grade] || action.grade}
+                      {gradeSymbols[action.grade] || action.grade}
                     </span>
 
                     {/* Info */}
@@ -1068,13 +1070,15 @@ export default function VideoPlayerPage() {
                   highlightZone={filterStartZone !== 'ALL' ? parseInt(filterStartZone, 10) : null}
                   onZoneSelect={(z) => setFilterStartZone(z ? String(z) : 'ALL')}
                   onActionClick={(a) => jumpToAction(a)}
-                  onAutoPlay={(a, list) => jumpToAction(a, list)} />
+                  onAutoPlay={(a, list) => jumpToAction(a, list)}
+                  gradeSymbols={gradeSymbols} />
                 <div style={{ height: 12 }} />
                 <CourtHeatmap actions={scout.actions} team="V" teamName={scout.teams?.V}
                   highlightZone={filterStartZone !== 'ALL' ? parseInt(filterStartZone, 10) : null}
                   onZoneSelect={(z) => setFilterStartZone(z ? String(z) : 'ALL')}
                   onActionClick={(a) => jumpToAction(a)}
-                  onAutoPlay={(a, list) => jumpToAction(a, list)} />
+                  onAutoPlay={(a, list) => jumpToAction(a, list)}
+                  gradeSymbols={gradeSymbols} />
               </div>
             )}
 
@@ -1215,6 +1219,7 @@ export default function VideoPlayerPage() {
               onZoneSelect={(z) => setFilterStartZone(z ? String(z) : 'ALL')}
               onActionClick={(a) => jumpToAction(a)}
               onAutoPlay={(a, list) => jumpToAction(a, list)}
+              gradeSymbols={gradeSymbols}
               compact />
           </div>
         </div>
