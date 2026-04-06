@@ -125,11 +125,8 @@ export default function VideosPage() {
     : null;
 
   const videoTitle = (video) => {
-    if ((video.matchType || 'own') === 'opponent') {
-      // Visa matchnamn utan datum (t.ex. "Hästhagen vs Uppsala")
-      return video.title?.split(' \u2014 ')[0] || video.opponent;
-    }
-    return `LVC vs ${video.opponent}`;
+    // Visa sparad titel utan datum-suffixet
+    return video.title?.split(' \u2014 ')[0] || `LVC vs ${video.opponent}`;
   };
 
   const matchTypeIcon = (video) => {
