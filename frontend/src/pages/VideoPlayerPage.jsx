@@ -370,7 +370,7 @@ export default function VideoPlayerPage() {
   };
 
   const handleSaveTitle = async () => {
-    if (!titleInput.trim() || titleInput.trim() === video.opponent) {
+    if (!titleInput.trim() || titleInput.trim() === video.title) {
       setEditingTitle(false);
       return;
     }
@@ -512,16 +512,11 @@ export default function VideoPlayerPage() {
           <div className="video-title-bar">
             {editingTitle ? (
               <div style={{ display: 'flex', gap: '0.4rem', alignItems: 'center', flex: 1 }}>
-                <span style={{ fontSize: '1.1rem', fontWeight: 600, whiteSpace: 'nowrap' }}>
-                  {(video?.matchType || 'own') === 'opponent'
-                    ? (video?.title?.split(' vs ')[0]?.split(' \u2014 ')[0] || '') + ' vs'
-                    : 'LVC vs'}
-                </span>
                 <input
                   autoFocus
                   value={titleInput}
                   onChange={e => setTitleInput(e.target.value)}
-                  placeholder="Motståndarnamn"
+                  placeholder="Videotitel"
                   onKeyDown={e => {
                     e.stopPropagation();
                     if (e.key === 'Enter') handleSaveTitle();
@@ -554,7 +549,7 @@ export default function VideoPlayerPage() {
               </div>
             ) : (
               <h1
-                onClick={() => { if (isAdmin) { setTitleInput(video.opponent || ''); setEditingTitle(true); } }}
+                onClick={() => { if (isAdmin) { setTitleInput(video.title || ''); setEditingTitle(true); } }}
                 style={isAdmin ? { cursor: 'pointer', borderBottom: '1px dashed var(--border-default)' } : {}}
                 title={isAdmin ? 'Klicka för att ändra titel' : undefined}
               >{video.title}</h1>
