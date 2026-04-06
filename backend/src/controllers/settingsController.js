@@ -62,5 +62,37 @@ export const settingsController = {
     } catch {
       res.status(500).json({ error: 'Kunde inte spara' });
     }
+  },
+
+  // GET /api/settings/music-url — alla inloggade kan läsa
+  async getMusicUrl(req, res) {
+    try {
+      const setting = await prisma.setting.findUnique({ where: { key: 'music_playlist_url' } });
+      res.json({ url: setting ? setting.value : null });
+    } catch {
+      res.json({ url: null });
+    }
+  },
+
+  // PUT /api/admin/settings/music-url — bara admin
+  async updateMusicUrl(req, res) {
+    try {
+      const { url } = req.body;
+      if (url && typeof url !== 'string') {
+        return res.status(400).json({ error: 'Ogiltig URL' });
+      }
+      if (url) {
+        await prisma.setting.upsert({
+          where: { key: 'music_playlist_url' },
+          update: { value: url },
+          create: { key: 'music_playlist_url', value: url }
+        });
+      } else {
+        await prisma.setting.deleteMany({ where: { key: 'music_playlist_url' } });
+      }
+      res.json({ ok: true });
+    } catch {
+      res.status(500).json({ error: 'Kunde inte spara' });
+    }
   }
 };

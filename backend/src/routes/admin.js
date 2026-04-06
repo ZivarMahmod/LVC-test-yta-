@@ -87,6 +87,7 @@ router.delete('/invites/:id', csrfProtection, adminController.deleteInvite);
 router.patch('/videos/:id/assign', csrfProtection, adminController.assignVideo);
 // Inställningar
 router.put('/settings/skill-names', csrfProtection, settingsController.updateSkillNames);
+router.put('/settings/music-url', csrfProtection, settingsController.updateMusicUrl);
 
 // Aktiva användare
 import { getActiveUsers } from '../middleware/activityTracker.js';
