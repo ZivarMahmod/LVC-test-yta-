@@ -1058,7 +1058,7 @@ export default function VideoPlayerPage() {
 
             {/* Rapport-vy */}
             {scoutTab === 'rapport' && (
-              <MatchReport stats={matchStats} onJumpToActions={jumpToPlayerActions} />
+              <MatchReport stats={matchStats} onJumpToActions={jumpToPlayerActions} matchType={video?.matchType || 'own'} />
             )}
 
             {/* Heatmap-vy */}

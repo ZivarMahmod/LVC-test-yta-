@@ -29,12 +29,12 @@ function StatRow({ label, value }) {
   );
 }
 
-function PlayerStatsCard({ player, team, teamName: _teamName, color, onJumpToActions, onShowHistory }) {
+function PlayerStatsCard({ player, team, teamName: _teamName, color, onJumpToActions, onShowHistory, lvcTeam }) {
   return (
     <div style={{ background: `rgba(${color}, 0.08)`, borderRadius: '6px', padding: '0.4rem', marginBottom: '0.3rem' }}>
-      {team === 'H' && (
+      {team === lvcTeam && (
         <button
-          onClick={() => onShowHistory(player.number)}
+          onClick={() => onShowHistory(player.number, player.name)}
           style={{ width: '100%', padding: '4px 8px', marginBottom: '0.3rem', background: 'rgba(59,130,246,0.15)', border: '1px solid rgba(59,130,246,0.3)', borderRadius: '4px', color: '#93c5fd', fontSize: '0.7rem', cursor: 'pointer' }}
         >
           Visa historik alla matcher
@@ -74,7 +74,7 @@ function PlayerStatsCard({ player, team, teamName: _teamName, color, onJumpToAct
   );
 }
 
-function TeamPlayerList({ players, team, teamName, color, titleColor, selectedPlayer, setSelectedPlayer, onJumpToActions, onShowHistory }) {
+function TeamPlayerList({ players, team, teamName, color, titleColor, selectedPlayer, setSelectedPlayer, onJumpToActions, onShowHistory, lvcTeam }) {
   return (
     <div style={{ marginBottom: '0.75rem' }}>
       <div style={{ fontSize: '0.78rem', fontWeight: '600', marginBottom: '0.3rem', color: titleColor }}>{teamName}</div>
@@ -98,7 +98,7 @@ function TeamPlayerList({ players, team, teamName, color, titleColor, selectedPl
             <span style={{ width: '55px', textAlign: 'right', fontSize: '0.75rem' }}>{p.attack.total > 0 ? pct(p.attack.pts, p.attack.total) : '-'}</span>
           </div>
           {selectedPlayer && selectedPlayer.team === team && selectedPlayer.number === p.number && (
-            <PlayerStatsCard player={selectedPlayer} team={team} teamName={teamName} color={color} onJumpToActions={onJumpToActions} onShowHistory={onShowHistory} />
+            <PlayerStatsCard player={selectedPlayer} team={team} teamName={teamName} color={color} onJumpToActions={onJumpToActions} onShowHistory={onShowHistory} lvcTeam={lvcTeam} />
           )}
         </React.Fragment>
       ))}
@@ -166,11 +166,12 @@ function StatSection({ section, stats }) {
   }
 }
 
-export default function MatchReport({ stats, onJumpToActions }) {
+export default function MatchReport({ stats, onJumpToActions, matchType = 'own' }) {
+  const lvcTeam = matchType === 'opponent' ? 'V' : 'H';
   const [selectedPlayer, setSelectedPlayer] = useState(null);
   const [statPage, setStatPage] = useState(0);
   const navigate = useNavigate();
-  const handleShowHistory = (jerseyNumber) => navigate(`/player/${jerseyNumber}`);
+  const handleShowHistory = (jerseyNumber, playerName) => navigate(`/player/${jerseyNumber}?name=${encodeURIComponent(playerName)}`);
 
   if (!stats) return <div style={{ padding: '1rem', color: 'var(--text-muted)', textAlign: 'center' }}>Ingen data</div>;
 
@@ -329,6 +330,7 @@ ${buildPlayerTable(vPlayers, stats.V.name)}
         setSelectedPlayer={setSelectedPlayer}
         onJumpToActions={onJumpToActions}
         onShowHistory={handleShowHistory}
+        lvcTeam={lvcTeam}
       />
 
       {/* Bortalag */}
@@ -342,6 +344,7 @@ ${buildPlayerTable(vPlayers, stats.V.name)}
         setSelectedPlayer={setSelectedPlayer}
         onJumpToActions={onJumpToActions}
         onShowHistory={handleShowHistory}
+        lvcTeam={lvcTeam}
       />
 
     </div>

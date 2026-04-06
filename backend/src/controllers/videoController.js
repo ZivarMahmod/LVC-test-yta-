@@ -678,14 +678,21 @@ export const playerStatsController = {
   async getPlayerHistory(req, res) {
     try {
       const { playerId } = req.params;
-      const { teamId } = req.query;
+      const { teamId, name: queryName } = req.query;
 
       // Stödjer både UUID och tröjnummer-sökning
       const isUuid = playerId.includes('-');
-      const player = isUuid
-        ? await prisma.user.findUnique({ where: { id: playerId }, select: { id: true, name: true, username: true, jerseyNumber: true } })
-        : await prisma.user.findFirst({ where: { jerseyNumber: parseInt(playerId, 10) }, select: { id: true, name: true, username: true, jerseyNumber: true } });
-      if (!player) return res.status(404).json({ error: 'Spelaren hittades inte.' });
+      const jerseyNumber = isUuid ? null : parseInt(playerId, 10);
+
+      let player = null;
+
+      if (isUuid) {
+        player = await prisma.user.findUnique({ where: { id: playerId }, select: { id: true, name: true, username: true, jerseyNumber: true } });
+        if (!player) return res.status(404).json({ error: 'Spelaren hittades inte.' });
+      } else {
+        // Skapa objekt med tröjnummer + namn från query (DVW-namn)
+        player = { id: null, name: queryName || null, username: null, jerseyNumber };
+      }
 
       // Hämta alla videor med DVW-filer (valfritt filtrerade på lag)
       const where = { dvwPath: { not: null }, deletedAt: null };
@@ -709,10 +716,21 @@ export const playerStatsController = {
       for (const video of videos) {
         try {
           const data = await getCachedScout(video.id, video.dvwPath, video.videoOffset || 0);
-          const playerActions = data.actions.filter(a =>
-            a.playerNumber === player.jerseyNumber && a.team === 'H'
-          );
+          // Matcha på namn (fungerar oavsett om LVC är hemma eller borta)
+          const playerActions = data.actions.filter(a => {
+            if (queryName) return a.playerName === queryName;
+            return a.playerNumber === player.jerseyNumber && a.team === 'H';
+          });
           if (playerActions.length === 0) continue;
+
+          // Hämta spelarnamn från DVW om det saknas
+          if (!player.name && playerActions.length > 0) {
+            player.name = playerActions[0].playerName;
+          }
+          // Uppdatera tröjnummer från denna match (kan variera mellan säsonger)
+          if (!player.jerseyNumber && playerActions.length > 0) {
+            player.jerseyNumber = playerActions[0].playerNumber;
+          }
 
           const stats = { serve: { total: 0, err: 0, pts: 0 }, attack: { total: 0, err: 0, blocked: 0, pts: 0 }, reception: { total: 0, pos: 0, exc: 0, err: 0 }, block: { pts: 0 }, dig: { total: 0, pos: 0, err: 0 }, totalPts: 0 };
 
@@ -771,6 +789,11 @@ export const playerStatsController = {
         } catch {
           // Skippa videor vars DVW-filer inte kan läsas
         }
+      }
+
+      // Om spelaren inte hittades i DB och inga matcher hittades i DVW
+      if (!player.name) {
+        player.name = `#${player.jerseyNumber}`;
       }
 
       res.json({ player, matches, totals, matchCount: matches.length });
