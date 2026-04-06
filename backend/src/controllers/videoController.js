@@ -242,20 +242,25 @@ export const videoController = {
   async updateTitle(req, res) {
     try {
       const { id } = req.params;
-      const { opponent } = req.body;
-      if (!opponent || !opponent.trim()) return res.status(400).json({ error: 'Motståndarnamn krävs.' });
+      const { title, opponent } = req.body;
+
+      if (!title && !opponent) return res.status(400).json({ error: 'Titel eller motståndarnamn krävs.' });
 
       const video = await prisma.video.findUnique({ where: { id } });
       if (!video) return res.status(404).json({ error: 'Videon hittades inte.' });
 
-      const newOpponent = opponent.trim();
-      const newTitle = formatVideoTitle(newOpponent, video.matchDate);
+      const data = {};
+      if (title && title.trim()) {
+        // Fri titel — sätt direkt
+        data.title = title.trim();
+      } else if (opponent && opponent.trim()) {
+        // Auto-genererad titel från motståndare
+        data.opponent = opponent.trim();
+        data.title = formatVideoTitle(data.opponent, video.matchDate);
+      }
 
-      const updated = await prisma.video.update({
-        where: { id },
-        data: { title: newTitle, opponent: newOpponent }
-      });
-      logger.info('Videotitel uppdaterad', { videoId: id, title: updated.title, opponent: updated.opponent });
+      const updated = await prisma.video.update({ where: { id }, data });
+      logger.info('Videotitel uppdaterad', { videoId: id, title: updated.title });
       res.json({ title: updated.title, opponent: updated.opponent });
     } catch (error) {
       logger.error('Titel update-fel:', error);
