@@ -12,7 +12,7 @@ services:
     volumes:
       - lvc-data-dev:/app/data
       - lvc-logs-dev:/app/backend/logs
-      - /mnt/nas-matcher:/storage
+      - /mnt/nas-matcher/dev:/storage
     healthcheck:
       test: ["CMD", "wget", "-qO-", "http://localhost:3001/api/health"]
       interval: 30s

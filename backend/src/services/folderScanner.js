@@ -32,6 +32,7 @@ const scanDirectory = async (dirPath, relativePath = '') => {
       const fullPath = path.join(dirPath, entry.name);
       const relPath = relativePath ? `${relativePath}/${entry.name}` : entry.name;
       if (entry.isDirectory()) {
+        if (entry.name === 'dev') continue; // Skippa dev-storage
         const subFiles = await scanDirectory(fullPath, relPath);
         files.push(...subFiles);
       } else if (entry.isFile()) {
