@@ -3,7 +3,7 @@
 // Visar en spelares prestationer över alla matcher
 // ===========================================
 import { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { playerStatsApi } from '../utils/api.js';
 import './PlayerStatsPage.css';
 
@@ -106,6 +106,8 @@ function TrendChart({ matches, field, label }) {
 
 export default function PlayerStatsPage() {
   const { playerId } = useParams();
+  const [searchParams] = useSearchParams();
+  const playerName = searchParams.get('name');
   const navigate = useNavigate();
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -113,11 +115,11 @@ export default function PlayerStatsPage() {
 
   useEffect(() => {
     setLoading(true);
-    playerStatsApi.getHistory(playerId)
+    playerStatsApi.getHistory(playerId, { name: playerName })
       .then(d => { setData(d); setError(null); })
       .catch(e => setError(e.message))
       .finally(() => setLoading(false));
-  }, [playerId]);
+  }, [playerId, playerName]);
 
   if (loading) return <div className="psp-loading">Laddar spelarstatistik...</div>;
   if (error) return <div className="psp-error">{error}</div>;

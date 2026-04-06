@@ -34,7 +34,7 @@ function PlayerStatsCard({ player, team, teamName: _teamName, color, onJumpToAct
     <div style={{ background: `rgba(${color}, 0.08)`, borderRadius: '6px', padding: '0.4rem', marginBottom: '0.3rem' }}>
       {team === 'H' && (
         <button
-          onClick={() => onShowHistory(player.number)}
+          onClick={() => onShowHistory(player.number, player.name)}
           style={{ width: '100%', padding: '4px 8px', marginBottom: '0.3rem', background: 'rgba(59,130,246,0.15)', border: '1px solid rgba(59,130,246,0.3)', borderRadius: '4px', color: '#93c5fd', fontSize: '0.7rem', cursor: 'pointer' }}
         >
           Visa historik alla matcher
@@ -170,7 +170,7 @@ export default function MatchReport({ stats, onJumpToActions }) {
   const [selectedPlayer, setSelectedPlayer] = useState(null);
   const [statPage, setStatPage] = useState(0);
   const navigate = useNavigate();
-  const handleShowHistory = (jerseyNumber) => navigate(`/player/${jerseyNumber}`);
+  const handleShowHistory = (jerseyNumber, playerName) => navigate(`/player/${jerseyNumber}?name=${encodeURIComponent(playerName)}`);
 
   if (!stats) return <div style={{ padding: '1rem', color: 'var(--text-muted)', textAlign: 'center' }}>Ingen data</div>;
 

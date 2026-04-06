@@ -553,9 +553,12 @@ export const userApi = {
 };
 
 export const playerStatsApi = {
-  async getHistory(playerId, teamId = null) {
-    const params = teamId ? `?teamId=${teamId}` : '';
-    const res = await apiFetch(`/api/videos/player-stats/${playerId}${params}`);
+  async getHistory(playerId, { teamId = null, name = null } = {}) {
+    const qp = new URLSearchParams();
+    if (teamId) qp.set('teamId', teamId);
+    if (name) qp.set('name', name);
+    const qs = qp.toString();
+    const res = await apiFetch(`/api/videos/player-stats/${playerId}${qs ? '?' + qs : ''}`);
     if (!res.ok) throw new Error('Kunde inte hämta spelarhistorik');
     return res.json();
   }
