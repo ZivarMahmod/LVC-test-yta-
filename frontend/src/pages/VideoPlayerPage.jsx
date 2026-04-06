@@ -235,6 +235,8 @@ export default function VideoPlayerPage() {
         if (prev) jumpToAction(prev);
       }
       else if (e.key === ' ') { e.preventDefault(); vid.paused ? vid.play() : vid.pause(); }
+      else if (e.key === ',') { e.preventDefault(); vid.pause(); vid.currentTime = Math.max(vid.currentTime - 1/30, 0); }
+      else if (e.key === '.') { e.preventDefault(); vid.pause(); vid.currentTime = Math.min(vid.currentTime + 1/30, vid.duration); }
     };
     window.addEventListener('keydown', handleKeyDown, true);
     return () => window.removeEventListener('keydown', handleKeyDown, true);
