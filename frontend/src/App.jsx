@@ -7,6 +7,26 @@ import { useAuth } from './context/AuthContext.jsx';
 import Layout from './components/layout/Layout.jsx';
 import LoginPage from './pages/LoginPage.jsx';
 import RegisterPage from './pages/RegisterPage.jsx';
+
+class ErrorBoundary extends React.Component {
+  constructor(props) { super(props); this.state = { hasError: false }; }
+  static getDerivedStateFromError() { return { hasError: true }; }
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: '1rem', background: '#0a1628', color: '#f4f5f7' }}>
+          <h1 style={{ fontSize: '1.4rem' }}>Något gick fel</h1>
+          <p style={{ color: '#7c8294' }}>Sidan stötte på ett oväntat fel.</p>
+          <button onClick={() => { this.setState({ hasError: false }); window.location.href = '/'; }}
+            style={{ padding: '0.6rem 1.2rem', background: '#1a5fb4', color: '#fff', border: 'none', borderRadius: '6px', cursor: 'pointer' }}>
+            Tillbaka till startsidan
+          </button>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
 // Lazy-laddade sidor — laddas först när användaren navigerar dit
 const TeamsPage = React.lazy(() => import('./pages/TeamsPage.jsx'));
 const SeasonsPage = React.lazy(() => import('./pages/SeasonsPage.jsx'));
@@ -57,6 +77,7 @@ export default function App() {
   const fallback = <div className="loading-container"><div className="spinner" /></div>;
 
   return (
+    <ErrorBoundary>
     <Suspense fallback={fallback}>
       <Routes>
         <Route path="/login" element={<LoginPage />} />
@@ -99,5 +120,6 @@ export default function App() {
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </Suspense>
+    </ErrorBoundary>
   );
 }

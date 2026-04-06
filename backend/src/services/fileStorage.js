@@ -73,6 +73,16 @@ export const fileStorageService = {
         const parts = rangeHeader.replace(/bytes=/, '').split('-');
         const start = parseInt(parts[0], 10);
         const end = parts[1] ? parseInt(parts[1], 10) : fileSize - 1;
+
+        // Validera range-värden
+        if (isNaN(start) || isNaN(end) || start < 0 || end >= fileSize || start > end) {
+          return {
+            stream: null,
+            status: 416,
+            headers: { 'content-range': `bytes */${fileSize}` }
+          };
+        }
+
         const chunkSize = end - start + 1;
         return {
           stream: createReadStream(absPath, { start, end }),

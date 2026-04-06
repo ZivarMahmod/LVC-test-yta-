@@ -2,9 +2,7 @@
 // LVC Media Hub — Settings Controller
 // Hanterar globala inställningar (t.ex. skill-namn)
 // ===========================================
-import { PrismaClient } from '@prisma/client';
-
-const prisma = new PrismaClient();
+import prisma from '../config/database.js';
 
 // Default skill-namn och bokstäver
 const DEFAULT_SKILL_NAMES = {

@@ -116,6 +116,8 @@ model Video {
   @@index([filePath])
   @@index([createdAt])
   @@index([uploadedById])
+  @@index([deletedAt, matchDate])
+  @@index([teamId, deletedAt])
   documents MatchDocument[]
 }
 
@@ -192,6 +194,7 @@ model CoachReview {
   @@index([playerId])
   @@index([videoId])
   @@index([createdAt])
+  @@index([videoId, playerId])
 }
 
 model Setting {

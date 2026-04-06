@@ -39,9 +39,12 @@ export const reviewController = {
     try {
       const playerId = req.user.id;
 
+      const limit = Math.min(parseInt(req.query.limit) || 100, 200);
+
       const reviews = await prisma.coachReview.findMany({
         where: { playerId },
         orderBy: { createdAt: 'desc' },
+        take: limit,
         include: {
           coach: { select: { id: true, name: true, username: true } }
         }
@@ -72,9 +75,12 @@ export const reviewController = {
     try {
       const coachId = req.user.id;
 
+      const limit = Math.min(parseInt(req.query.limit) || 100, 200);
+
       const reviews = await prisma.coachReview.findMany({
         where: { coachId },
         orderBy: { createdAt: 'desc' },
+        take: limit,
         include: {
           player: { select: { id: true, name: true, username: true } }
         }
