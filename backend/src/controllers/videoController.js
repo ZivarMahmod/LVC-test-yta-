@@ -716,12 +716,10 @@ export const playerStatsController = {
       for (const video of videos) {
         try {
           const data = await getCachedScout(video.id, video.dvwPath, video.videoOffset || 0);
+          // Matcha på namn (fungerar oavsett om LVC är hemma eller borta)
           const playerActions = data.actions.filter(a => {
-            if (a.team !== 'H') return false;
-            // Om namn finns, matcha på namn (hanterar byte av tröjnummer mellan säsonger)
             if (queryName) return a.playerName === queryName;
-            // Fallback: matcha på tröjnummer
-            return a.playerNumber === player.jerseyNumber;
+            return a.playerNumber === player.jerseyNumber && a.team === 'H';
           });
           if (playerActions.length === 0) continue;
 
