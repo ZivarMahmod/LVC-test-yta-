@@ -4,7 +4,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { Outlet, NavLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext.jsx';
-import { authApi, reviewApi } from '../../utils/api.js';
+import { authApi, reviewApi, settingsApi } from '../../utils/api.js';
 import { useGradeSymbols } from '../../hooks/useGradeSymbols.js';
 import { useScoreboardSettings } from '../../hooks/useScoreboardSettings.js';
 import './Layout.css';
@@ -27,10 +27,12 @@ export default function Layout() {
   const [showSymbolSettings, setShowSymbolSettings] = useState(false);
   const { settings: scoreboardSettings, updateSettings: updateScoreboardSettings, resetSettings: resetScoreboardSettings2 } = useScoreboardSettings();
   const [settingsTab, setSettingsTab] = useState('symbols');
+  const [musicUrl, setMusicUrl] = useState(null);
   const dropdownRef = useRef(null);
 
   useEffect(() => {
     fetchUnreadCount();
+    settingsApi.getMusicUrl().then(data => { if (data?.url) setMusicUrl(data.url); }).catch(() => {});
     const interval = setInterval(fetchUnreadCount, 60000);
     return () => clearInterval(interval);
   }, []);
@@ -161,6 +163,11 @@ export default function Layout() {
             <NavLink to="/changelog" className="nav-link">
               Logg
             </NavLink>
+            {musicUrl && (
+              <a href={musicUrl} target="_blank" rel="noopener noreferrer" className="nav-link">
+                Musik
+              </a>
+            )}
           </nav>
 
           <div className="user-section" ref={dropdownRef}>
@@ -297,6 +304,11 @@ export default function Layout() {
             <NavLink to="/changelog" className="mobile-nav-link" onClick={closeMenu}>
               Logg
             </NavLink>
+            {musicUrl && (
+              <a href={musicUrl} target="_blank" rel="noopener noreferrer" className="mobile-nav-link" onClick={closeMenu}>
+                Musik
+              </a>
+            )}
             <button className="mobile-nav-link" onClick={() => { setShowSymbolSettings(true); closeMenu(); }} style={{ textAlign: 'left', border: 'none', background: 'none', cursor: 'pointer', width: '100%', color: 'inherit', font: 'inherit' }}>
               Inställningar
             </button>

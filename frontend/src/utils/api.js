@@ -520,6 +520,19 @@ export const settingsApi = {
     });
     if (!res.ok) throw new Error('Kunde inte spara');
     return res.json();
+  },
+  async getMusicUrl() {
+    const res = await apiFetch('/api/settings/music-url');
+    if (!res.ok) return null;
+    return res.json();
+  },
+  async updateMusicUrl(url) {
+    const res = await apiFetch('/api/admin/settings/music-url', {
+      method: 'PUT',
+      body: JSON.stringify({ url })
+    });
+    if (!res.ok) throw new Error('Kunde inte spara');
+    return res.json();
   }
 };
 
