@@ -5,14 +5,19 @@ import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { useParams, Link, useNavigate, useSearchParams, useOutletContext } from 'react-router-dom';
 import { videoApi, scoutApi, settingsApi, documentApi, reviewApi } from '../utils/api.js';
 import { useAuth } from '../context/AuthContext.jsx';
-import { formatVideoTime } from '../utils/format.js';
-import { SKILL_COLORS, DEFAULT_SKILL_NAMES } from '../utils/scoutConstants.js';
+import { DEFAULT_SKILL_NAMES } from '../utils/scoutConstants.js';
 import { useGradeSymbols } from '../hooks/useGradeSymbols.js';
 import MatchReport from '../components/player/MatchReport.jsx';
 import CourtHeatmap from '../components/player/CourtHeatmap.jsx';
 import ReviewPanel from '../components/player/ReviewPanel.jsx';
 import DvwSearchPanel from '../components/player/DvwSearchPanel.jsx';
 import DraggableScoreboard from '../components/player/DraggableScoreboard.jsx';
+import VideoTitleBar from '../components/player/VideoTitleBar.jsx';
+import ScoutFilters from '../components/player/ScoutFilters.jsx';
+import ScoutActionsList from '../components/player/ScoutActionsList.jsx';
+import DocumentsTab from '../components/player/DocumentsTab.jsx';
+import DocumentViewer from '../components/player/DocumentViewer.jsx';
+import HeatmapOverlay from '../components/player/HeatmapOverlay.jsx';
 import './VideoPlayerPage.css';
 
 export default function VideoPlayerPage() {
@@ -40,9 +45,7 @@ export default function VideoPlayerPage() {
 
   // Documents
   const [documents, setDocuments] = useState([]);
-  const [docUploading, setDocUploading] = useState(false);
   const [viewingDoc, setViewingDoc] = useState(null);
-  const docFileRef = useRef(null);
 
   // Scout state
   const [scout, setScout] = useState(null);
@@ -64,14 +67,9 @@ export default function VideoPlayerPage() {
   const [dvwUploading, setDvwUploading] = useState(false);
   const [dvwMsg, setDvwMsg] = useState('');
   const dvwInputRef = useRef(null);
-  const [editingTitle, setEditingTitle] = useState(false);
-  const [titleInput, setTitleInput] = useState('');
-  const [titleSaving, setTitleSaving] = useState(false);
-
   // Heatmap overlay (Ctrl+Z)
   const [heatmapOverlay, setHeatmapOverlay] = useState(false);
   const overlayPosRef = useRef({ x: 20, y: 80 });
-  const heatmapDragRef = useRef(null);
   // DVW-kodsökning
   const [dvwSearchOpen, setDvwSearchOpen] = useState(false);
   const [dvwSearchQuery, setDvwSearchQuery] = useState('');
@@ -369,20 +367,6 @@ export default function VideoPlayerPage() {
     }
   };
 
-  const handleSaveTitle = async () => {
-    if (!titleInput.trim() || titleInput.trim() === video.title) {
-      setEditingTitle(false);
-      return;
-    }
-    setTitleSaving(true);
-    try {
-      const data = await videoApi.updateTitle(id, titleInput.trim());
-      setVideo(prev => ({ ...prev, title: data.title, opponent: data.opponent }));
-    } catch {}
-    setTitleSaving(false);
-    setEditingTitle(false);
-  };
-
   // Hämta lagspelare för coach
   useEffect(() => {
     if (!isCoach) return;
@@ -509,55 +493,7 @@ export default function VideoPlayerPage() {
 
         {/* VIDEO + INFO */}
         <div className="player-main">
-          <div className="video-title-bar">
-            {editingTitle ? (
-              <div style={{ display: 'flex', gap: '0.4rem', alignItems: 'center', flex: 1 }}>
-                <input
-                  autoFocus
-                  value={titleInput}
-                  onChange={e => setTitleInput(e.target.value)}
-                  placeholder="Videotitel"
-                  onKeyDown={e => {
-                    e.stopPropagation();
-                    if (e.key === 'Enter') handleSaveTitle();
-                    if (e.key === 'Escape') setEditingTitle(false);
-                  }}
-                  style={{
-                    flex: 1, padding: '0.3rem 0.6rem', fontSize: '1.1rem', fontWeight: 600,
-                    borderRadius: '6px', border: '1px solid var(--lvc-blue, #1a5fb4)',
-                    background: 'var(--surface-raised)', color: 'var(--text-primary)',
-                    outline: 'none'
-                  }}
-                />
-                <button
-                  onClick={handleSaveTitle}
-                  disabled={titleSaving}
-                  style={{
-                    padding: '0.3rem 0.8rem', borderRadius: '6px', border: 'none',
-                    background: 'var(--lvc-blue, #1a5fb4)', color: '#fff',
-                    fontSize: '0.82rem', fontWeight: 600, cursor: 'pointer'
-                  }}
-                >{titleSaving ? '...' : 'Spara'}</button>
-                <button
-                  onClick={() => setEditingTitle(false)}
-                  style={{
-                    padding: '0.3rem 0.6rem', borderRadius: '6px',
-                    border: '1px solid var(--border-default)', background: 'transparent',
-                    color: 'var(--text-muted)', fontSize: '0.82rem', cursor: 'pointer'
-                  }}
-                >Avbryt</button>
-              </div>
-            ) : (
-              <h1
-                onClick={() => { if (isAdmin) { setTitleInput(video.title || ''); setEditingTitle(true); } }}
-                style={isAdmin ? { cursor: 'pointer', borderBottom: '1px dashed var(--border-default)' } : {}}
-                title={isAdmin ? 'Klicka för att ändra titel' : undefined}
-              >{video.title}</h1>
-            )}
-            {(isAdmin || isUploader) && (
-              <button className="btn-danger btn-sm" onClick={handleDelete}>Ta bort</button>
-            )}
-          </div>
+          <VideoTitleBar video={video} isAdmin={isAdmin} isUploader={isUploader} onUpdate={(data) => setVideo(prev => ({ ...prev, ...data }))} onDelete={handleDelete} />
           <div className="player-wrapper" ref={playerWrapperRef}>
             <video
               ref={videoRef}
@@ -658,185 +594,39 @@ export default function VideoPlayerPage() {
               </div>
 
               {scoutTab === 'actions' && (
-              <div className={filtersOpen ? 'scout-filters scout-filters-open' : 'scout-filters'}>
-
-              {/* Offset (admin) */}
-              {isAdmin && (
-                <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', marginBottom: '0.75rem' }}>
-                  <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Offset (sek):</span>
-                  <input
-                    type="number"
-                    value={offsetInput}
-                    onChange={e => setOffsetInput(e.target.value)}
-                    style={{
-                      width: '70px', padding: '0.25rem 0.5rem', borderRadius: '6px',
-                      border: '1px solid var(--border)', background: 'var(--surface-2)',
-                      color: 'var(--text)', fontSize: '0.85rem'
-                    }}
-                  />
-                  <button
-                    onClick={handleSaveOffset}
-                    style={{
-                      padding: '0.25rem 0.75rem', borderRadius: '6px',
-                      background: 'var(--accent)', color: '#fff', border: 'none',
-                      cursor: 'pointer', fontSize: '0.8rem'
-                    }}
-                  >
-                    Spara
-                  </button>
-                </div>
+                <ScoutFilters
+                  isAdmin={isAdmin}
+                  scout={scout}
+                  filtersOpen={filtersOpen}
+                  offsetInput={offsetInput}
+                  setOffsetInput={setOffsetInput}
+                  onSaveOffset={handleSaveOffset}
+                  filterSet={filterSet}
+                  setFilterSet={setFilterSet}
+                  uniqueSets={uniqueSets}
+                  filterTeam={filterTeam}
+                  setFilterTeam={setFilterTeam}
+                  filterStartZone={filterStartZone}
+                  setFilterStartZone={setFilterStartZone}
+                  filterEndZone={filterEndZone}
+                  setFilterEndZone={setFilterEndZone}
+                  filterPlayer={filterPlayer}
+                  setFilterPlayer={setFilterPlayer}
+                  uniquePlayers={uniquePlayers}
+                  preRoll={preRoll}
+                  setPreRoll={setPreRoll}
+                  skipSeconds={skipSeconds}
+                  setSkipSeconds={setSkipSeconds}
+                  filterSkill={filterSkill}
+                  setFilterSkill={setFilterSkill}
+                  uniqueSkills={uniqueSkills}
+                  filterGrade={filterGrade}
+                  setFilterGrade={setFilterGrade}
+                  SKILL_NAMES={SKILL_NAMES}
+                  SKILL_LETTERS={SKILL_LETTERS}
+                  gradeSymbols={gradeSymbols}
+                />
               )}
-
-              {/* Filter: Set + Lag + Zoner — kompakt rad */}
-              <div style={{ display: 'flex', gap: '0.4rem', marginBottom: '0.4rem' }}>
-                <select
-                  value={filterSet}
-                  onChange={e => setFilterSet(e.target.value)}
-                  style={{
-                    flex: 1, padding: '0.3rem 0.4rem', borderRadius: '6px',
-                    border: '1px solid var(--border)', background: 'var(--surface-2)',
-                    color: 'var(--text)', fontSize: '0.78rem'
-                  }}
-                >
-                  <option value="ALL">Set</option>
-                  {uniqueSets.map(s => <option key={s} value={String(s)}>Set {s}</option>)}
-                </select>
-                {scout && (
-                  <select
-                    value={filterTeam}
-                    onChange={e => setFilterTeam(e.target.value)}
-                    style={{
-                      flex: 1, padding: '0.3rem 0.4rem', borderRadius: '6px',
-                      border: '1px solid var(--border)', background: 'var(--surface-2)',
-                      color: 'var(--text)', fontSize: '0.78rem'
-                    }}
-                  >
-                    <option value="ALL">Lag</option>
-                    <option value="H">{scout.teams?.H || 'Hemma'}</option>
-                    <option value="V">{scout.teams?.V || 'Borta'}</option>
-                  </select>
-                )}
-                <select
-                  value={filterStartZone}
-                  onChange={e => setFilterStartZone(e.target.value)}
-                  style={{
-                    flex: 1, padding: '0.3rem 0.4rem', borderRadius: '6px',
-                    border: '1px solid var(--border)', background: 'var(--surface-2)',
-                    color: 'var(--text)', fontSize: '0.78rem'
-                  }}
-                >
-                  <option value="ALL">Från</option>
-                  {[1,2,3,4,5,6,7,8,9].map(z => <option key={z} value={String(z)}>Z{z}</option>)}
-                </select>
-                <select
-                  value={filterEndZone}
-                  onChange={e => setFilterEndZone(e.target.value)}
-                  style={{
-                    flex: 1, padding: '0.3rem 0.4rem', borderRadius: '6px',
-                    border: '1px solid var(--border)', background: 'var(--surface-2)',
-                    color: 'var(--text)', fontSize: '0.78rem'
-                  }}
-                >
-                  <option value="ALL">Till</option>
-                  {[1,2,3,4,5,6,7,8,9].map(z => <option key={z} value={String(z)}>Z{z}</option>)}
-                </select>
-              </div>
-
-              {/* Pre/Skip + Spelare */}
-              <div style={{ display: 'flex', gap: '0.4rem', marginBottom: '0.4rem', alignItems: 'center' }}>
-                <select
-                  value={filterPlayer}
-                  onChange={e => setFilterPlayer(e.target.value)}
-                  style={{
-                    flex: 1, padding: '0.3rem 0.4rem', borderRadius: '6px',
-                    border: '1px solid var(--border)', background: 'var(--surface-2)',
-                    color: 'var(--text)', fontSize: '0.78rem'
-                  }}
-                >
-                  <option value="ALL">Spelare</option>
-                  {uniquePlayers.map(({ number, team }) => {
-                    const key = team + '-' + number;
-                    const p = scout.players.find(pl => parseInt(pl.number, 10) === number && pl.team === team);
-                    const teamName = scout.teams?.[team] || team;
-                    return <option key={key} value={key}>#{number} {p ? p.name : ''} ({teamName})</option>;
-                  })}
-                </select>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', flexShrink: 0 }}>
-                  <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>Pre</span>
-                  <select
-                    value={preRoll}
-                    onChange={e => setPreRoll(Number(e.target.value))}
-                    style={{ padding: '0.15rem 0.3rem', borderRadius: '4px', border: '1px solid var(--border)', background: 'var(--surface-2)', color: 'var(--text)', fontSize: '0.75rem' }}
-                  >
-                    {[0,2,3,5].map(s => <option key={s} value={s}>{s}s</option>)}
-                  </select>
-                  <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>Skip</span>
-                  <select
-                    value={skipSeconds}
-                    onChange={e => setSkipSeconds(Number(e.target.value))}
-                    style={{ padding: '0.15rem 0.3rem', borderRadius: '4px', border: '1px solid var(--border)', background: 'var(--surface-2)', color: 'var(--text)', fontSize: '0.75rem' }}
-                  >
-                    {[1,2,5,10,30].map(s => <option key={s} value={s}>{s}s</option>)}
-                  </select>
-                </div>
-              </div>
-
-              {/* Filter: Skill — pill-knappar */}
-              <div style={{ display: 'flex', gap: '0.3rem', flexWrap: 'wrap', marginBottom: '0.25rem', alignItems: 'center' }}>
-                {[{ key: 'ALL', label: 'Alla', color: '#94a3b8' }, ...uniqueSkills.map(s => ({ key: s, label: SKILL_NAMES[s] || s, color: SKILL_COLORS[s] || '#666' }))].map(sk => {
-                  const isActive = filterSkill === sk.key;
-                  return (
-                    <button
-                      key={sk.key}
-                      onClick={() => setFilterSkill(sk.key)}
-                      title={sk.label}
-                      style={{
-                        padding: '0.25rem 0.55rem',
-                        borderRadius: '12px',
-                        border: `1.5px solid ${isActive ? sk.color : 'transparent'}`,
-                        background: isActive ? `${sk.color}22` : 'var(--surface-2)',
-                        color: isActive ? sk.color : 'var(--text-muted)',
-                        fontSize: '0.72rem',
-                        fontWeight: isActive ? '600' : '400',
-                        cursor: 'pointer',
-                        transition: 'all 0.15s',
-                        letterSpacing: '0.02em',
-                      }}
-                    >
-                      {isActive ? sk.label : (sk.key === 'ALL' ? 'Alla' : (SKILL_LETTERS[sk.key] || sk.key))}
-                    </button>
-                  );
-                })}
-              </div>
-
-              {/* Filter: Grade — symboler, text visas vid vald */}
-              <div style={{ display: 'flex', gap: '0.35rem', flexWrap: 'wrap', marginTop: '0.4rem', alignItems: 'center' }}>
-                <button onClick={() => setFilterGrade('ALL')} style={{...filterBtnStyle(filterGrade === 'ALL'), minWidth: 'auto', padding: '0.25rem 0.4rem'}} title="Alla">◆{filterGrade === 'ALL' ? ' Alla' : ''}</button>
-                {[
-                  { key: '#', symbol: gradeSymbols['#'], label: 'Perfekt', color: '#4CAF50' },
-                  { key: '+', symbol: gradeSymbols['+'], label: 'Positiv', color: '#4CAF50' },
-                  { key: '!', symbol: gradeSymbols['!'], label: 'OK', color: '#FF9800' },
-                  { key: '-', symbol: gradeSymbols['-'], label: 'Negativ', color: '#F44336' },
-                  { key: 'ERR', symbol: gradeSymbols['/'], label: 'Error', color: '#F44336' },
-                ].map(g => (
-                  <button
-                    key={g.key}
-                    onClick={() => setFilterGrade(filterGrade === g.key ? 'ALL' : g.key)}
-                    title={g.label}
-                    style={{
-                      ...filterBtnStyle(filterGrade === g.key),
-                      color: g.color,
-                      minWidth: 'auto',
-                      padding: '0.25rem 0.4rem',
-                    }}
-                  >
-                    {g.symbol}{filterGrade === g.key ? ` ${g.label}` : ''}
-                  </button>
-                ))}
-              </div>
-
-              </div>
-            )}
             </div>
 
             {/* Dold filinput för DVW-upload */}
@@ -872,183 +662,32 @@ export default function VideoPlayerPage() {
               </div>
             )}
 
-            {/* Action-lista */}
+            {/* Action-lista + Footer */}
             {scoutTab === 'actions' && hasScout && (
-            <div ref={actionListRef} style={{ overflowY: 'auto', flex: 1, padding: '0.5rem' }}>
-              {scoutLoading ? (
-                <div style={{ textAlign: 'center', padding: '2rem', color: 'var(--text-muted)' }}>Laddar scout...</div>
-              ) : filteredActions.length === 0 ? (
-                <div style={{ textAlign: 'center', padding: '2rem', color: 'var(--text-muted)' }}>Inga actions</div>
-              ) : (
-                filteredActions.map(action => {
-                  const actionIdx = scout?.actions?.indexOf(action) ?? filteredActions.indexOf(action);
-                  const actionReviews = reviewsByAction[actionIdx] || [];
-                  const hasReview = actionReviews.length > 0;
-                  const isExpanded = expandedReviewAction === actionIdx;
-
-                  return (
-                  <div key={action.id} data-action-id={action.id}>
-                  <div
-                    onClick={() => jumpToAction(action)}
-                    style={{
-                      display: 'flex', alignItems: 'center', gap: '0.5rem',
-                      padding: '0.4rem 0.6rem', borderRadius: isExpanded ? '6px 6px 0 0' : '6px', cursor: 'pointer',
-                      marginBottom: isExpanded ? '0' : '2px',
-                      background: activeActionId === action.id ? 'var(--accent-subtle, rgba(99,102,241,0.15))' : hasReview ? 'rgba(255, 183, 77, 0.08)' : 'transparent',
-                      border: activeActionId === action.id ? '1px solid var(--accent)' : hasReview ? '1px solid rgba(255, 183, 77, 0.3)' : '1px solid transparent',
-                      borderBottom: isExpanded ? '1px solid rgba(255, 183, 77, 0.15)' : undefined,
-                      transition: 'background 0.15s'
-                    }}
-                  >
-                    {/* Skill badge */}
-                    <span style={{
-                      width: '24px', height: '24px', borderRadius: '4px', flexShrink: 0,
-                      background: SKILL_COLORS[action.skill] || '#666',
-                      display: 'flex', alignItems: 'center', justifyContent: 'center',
-                      fontSize: '0.75rem', fontWeight: 'bold', color: '#fff'
-                    }}>{SKILL_LETTERS[action.skill] || action.skill}</span>
-
-                    {/* Grade */}
-                    <span style={{ fontSize: '0.85rem', width: '16px', textAlign: 'center', color: gradeColor(action.grade) }}>
-                      {gradeSymbols[action.grade] || action.grade}
-                    </span>
-
-                    {/* Info */}
-                    <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ fontSize: '0.82rem', fontWeight: '500', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                        #{action.playerNumber} {action.playerName}
-                      </div>
-                      <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
-                        Set {action.set} · {action.teamName}
-                      </div>
-                    </div>
-
-                    {/* Tid */}
-                    <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)', flexShrink: 0 }}>
-                      {formatVideoTime(action.videoTime)}
-                    </span>
-                    {/* Review-bubbla för spelare */}
-                    {hasReview && (() => {
-                      const unread = actionReviews.filter(r => !r.acknowledgedAt);
-                      const allAcked = unread.length === 0;
-                      return (
-                      <span
-                        onClick={e => {
-                          e.stopPropagation();
-                          setExpandedReviewAction(isExpanded ? null : actionIdx);
-                          setAckPassword('');
-                          setAckError('');
-                        }}
-                        title={allAcked ? 'Bekräftad kommentar' : 'Ny coach-kommentar'}
-                        className="review-bubble-icon"
-                        style={{
-                          fontSize: '0.85rem', cursor: 'pointer', flexShrink: 0,
-                          position: 'relative',
-                          opacity: allAcked ? 0.6 : 1,
-                          animation: !allAcked && !isExpanded ? 'reviewPulse 2s ease-in-out infinite' : 'none'
-                        }}
-                      >
-                        {allAcked ? '✅' : '💬'}
-                        {unread.length > 1 && (
-                          <span style={{
-                            position: 'absolute', top: '-4px', right: '-6px',
-                            background: '#F44336', color: '#fff', borderRadius: '50%',
-                            width: '14px', height: '14px', fontSize: '0.6rem',
-                            display: 'flex', alignItems: 'center', justifyContent: 'center',
-                            fontWeight: 700
-                          }}>{unread.length}</span>
-                        )}
-                      </span>
-                      );
-                    })()}
-                    {/* Review-knapp för coach */}
-                    {isCoach && (
-                      <span
-                        onClick={e => {
-                          e.stopPropagation();
-                          setReviewModal({ action, actionIndex: actionIdx });
-                        }}
-                        title="Skicka till spelare"
-                        style={{
-                          fontSize: '0.85rem', cursor: 'pointer', flexShrink: 0,
-                          opacity: 0.6, transition: 'opacity 0.15s'
-                        }}
-                        onMouseEnter={e => e.target.style.opacity = 1}
-                        onMouseLeave={e => e.target.style.opacity = 0.6}
-                      >📤</span>
-                    )}
-                  </div>
-
-                  {/* Expanderad kommentarsbubbla */}
-                  {isExpanded && (
-                    <div className="review-bubble-container">
-                      {actionReviews.map(review => (
-                        <div key={review.id} className={review.acknowledgedAt ? 'review-bubble review-bubble-acked' : 'review-bubble'}>
-                          <div className="review-bubble-header">
-                            <span className="review-bubble-coach">{review.coach?.name || 'Coach'}</span>
-                            <span className="review-bubble-date">
-                              {review.acknowledgedAt
-                                ? `✓ Bekräftad ${new Date(review.acknowledgedAt).toLocaleDateString('sv-SE')}`
-                                : new Date(review.createdAt).toLocaleDateString('sv-SE')
-                              }
-                            </span>
-                          </div>
-                          <div className="review-bubble-comment">{review.comment}</div>
-                          {!review.acknowledgedAt && (
-                            <>
-                              <div className="review-bubble-actions">
-                                <input
-                                  type="password"
-                                  placeholder="Ditt lösenord..."
-                                  value={ackPassword}
-                                  onChange={e => { setAckPassword(e.target.value); setAckError(''); }}
-                                  onKeyDown={e => {
-                                    e.stopPropagation();
-                                    if (e.key === 'Enter') handleAcknowledge(review.id);
-                                  }}
-                                  className="review-bubble-pw"
-                                />
-                                <button
-                                  onClick={(e) => { e.stopPropagation(); handleAcknowledge(review.id); }}
-                                  disabled={ackLoading}
-                                  className="review-bubble-confirm"
-                                >
-                                  {ackLoading ? '...' : 'Bekräfta'}
-                                </button>
-                              </div>
-                              {ackError && <div className="review-bubble-error">{ackError}</div>}
-                            </>
-                          )}
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                  </div>
-                  );
-                })
-              )}
-            </div>
-            )}
-
-            {/* Footer */}
-            {hasScout && scoutTab === 'actions' && (
-              <div style={{ padding: '0.5rem 1rem', borderTop: '1px solid var(--border)', fontSize: '0.78rem', color: 'var(--text-muted)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <span>{filteredActions.length} actions</span>
-                {myReviews.some(r => r.acknowledgedAt) && (
-                  <button
-                    onClick={() => setShowAcknowledged(v => !v)}
-                    style={{
-                      padding: '0.15rem 0.4rem', borderRadius: '4px', fontSize: '0.7rem',
-                      border: showAcknowledged ? '1px solid rgba(76, 175, 80, 0.4)' : '1px solid var(--border-default)',
-                      background: showAcknowledged ? 'rgba(76, 175, 80, 0.1)' : 'transparent',
-                      color: showAcknowledged ? '#4CAF50' : 'var(--text-muted)',
-                      cursor: 'pointer'
-                    }}
-                  >
-                    {showAcknowledged ? '✅ Bekräftade' : '○ Bekräftade'}
-                  </button>
-                )}
-              </div>
+              <ScoutActionsList
+                scout={scout}
+                filteredActions={filteredActions}
+                activeActionId={activeActionId}
+                jumpToAction={jumpToAction}
+                reviewsByAction={reviewsByAction}
+                expandedReviewAction={expandedReviewAction}
+                setExpandedReviewAction={setExpandedReviewAction}
+                isCoach={isCoach}
+                setReviewModal={setReviewModal}
+                ackPassword={ackPassword}
+                setAckPassword={setAckPassword}
+                ackLoading={ackLoading}
+                ackError={ackError}
+                setAckError={setAckError}
+                handleAcknowledge={handleAcknowledge}
+                SKILL_LETTERS={SKILL_LETTERS}
+                gradeSymbols={gradeSymbols}
+                myReviews={myReviews}
+                showAcknowledged={showAcknowledged}
+                setShowAcknowledged={setShowAcknowledged}
+                actionListRef={actionListRef}
+                scoutLoading={scoutLoading}
+              />
             )}
 
             {/* Rapport-vy */}
@@ -1076,69 +715,15 @@ export default function VideoPlayerPage() {
             )}
 
             {scoutTab === 'docs' && (
-              <div style={{ padding: '0.75rem', overflowY: 'auto', flex: 1 }}>
-                {(isUploader || isCoach || isAdmin) && (
-                  <>
-                    <input ref={docFileRef} type="file" accept=".pdf,.png,.jpg,.jpeg" hidden onChange={async (e) => {
-                      const f = e.target.files[0];
-                      if (!f) return;
-                      setDocUploading(true);
-                      try {
-                        const res = await documentApi.upload(id, f, f.name.replace(/\.[^.]+$/, ''));
-                        setDocuments(prev => [res.document, ...prev]);
-                      } catch { alert('Kunde inte ladda upp dokumentet.'); }
-                      setDocUploading(false);
-                      if (docFileRef.current) docFileRef.current.value = '';
-                    }} />
-                    <button
-                      onClick={() => docFileRef.current?.click()}
-                      disabled={docUploading}
-                      style={{
-                        width: '100%', padding: '0.5rem', borderRadius: 6, fontSize: '0.8rem',
-                        border: '1px dashed var(--border)', background: 'var(--surface-2)',
-                        color: 'var(--text-muted)', cursor: 'pointer', marginBottom: '0.5rem'
-                      }}
-                    >{docUploading ? 'Laddar upp...' : '+ Ladda upp PDF / bild'}</button>
-                  </>
-                )}
-                {documents.length === 0 ? (
-                  <div style={{ textAlign: 'center', color: 'var(--text-muted)', fontSize: '0.8rem', padding: '1rem 0' }}>
-                    Inga dokument uppladdade.
-                  </div>
-                ) : (
-                  documents.map(doc => (
-                    <div key={doc.id} style={{
-                      display: 'flex', alignItems: 'center', gap: '0.4rem',
-                      padding: '0.4rem 0.5rem', marginBottom: 2, borderRadius: 6,
-                      background: 'var(--surface-2)', fontSize: '0.8rem'
-                    }}>
-                      <span style={{ color: '#f59e0b', fontSize: '0.9rem' }}>
-                        {doc.filePath?.endsWith('.pdf') ? '📄' : '🖼️'}
-                      </span>
-                      <button
-                        onClick={() => setViewingDoc(doc)}
-                        style={{ flex: 1, color: 'var(--text)', background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left', padding: 0, fontSize: '0.8rem', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}
-                        title={doc.name}
-                      >{doc.name}</button>
-                      <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)', flexShrink: 0 }}>
-                        {Math.round(doc.fileSize / 1024)} KB
-                      </span>
-                      {isAdmin && (
-                        <button
-                          onClick={async () => {
-                            if (!confirm(`Ta bort "${doc.name}"?`)) return;
-                            try {
-                              await documentApi.remove(doc.id);
-                              setDocuments(prev => prev.filter(d => d.id !== doc.id));
-                            } catch { alert('Kunde inte ta bort.'); }
-                          }}
-                          style={{ background: 'none', border: 'none', color: '#f44336', cursor: 'pointer', fontSize: '0.75rem', flexShrink: 0 }}
-                        >x</button>
-                      )}
-                    </div>
-                  ))
-                )}
-              </div>
+              <DocumentsTab
+                videoId={id}
+                isUploader={isUploader}
+                isCoach={isCoach}
+                isAdmin={isAdmin}
+                onViewDoc={setViewingDoc}
+                documents={documents}
+                setDocuments={setDocuments}
+              />
             )}
           </div>
         )}
@@ -1167,120 +752,22 @@ export default function VideoPlayerPage() {
 
       {/* Draggable heatmap overlay (Ctrl+Z) */}
       {heatmapOverlay && scout?.actions && (
-        <div
-          ref={heatmapDragRef}
-          style={{
-            position: 'fixed', left: 0, top: 0,
-            transform: `translate(${overlayPosRef.current.x}px, ${overlayPosRef.current.y}px)`,
-            width: 300, zIndex: 1000,
-            background: '#0f172a', border: '1px solid #334155',
-            borderRadius: 10, boxShadow: '0 8px 32px rgba(0,0,0,0.6)',
-            userSelect: 'none', willChange: 'transform'
-          }}
-        >
-          <div
-            onMouseDown={(e) => {
-              e.preventDefault();
-              const el = heatmapDragRef.current;
-              if (!el) return;
-              const startX = e.clientX - overlayPosRef.current.x;
-              const startY = e.clientY - overlayPosRef.current.y;
-              const onMove = (ev) => {
-                ev.preventDefault();
-                overlayPosRef.current = { x: ev.clientX - startX, y: ev.clientY - startY };
-                el.style.transform = `translate(${overlayPosRef.current.x}px, ${overlayPosRef.current.y}px)`;
-              };
-              const onUp = () => { window.removeEventListener('mousemove', onMove); window.removeEventListener('mouseup', onUp); };
-              window.addEventListener('mousemove', onMove);
-              window.addEventListener('mouseup', onUp);
-            }}
-            style={{
-              padding: '4px 10px', cursor: 'grab',
-              display: 'flex', justifyContent: 'flex-end', alignItems: 'center'
-            }}
-          >
-            <button onClick={() => setHeatmapOverlay(false)} style={{
-              background: 'none', border: 'none', color: '#64748b', cursor: 'pointer', fontSize: '0.85rem'
-            }}>x</button>
-          </div>
-          <div style={{ padding: '0 8px 8px' }}>
-            <CourtHeatmap actions={scout.actions} team={filterTeam !== 'ALL' ? filterTeam : undefined}
-              teamName={filterPlayer !== 'ALL'
-                ? (() => { const [t, n] = filterPlayer.split('-'); const p = scout.players.find(pl => parseInt(pl.number, 10) === parseInt(n, 10) && pl.team === t); return p ? p.name : ''; })()
-                : ''}
-              highlightZone={filterStartZone !== 'ALL' ? parseInt(filterStartZone, 10) : null}
-              onZoneSelect={(z) => setFilterStartZone(z ? String(z) : 'ALL')}
-              onActionClick={(a) => jumpToAction(a)}
-              onAutoPlay={(a, list) => jumpToAction(a, list)}
-              gradeSymbols={gradeSymbols}
-              compact />
-          </div>
-        </div>
+        <HeatmapOverlay
+          scout={scout}
+          filterTeam={filterTeam}
+          filterPlayer={filterPlayer}
+          filterStartZone={filterStartZone}
+          setFilterStartZone={setFilterStartZone}
+          jumpToAction={jumpToAction}
+          gradeSymbols={gradeSymbols}
+          overlayPosRef={overlayPosRef}
+          onClose={() => setHeatmapOverlay(false)}
+        />
       )}
 
       {/* Dokument-visare overlay */}
-      {viewingDoc && (
-        <div
-          onClick={() => setViewingDoc(null)}
-          style={{
-            position: 'fixed', inset: 0, zIndex: 2000,
-            background: 'rgba(0,0,0,0.85)',
-            display: 'flex', flexDirection: 'column',
-            alignItems: 'center', justifyContent: 'center'
-          }}
-        >
-          <div style={{
-            display: 'flex', alignItems: 'center', gap: '1rem',
-            marginBottom: '0.5rem', color: '#fff'
-          }} onClick={e => e.stopPropagation()}>
-            <span style={{ fontSize: '1rem', fontWeight: 600 }}>{viewingDoc.name}</span>
-            <a
-              href={`/api/videos/documents/${viewingDoc.id}/view`}
-              target="_blank"
-              rel="noopener noreferrer"
-              style={{ color: '#93c5fd', fontSize: '0.8rem', textDecoration: 'none' }}
-            >Öppna i ny flik ↗</a>
-            <button
-              onClick={() => setViewingDoc(null)}
-              style={{
-                background: 'none', border: '1px solid #475569', color: '#fff',
-                borderRadius: 6, padding: '0.3rem 0.8rem', cursor: 'pointer', fontSize: '0.85rem'
-              }}
-            >Stäng</button>
-          </div>
-          <div onClick={e => e.stopPropagation()} style={{ width: '90vw', height: '85vh', borderRadius: 8, overflow: 'hidden' }}>
-            {viewingDoc.filePath?.endsWith('.pdf') ? (
-              <iframe
-                src={`/api/videos/documents/${viewingDoc.id}/view`}
-                style={{ width: '100%', height: '100%', border: 'none', background: '#fff' }}
-                title={viewingDoc.name}
-              />
-            ) : (
-              <img
-                src={`/api/videos/documents/${viewingDoc.id}/view`}
-                alt={viewingDoc.name}
-                style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain', margin: 'auto', display: 'block' }}
-              />
-            )}
-          </div>
-        </div>
-      )}
+      <DocumentViewer document={viewingDoc} onClose={() => setViewingDoc(null)} />
     </div>
   );
 }
 
-function filterBtnStyle(active) {
-  return {
-    padding: '0.2rem 0.5rem', borderRadius: '4px', border: '1px solid var(--border)',
-    background: active ? 'var(--accent)' : 'var(--surface-2)',
-    color: active ? '#fff' : 'var(--text-muted)',
-    cursor: 'pointer', fontSize: '0.78rem'
-  };
-}
-
-function gradeColor(grade) {
-  if (grade === '#' || grade === '+') return '#4CAF50';
-  if (grade === '!') return '#FF9800';
-  if (grade === '-' || grade === '/' || grade === '=') return '#F44336';
-  return 'var(--text-muted)';
-}

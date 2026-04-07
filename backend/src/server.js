@@ -27,7 +27,7 @@ import { adminController } from './controllers/adminController.js';
 import { authenticateToken, requireAdmin } from './middleware/auth.js';
 import { trackActivity } from './middleware/activityTracker.js';
 import { csrfProtection } from './middleware/csrf.js';
-import { startFolderScanner } from './services/folderScanner.js';
+
 
 // Periodisk rensning
 import { tokenService } from './services/tokenService.js';
@@ -172,5 +172,4 @@ app.listen(PORT, () => {
   logger.info(`🎬 LVC Media Hub-servern körs å port ${PORT}`);
   logger.info(`   Miljö: ${process.env.NODE_ENV || 'development'}`);
   logger.info(`   CORS: ${isProduction ? process.env.FRONTEND_URL : 'http://localhost:5173'}`);
-  startFolderScanner();
 });

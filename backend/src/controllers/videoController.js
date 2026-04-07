@@ -485,10 +485,15 @@ export const videoController = {
       if (!video) return res.status(404).json({ error: 'Videon kunde inte hittas.' });
 
       if (req.user.role === 'admin') {
-        // Admin = permanent radering
-        await fileStorageService.deleteFile(video.filePath);
-        if (video.dvwPath) await fileStorageService.deleteFile(video.dvwPath);
-        if (video.thumbnailPath) await fileStorageService.deleteFile(video.thumbnailPath);
+        // Admin = permanent radering — kolla om annan video använder samma fil
+        const otherVideo = await prisma.video.findFirst({
+          where: { filePath: video.filePath, id: { not: video.id } }
+        });
+        if (!otherVideo) {
+          await fileStorageService.deleteFile(video.filePath);
+          if (video.dvwPath) await fileStorageService.deleteFile(video.dvwPath);
+          if (video.thumbnailPath) await fileStorageService.deleteFile(video.thumbnailPath);
+        }
         await prisma.video.delete({ where: { id: video.id } });
         logger.info('Video permanent raderad av admin', { videoId: video.id, title: video.title, deletedBy: req.user.email });
         res.json({ message: 'Videon har raderats permanent.' });
