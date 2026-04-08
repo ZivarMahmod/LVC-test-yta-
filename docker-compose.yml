@@ -1,9 +1,9 @@
 # ===========================================
 # LVC Media Hub — Docker Compose (Production)
-# PostgreSQL + App
+# PostgreSQL + App + Supabase Studio
 # ===========================================
 services:
-  # --- PostgreSQL (Supabase-kompatibel) ---
+  # --- PostgreSQL ---
   postgres:
     image: postgres:16-alpine
     container_name: lvc-postgres
@@ -20,6 +20,41 @@ services:
       timeout: 5s
       retries: 5
       start_period: 10s
+
+  # --- Supabase Meta (krävs av Studio) ---
+  supabase-meta:
+    image: supabase/postgres-meta:v0.84.2
+    container_name: lvc-supabase-meta
+    restart: unless-stopped
+    environment:
+      PG_META_PORT: 8080
+      PG_META_DB_HOST: postgres
+      PG_META_DB_PORT: 5432
+      PG_META_DB_NAME: ${POSTGRES_DB:-lvcmediahub}
+      PG_META_DB_USER: ${POSTGRES_USER:-lvc}
+      PG_META_DB_PASSWORD: ${POSTGRES_PASSWORD}
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  # --- Supabase Studio (Dashboard UI) ---
+  supabase-studio:
+    image: supabase/studio:20250317-7db6263
+    container_name: lvc-supabase-studio
+    restart: unless-stopped
+    ports:
+      - "3030:3000"
+    environment:
+      STUDIO_PG_META_URL: http://supabase-meta:8080
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      DEFAULT_ORGANIZATION_NAME: "LVC Media Hub"
+      DEFAULT_PROJECT_NAME: "lvcmediahub"
+      SUPABASE_URL: http://localhost:3001
+      SUPABASE_PUBLIC_URL: http://localhost:3001
+      NEXT_PUBLIC_ENABLE_LOGS: "false"
+      NEXT_ANALYTICS_BACKEND_PROVIDER: ""
+    depends_on:
+      - supabase-meta
 
   # --- LVC Media Hub App ---
   lvc-media-hub:
