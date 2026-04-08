@@ -56,6 +56,23 @@ services:
     depends_on:
       - supabase-meta
 
+  # --- Caddy Reverse Proxy (HTTP/HTTPS → App) ---
+  caddy:
+    image: caddy:2-alpine
+    container_name: lvc-caddy
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    environment:
+      SITE_ADDRESS: ${SITE_ADDRESS:-:80}
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - lvc-caddy-data:/data
+      - lvc-caddy-config:/config
+    depends_on:
+      - lvc-media-hub
+
   # --- LVC Media Hub App ---
   lvc-media-hub:
     build: .
@@ -87,3 +104,5 @@ volumes:
   lvc-storage:
   lvc-logs:
   lvc-thumbnails:
+  lvc-caddy-data:
+  lvc-caddy-config:

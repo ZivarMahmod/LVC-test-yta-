@@ -1,0 +1,12 @@
+# ===========================================
+# LVC Media Hub — Caddy Reverse Proxy
+# Hanterar HTTP/HTTPS och skickar vidare till appen
+# ===========================================
+
+# Om du har en domän med DNS → sätt SITE_ADDRESS=kvikta.se i .env
+# Caddy fixar auto-HTTPS via Let's Encrypt automatiskt
+# Om du bara kör lokalt → sätt SITE_ADDRESS=:80
+
+{$SITE_ADDRESS::80} {
+	reverse_proxy lvc-media-hub:3001
+}
