@@ -101,7 +101,7 @@ export const authController = {
       const user = await prisma.$transaction(async (tx) => {
         const newUser = await tx.user.create({
           data: {
-            email: username.toLowerCase() + '@lvcmediahub.local',
+            email: username.toLowerCase() + '@' + (process.env.EMAIL_DOMAIN || 'kvikta.local'),
             username: username.toLowerCase(),
             name: name || username,
             passwordHash,

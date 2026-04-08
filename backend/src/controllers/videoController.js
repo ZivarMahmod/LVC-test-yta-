@@ -451,7 +451,7 @@ export const videoController = {
 
   async stream(req, res) {
     try {
-      res.set('Access-Control-Allow-Origin', 'https://lvcmediahub.com');
+      res.set('Access-Control-Allow-Origin', process.env.FRONTEND_URL || '*');
       res.set('Access-Control-Allow-Methods', 'GET');
       const { id } = req.params;
       const { expires, sig } = req.query;
