@@ -18,6 +18,8 @@ export function calculateAdvancedStats(actions, allActions = [], scoreboards = [
     overview: calculateOverview(actions),
     zoneAnalysis: calculateZoneAnalysis(actions),
     skillDetails: calculateSkillDetails(actions),
+    setAnalysis: calculateSetAnalysis(actions),
+    opponentAnalysis: calculateOpponentAnalysis(actions),
     trends: [], // Fylls i av caller per match
     pressureStats: calculatePressureStats(actions, scoreboards),
   };
@@ -178,6 +180,64 @@ function calculateSkillDetails(actions) {
   }
 
   return skills;
+}
+
+/**
+ * Set-för-set-analys — hur spelaren presterar i varje set
+ */
+function calculateSetAnalysis(actions) {
+  const sets = {};
+
+  for (const a of actions) {
+    const set = a.set || 1;
+    if (!sets[set]) {
+      sets[set] = { set, total: 0, positive: 0, errors: 0, points: 0 };
+    }
+    const s = sets[set];
+    s.total++;
+    if (GRADE_POSITIVE.includes(a.grade)) s.positive++;
+    if (GRADE_ERROR.includes(a.grade)) s.errors++;
+    if (a.grade === '#' && ['S', 'A', 'B'].includes(a.skill)) s.points++;
+  }
+
+  return Object.values(sets).map(s => ({
+    ...s,
+    positivePct: s.total > 0 ? Math.round((s.positive / s.total) * 100) : 0,
+    errorPct: s.total > 0 ? Math.round((s.errors / s.total) * 100) : 0,
+    efficiency: s.total > 0 ? Math.round(((s.positive - s.errors) / s.total) * 100) : 0,
+  }));
+}
+
+/**
+ * Motståndaranalys — prestanda mot varje motståndare
+ */
+function calculateOpponentAnalysis(actions) {
+  const opponents = {};
+
+  for (const a of actions) {
+    const opp = a.matchOpponent || 'Okänd';
+    if (!opponents[opp]) {
+      opponents[opp] = { opponent: opp, total: 0, positive: 0, errors: 0, points: 0, kills: 0, attacks: 0, matches: new Set() };
+    }
+    const o = opponents[opp];
+    o.total++;
+    if (GRADE_POSITIVE.includes(a.grade)) o.positive++;
+    if (GRADE_ERROR.includes(a.grade)) o.errors++;
+    if (a.grade === '#' && ['S', 'A', 'B'].includes(a.skill)) o.points++;
+    if (a.skill === 'A') { o.attacks++; if (a.grade === '#') o.kills++; }
+    if (a.videoId) o.matches.add(a.videoId);
+  }
+
+  return Object.values(opponents).map(o => ({
+    opponent: o.opponent,
+    matchCount: o.matches.size,
+    total: o.total,
+    points: o.points,
+    killPct: o.attacks > 0 ? Math.round((o.kills / o.attacks) * 100) : 0,
+    positivePct: o.total > 0 ? Math.round((o.positive / o.total) * 100) : 0,
+    errorPct: o.total > 0 ? Math.round((o.errors / o.total) * 100) : 0,
+    efficiency: o.total > 0 ? Math.round(((o.positive - o.errors) / o.total) * 100) : 0,
+  })).sort((a, b) => b.matchCount - a.matchCount);
 }
 
 /**

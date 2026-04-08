@@ -792,9 +792,9 @@ export const playerStatsController = {
           totals.block.pts += stats.block.pts;
           totals.totalPts += stats.totalPts;
 
-          // Samla actions med videoId för avancerad analys
+          // Samla actions med videoId och matchinfo för avancerad analys
           for (const a of playerActions) {
-            allPlayerActions.push({ ...a, videoId: video.id });
+            allPlayerActions.push({ ...a, videoId: video.id, matchOpponent: video.opponent });
           }
 
           // Samla scoreboard för pressningsstatistik

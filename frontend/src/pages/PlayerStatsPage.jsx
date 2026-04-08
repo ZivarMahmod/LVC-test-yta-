@@ -294,6 +294,8 @@ export default function PlayerStatsPage() {
     { id: 'overview', label: 'Översikt' },
     { id: 'zones', label: 'Zonanalys' },
     { id: 'trends', label: 'Utveckling' },
+    { id: 'sets', label: 'Set' },
+    { id: 'opponents', label: 'Motståndare' },
     { id: 'pressure', label: 'Press' },
     { id: 'matches', label: 'Matcher' },
   ];
@@ -375,6 +377,61 @@ export default function PlayerStatsPage() {
             <TrendChart data={advanced.trends} field="recPosPct" label="Mottagning+" color="#3b82f6" unit="%" />
             <TrendChart data={advanced.trends} field="servePts" label="Ess" color="#8b5cf6" />
             <TrendChart data={advanced.trends} field="actionCount" label="Aktioner" color="#64748b" />
+          </div>
+        </div>
+      )}
+
+      {/* Set-analys */}
+      {activeTab === 'sets' && advanced?.setAnalysis && (
+        <div className="psp-section">
+          <h2>Prestanda per set</h2>
+          <p className="psp-section-desc">Hur spelaren presterar i varje set — tappar formen i set 4?</p>
+          <div className="psp-set-grid">
+            {advanced.setAnalysis.map(s => (
+              <div key={s.set} className="psp-set-card">
+                <div className="psp-set-number">Set {s.set}</div>
+                <div className="psp-set-stats">
+                  <div className="psp-set-main">
+                    <span className="psp-set-eff" style={{ color: s.efficiency >= 30 ? '#22c55e' : s.efficiency >= 0 ? '#eab308' : '#ef4444' }}>{s.efficiency}%</span>
+                    <span className="psp-set-eff-label">eff.</span>
+                  </div>
+                  <div className="psp-set-details">
+                    <span>{s.total} aktioner</span>
+                    <span>{s.points} poäng</span>
+                    <span style={{ color: '#22c55e' }}>{s.positivePct}% pos</span>
+                    <span style={{ color: '#ef4444' }}>{s.errorPct}% fel</span>
+                  </div>
+                </div>
+                <div className="psp-set-bar-bg">
+                  <div className="psp-set-bar-pos" style={{ width: `${s.positivePct}%` }} />
+                  <div className="psp-set-bar-err" style={{ width: `${s.errorPct}%`, marginLeft: `${100 - s.errorPct}%` }} />
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Motståndaranalys */}
+      {activeTab === 'opponents' && advanced?.opponentAnalysis && (
+        <div className="psp-section">
+          <h2>Mot varje motståndare</h2>
+          <p className="psp-section-desc">Hur spelaren presterar mot specifika lag</p>
+          <div className="psp-opp-list">
+            {advanced.opponentAnalysis.map(o => (
+              <div key={o.opponent} className="psp-opp-row">
+                <div className="psp-opp-info">
+                  <span className="psp-opp-name">{o.opponent}</span>
+                  <span className="psp-opp-meta">{o.matchCount} {o.matchCount === 1 ? 'match' : 'matcher'} | {o.total} akt</span>
+                </div>
+                <div className="psp-opp-stats">
+                  <span className="psp-opp-pts">{o.points}p</span>
+                  <span style={{ color: o.killPct >= 40 ? '#22c55e' : o.killPct >= 25 ? '#eab308' : '#ef4444' }}>{o.killPct}% kill</span>
+                  <span style={{ color: o.efficiency >= 20 ? '#22c55e' : o.efficiency >= 0 ? '#eab308' : '#ef4444' }}>{o.efficiency}% eff</span>
+                  <span style={{ color: '#ef4444' }}>{o.errorPct}% fel</span>
+                </div>
+              </div>
+            ))}
           </div>
         </div>
       )}

@@ -255,6 +255,74 @@
 .psp-match-stats { display: flex; gap: 12px; font-size: 12px; color: #94a3b8; }
 .psp-match-pts { color: #22c55e; font-weight: 600; }
 
+/* ===== Set Analysis ===== */
+.psp-set-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 12px;
+}
+.psp-set-card {
+  background: #0f172a;
+  border-radius: 10px;
+  padding: 14px;
+}
+.psp-set-number {
+  font-size: 13px;
+  font-weight: 600;
+  color: #94a3b8;
+  margin-bottom: 8px;
+}
+.psp-set-stats { display: flex; gap: 12px; align-items: center; }
+.psp-set-main { text-align: center; min-width: 60px; }
+.psp-set-eff { font-size: 26px; font-weight: 800; display: block; }
+.psp-set-eff-label { font-size: 10px; color: #64748b; }
+.psp-set-details {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-size: 12px;
+  color: #94a3b8;
+}
+.psp-set-bar-bg {
+  height: 6px;
+  background: #1e293b;
+  border-radius: 3px;
+  margin-top: 8px;
+  overflow: hidden;
+  position: relative;
+}
+.psp-set-bar-pos {
+  position: absolute;
+  left: 0;
+  top: 0;
+  height: 100%;
+  background: #22c55e;
+  border-radius: 3px;
+}
+.psp-set-bar-err {
+  position: absolute;
+  top: 0;
+  height: 100%;
+  background: #ef4444;
+  border-radius: 3px;
+}
+
+/* ===== Opponent Analysis ===== */
+.psp-opp-list { display: flex; flex-direction: column; gap: 6px; }
+.psp-opp-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 14px;
+  background: #0f172a;
+  border-radius: 8px;
+}
+.psp-opp-info { display: flex; flex-direction: column; gap: 2px; }
+.psp-opp-name { color: #e2e8f0; font-weight: 600; font-size: 14px; }
+.psp-opp-meta { color: #64748b; font-size: 12px; }
+.psp-opp-stats { display: flex; gap: 14px; font-size: 13px; font-weight: 500; }
+.psp-opp-pts { color: #22c55e; font-weight: 700; }
+
 /* Responsive */
 @media (max-width: 640px) {
   .psp-summary { grid-template-columns: repeat(2, 1fr); }
@@ -264,4 +332,7 @@
   .psp-skill-grid { grid-template-columns: 1fr; }
   .psp-trend-grid { grid-template-columns: 1fr; }
   .psp-pressure-grid { grid-template-columns: 1fr; }
+  .psp-set-grid { grid-template-columns: repeat(2, 1fr); }
+  .psp-opp-row { flex-direction: column; gap: 8px; align-items: flex-start; }
+  .psp-opp-stats { gap: 8px; font-size: 12px; }
 }
