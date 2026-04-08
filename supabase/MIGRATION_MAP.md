@@ -88,3 +88,55 @@
 | is_admin()         | true if role = 'admin'       |
 | is_coach_or_admin()| true if role in (admin,coach)|
 | can_upload()       | true if admin/coach/uploader |
+
+## Edge Functions
+
+| Function      | Purpose                                      |
+|--------------|----------------------------------------------|
+| parse-dvw    | Parses DataVolley .dvw files from Storage    |
+
+## Switchover: How to activate Supabase
+
+The migration uses a **zero-downtime switchover**. Both old (Express) and new
+(Supabase) backends coexist. The switch is controlled by environment variables.
+
+### Steps to activate:
+
+1. **Run migrations** in your Supabase project:
+   ```
+   supabase db push  # or paste SQL from supabase/migrations/ in SQL Editor
+   ```
+
+2. **Deploy Edge Function**:
+   ```
+   supabase functions deploy parse-dvw
+   ```
+
+3. **Set frontend env vars** (in `.env` or hosting platform):
+   ```
+   VITE_SUPABASE_URL=https://your-project.supabase.co
+   VITE_SUPABASE_ANON_KEY=your-anon-key
+   ```
+
+4. **Rebuild frontend** — the switchover in `main.jsx` and `apiSwitch.js`
+   will automatically pick up Supabase when those env vars exist.
+
+5. **Verify** everything works. The old Express backend still runs and
+   serves as fallback if you remove the env vars.
+
+6. **Clean up** (Step 6 — only after full verification):
+   - Remove `backend/` folder
+   - Remove old `context/AuthContext.jsx`
+   - Remove old `utils/api.js`
+   - Replace `apiSwitch.js` imports with direct `supabaseApi.js` imports
+   - Remove `Dockerfile`, `docker-compose.yml`, etc.
+
+### Files overview:
+
+| File | Role |
+|------|------|
+| `main.jsx` | Switches AuthProvider (Express vs Supabase) |
+| `utils/apiSwitch.js` | Switches API module (api.js vs supabaseApi.js) |
+| `utils/supabaseClient.js` | Supabase client singleton |
+| `utils/supabaseApi.js` | Complete API layer using Supabase |
+| `context/SupabaseAuthContext.jsx` | Auth using supabase.auth |
