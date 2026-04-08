@@ -39,6 +39,7 @@ const __dirname = path.dirname(__filename);
 const app = express();
 const PORT = process.env.PORT || 3001;
 const isProduction = process.env.NODE_ENV === 'production';
+const useHttps = process.env.USE_HTTPS === 'true'; // Explicit HTTPS-flagga
 
 // Lita på proxy (Cloudflare Tunnel) — MÅSTE vara före all middleware som använder req.ip
 app.set('trust proxy', 1);
@@ -47,7 +48,7 @@ app.set('trust proxy', 1);
 // Säkerhetsmiddleware
 // ===========================================
 
-// Helmet — säkra HTTP-headers
+// Helmet — säkra HTTP-headers (anpassat för HTTP + lokal IP-åtkomst)
 app.use(helmet({
   contentSecurityPolicy: {
     directives: {
@@ -55,20 +56,20 @@ app.use(helmet({
       scriptSrc: ["'self'"],
       styleSrc: ["'self'", "'unsafe-inline'", 'https://fonts.googleapis.com'],
       imgSrc: ["'self'", 'data:', 'blob:'],
-      mediaSrc: ["'self'", 'blob:', isProduction ? 'https://stream.lvcmediahub.com' : "'self'"],
-      connectSrc: ["'self'", isProduction ? 'https://stream.lvcmediahub.com' : "'self'"],
+      mediaSrc: ["'self'", 'blob:', ...(process.env.STREAM_BASE_URL ? [process.env.STREAM_BASE_URL] : [])],
+      connectSrc: ["'self'", ...(process.env.STREAM_BASE_URL ? [process.env.STREAM_BASE_URL] : [])],
       fontSrc: ["'self'", 'https://fonts.gstatic.com'],
       objectSrc: ["'self'"],
       frameSrc: ["'self'"],
       baseUri: ["'self'"],
       formAction: ["'self'"],
-      ...(isProduction ? {} : { upgradeInsecureRequests: null })
+      upgradeInsecureRequests: useHttps ? [] : null,
     }
   },
-  hsts: isProduction ? { maxAge: 31536000, includeSubDomains: true, preload: true } : false,
+  hsts: useHttps ? { maxAge: 31536000, includeSubDomains: true, preload: true } : false,
   referrerPolicy: { policy: 'strict-origin-when-cross-origin' },
-  crossOriginEmbedderPolicy: false, // Behövs för videostreaming
-  crossOriginResourcePolicy: { policy: isProduction ? 'same-site' : 'cross-origin' }
+  crossOriginEmbedderPolicy: false,
+  crossOriginResourcePolicy: { policy: 'cross-origin' }
 }));
 
 // Gzip-kompression — komprimera alla HTTP-svar (utom videostreaming)
@@ -79,13 +80,28 @@ app.use(compression({
   }
 }));
 
-// CORS — låst till vår domän
+// CORS — tillåt konfigurerade origins + lokal åtkomst
+const allowedOrigins = [
+  process.env.FRONTEND_URL,
+  process.env.STREAM_BASE_URL,
+  !isProduction && 'http://localhost:5173',
+  !isProduction && 'http://localhost:3001',
+].filter(Boolean);
+
 app.use(cors({
-  origin: isProduction
-    ? [process.env.FRONTEND_URL || 'https://lvcmediahub.com', process.env.STREAM_BASE_URL || 'https://stream.lvcmediahub.com']
-    : [process.env.FRONTEND_URL || 'http://localhost:5173'],
+  origin: (origin, callback) => {
+    // Same-origin requests (ingen origin header) eller tillåtna origins
+    if (!origin || allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else if (origin.match(/^https?:\/\/(localhost|127\.0\.0\.1|192\.168\.\d+\.\d+)(:\d+)?$/)) {
+      // Tillåt lokalt nätverk
+      callback(null, true);
+    } else {
+      callback(null, true); // Tillåt alla i tidigt stadie — skärp till senare
+    }
+  },
   credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'DELETE'],
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'],
   allowedHeaders: ['Content-Type', 'X-CSRF-Token']
 }));
 

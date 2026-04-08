@@ -126,22 +126,22 @@ export const tokenService = {
 
   // Ställ in token-cookies
   setTokenCookies(res, accessToken, refreshToken) {
-    const isProduction = process.env.NODE_ENV === 'production';
+    const useHttps = process.env.USE_HTTPS === 'true';
 
     res.cookie('accessToken', accessToken, {
       httpOnly: true,
-      secure: isProduction,
-      sameSite: 'strict',
+      secure: useHttps,
+      sameSite: useHttps ? 'strict' : 'lax',
       maxAge: 15 * 60 * 1000, // 15 minuter
       path: '/'
     });
 
     res.cookie('refreshToken', refreshToken, {
       httpOnly: true,
-      secure: isProduction,
-      sameSite: 'strict',
+      secure: useHttps,
+      sameSite: useHttps ? 'strict' : 'lax',
       maxAge: 7 * 24 * 60 * 60 * 1000, // 7 dagar
-      path: '/api/auth/refresh' // Bara tillgänglig för refresh-endpoint
+      path: '/api/auth/refresh'
     });
   },
 

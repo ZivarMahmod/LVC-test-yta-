@@ -221,7 +221,7 @@ describe('tokenService.setTokenCookies', () => {
     expect(accessCall[0]).toBe('accessToken');
     expect(accessCall[1]).toBe('access-123');
     expect(accessCall[2].httpOnly).toBe(true);
-    expect(accessCall[2].sameSite).toBe('strict');
+    expect(accessCall[2].sameSite).toBe(process.env.USE_HTTPS === 'true' ? 'strict' : 'lax');
 
     // Refresh token cookie
     const refreshCall = res.cookie.mock.calls[1];

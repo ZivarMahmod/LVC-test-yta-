@@ -4,21 +4,21 @@
 import { doubleCsrf } from 'csrf-csrf';
 import logger from '../utils/logger.js';
 
-const isProduction = process.env.NODE_ENV === 'production';
+const useHttps = process.env.USE_HTTPS === 'true';
 
-// __Host- prefix kräver secure=true, vilket inte fungerar i dev (http)
-// Använd prefix enbart i produktion
+// __Host- prefix kräver secure=true (HTTPS)
+// Utan HTTPS använder vi vanligt cookie-namn
 const {
   generateToken,
   doubleCsrfProtection,
   invalidCsrfTokenError
 } = doubleCsrf({
   getSecret: () => process.env.CSRF_SECRET,
-  cookieName: isProduction ? '__Host-lvc.x-csrf-token' : 'lvc.x-csrf-token',
+  cookieName: useHttps ? '__Host-lvc.x-csrf-token' : 'lvc.x-csrf-token',
   cookieOptions: {
     httpOnly: true,
-    sameSite: isProduction ? 'strict' : 'lax', // lax i dev för att undvika problem
-    secure: isProduction,
+    sameSite: useHttps ? 'strict' : 'lax',
+    secure: useHttps,
     path: '/'
   },
   getTokenFromRequest: (req) => req.headers['x-csrf-token']
