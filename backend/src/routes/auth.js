@@ -3,6 +3,7 @@
 // ===========================================
 import { Router } from 'express';
 import { authController } from '../controllers/authController.js';
+import { kvittraAuthController } from '../controllers/kvittraAuthController.js';
 import { authenticateToken } from '../middleware/auth.js';
 import { loginLimiter, refreshLimiter } from '../middleware/rateLimiter.js';
 import { csrfProtection, getCsrfToken } from '../middleware/csrf.js';
@@ -70,6 +71,32 @@ router.put('/user/preferences',
   authenticateToken,
   csrfProtection,
   authController.updatePreferences
+);
+
+// ===========================================
+// Kvittra Auth (OTP-baserat)
+// ===========================================
+router.post('/kvittra/login',
+  loginLimiter,
+  csrfProtection,
+  kvittraAuthController.login
+);
+
+router.post('/kvittra/verify-otp',
+  loginLimiter,
+  csrfProtection,
+  kvittraAuthController.verifyOtp
+);
+
+router.post('/kvittra/resend-otp',
+  loginLimiter,
+  csrfProtection,
+  kvittraAuthController.resendOtp
+);
+
+router.get('/kvittra/my-orgs',
+  authenticateToken,
+  kvittraAuthController.getMyOrgs
 );
 
 export default router;
