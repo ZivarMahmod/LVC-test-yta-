@@ -144,6 +144,7 @@ export default function ComparePlayersPage() {
   const [selectedTeam, setSelectedTeam] = useState('all');
   const [selected, setSelected] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
   useEffect(() => {
     teamApi.listTeams().then(t => setTeams(t.teams || t || [])).catch(() => {});
@@ -151,8 +152,10 @@ export default function ComparePlayersPage() {
 
   useEffect(() => {
     setLoading(true);
+    setError(null);
     playerStatsApi.getTeamRoster(selectedTeam)
       .then(d => { setRoster(d.roster || []); setSelected([]); })
+      .catch(e => setError(e.message))
       .finally(() => setLoading(false));
   }, [selectedTeam]);
 
@@ -170,6 +173,7 @@ export default function ComparePlayersPage() {
   };
 
   if (loading) return <div className="cp-loading">Laddar spelardata...</div>;
+  if (error) return <div className="cp-loading" style={{ color: '#ef4444' }}>{error}</div>;
 
   return (
     <div className="cp-container">

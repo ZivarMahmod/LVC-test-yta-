@@ -139,7 +139,7 @@ export const fileStorageService = {
       .update(`${videoId}:${expiresAt}`)
       .digest('hex');
     return {
-      url: `${process.env.STREAM_BASE_URL ? process.env.STREAM_BASE_URL : ''}/api/videos/${videoId}/stream?expires=${expiresAt}&sig=${signature}`,
+      url: `${process.env.STREAM_BASE_URL || process.env.BACKEND_URL || ''}/api/videos/${videoId}/stream?expires=${expiresAt}&sig=${signature}`,
       expiresAt
     };
   },

@@ -368,11 +368,13 @@ export function calculateConsistency(matchStats) {
  * Jämför spelarens statistik med laggenomsnitt
  */
 export function calculateTeamComparison(playerStats, teamPlayerStats) {
-  if (teamPlayerStats.length === 0) return null;
+  if (!teamPlayerStats || teamPlayerStats.length === 0) return null;
+  if (!playerStats?.attack || !playerStats?.reception) return null;
 
   const teamTotals = { killPct: [], recPosPct: [], ptsPerMatch: [], servePts: [] };
 
   for (const p of teamPlayerStats) {
+    if (!p?.attack || !p?.reception || !p?.serve) continue;
     if (p.attack.total >= 5) {
       teamTotals.killPct.push(p.attack.total > 0 ? (p.attack.pts / p.attack.total) * 100 : 0);
     }
