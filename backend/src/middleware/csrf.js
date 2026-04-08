@@ -6,18 +6,18 @@ import logger from '../utils/logger.js';
 
 const useHttps = process.env.USE_HTTPS === 'true';
 
-// __Host- prefix kräver secure=true (HTTPS)
-// Utan HTTPS använder vi vanligt cookie-namn
+// Bakom Cloudflare Tunnel: undvik __Host- prefix (kräver exakt cookie-config)
+// Använd lax sameSite — fungerar med redirects och reverse proxies
 const {
   generateToken,
   doubleCsrfProtection,
   invalidCsrfTokenError
 } = doubleCsrf({
   getSecret: () => process.env.CSRF_SECRET,
-  cookieName: useHttps ? '__Host-lvc.x-csrf-token' : 'lvc.x-csrf-token',
+  cookieName: 'kvittra.csrf',
   cookieOptions: {
     httpOnly: true,
-    sameSite: useHttps ? 'strict' : 'lax',
+    sameSite: 'lax',
     secure: useHttps,
     path: '/'
   },
