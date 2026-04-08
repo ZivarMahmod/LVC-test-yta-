@@ -43,14 +43,21 @@ async function apiFetch(url, options = {}) {
 
   let res = await fetch(url, config);
 
+  // Debug: logga misslyckade requests
+  if (!res.ok && res.status !== 401) {
+    console.warn(`[API] ${url} → ${res.status}`, await res.clone().text().catch(() => ''));
+  }
+
   // Om 401 — försök refresha token
   if (res.status === 401 && !options._retried) {
+    console.warn(`[API] 401 på ${url} — försöker refresh...`);
     const refreshed = await refreshToken();
     if (refreshed) {
-      // Hämta ny CSRF-token efter refresh
       await fetchCsrfToken();
       config.headers['X-CSRF-Token'] = csrfToken || '';
       res = await fetch(url, { ...config, _retried: true });
+    } else {
+      console.warn('[API] Token refresh misslyckades');
     }
   }
 

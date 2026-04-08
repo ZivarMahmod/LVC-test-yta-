@@ -176,6 +176,22 @@ app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
 });
 
+// Debug endpoint — visar cookie-status och request-info (ta bort i produktion)
+app.get('/api/debug', (req, res) => {
+  res.json({
+    cookies: Object.keys(req.cookies || {}),
+    hasAccessToken: !!req.cookies?.accessToken,
+    hasCsrf: !!req.cookies?.['kvittra.csrf'],
+    ip: req.ip,
+    protocol: req.protocol,
+    secure: req.secure,
+    xForwardedProto: req.headers['x-forwarded-proto'],
+    xForwardedFor: req.headers['x-forwarded-for'],
+    host: req.headers.host,
+    origin: req.headers.origin,
+  });
+});
+
 // ===========================================
 // Statisk frontend (produktion)
 // ===========================================
