@@ -102,6 +102,50 @@
   line-height: 1.8;
 }
 
+.teams-onboarding h2 {
+  font-size: 1.5rem;
+  color: #f1f5f9;
+  margin-bottom: 8px;
+}
+.teams-onboarding > p {
+  color: #64748b;
+  margin-bottom: 24px;
+}
+.teams-steps {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  max-width: 400px;
+  margin: 0 auto;
+  text-align: left;
+}
+.teams-step {
+  display: flex;
+  gap: 14px;
+  align-items: flex-start;
+  padding: 16px;
+  background: #1e293b;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.teams-step:hover { background: #1a2744; }
+.teams-step-num {
+  width: 32px;
+  height: 32px;
+  background: #3b82f6;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  color: #fff;
+  font-size: 14px;
+  flex-shrink: 0;
+}
+.teams-step strong { color: #e2e8f0; font-size: 14px; display: block; }
+.teams-step p { color: #64748b; font-size: 12px; margin: 2px 0 0; }
+
 
 .team-card-img {
   position: absolute;

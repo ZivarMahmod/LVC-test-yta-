@@ -53,8 +53,33 @@ export default function TeamsPage() {
       <h1 className="teams-title">Välj lag</h1>
       {teams.length === 0 ? (
         <div className="teams-empty">
-          <p>Inga lag har skapats ännu.</p>
-          <p>En admin kan skapa lag under <strong>Admin → Lag & Säsonger</strong>.</p>
+          <div className="teams-onboarding">
+            <h2>Välkommen till LVC Media Hub</h2>
+            <p>Kom igång med volleybollanalys i 3 steg:</p>
+            <div className="teams-steps">
+              <div className="teams-step" onClick={() => isAdmin && navigate('/admin')}>
+                <span className="teams-step-num">1</span>
+                <div>
+                  <strong>Skapa lag & säsong</strong>
+                  <p>Gå till Admin → Lag & Säsonger</p>
+                </div>
+              </div>
+              <div className="teams-step" onClick={() => navigate('/upload')}>
+                <span className="teams-step-num">2</span>
+                <div>
+                  <strong>Ladda upp en match</strong>
+                  <p>Video + DVW scout-fil</p>
+                </div>
+              </div>
+              <div className="teams-step">
+                <span className="teams-step-num">3</span>
+                <div>
+                  <strong>Analysera</strong>
+                  <p>Heatmaps, statistik, spelarjämförelse</p>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
       ) : (
         <div className="teams-grid">
