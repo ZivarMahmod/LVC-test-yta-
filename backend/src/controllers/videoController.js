@@ -8,6 +8,7 @@ import path from 'path';
 import { mkdir, unlink, stat as fsStat } from 'fs/promises';
 import logger from '../utils/logger.js';
 import { formatVideoTitle } from '../utils/formatTitle.js';
+import { calculateAdvancedStats, calculateMatchTrend, calculateTeamComparison } from '../services/statsEngine.js';
 
 export const videoController = {
 
@@ -700,7 +701,6 @@ export const playerStatsController = {
         player = await prisma.user.findUnique({ where: { id: playerId }, select: { id: true, name: true, username: true, jerseyNumber: true } });
         if (!player) return res.status(404).json({ error: 'Spelaren hittades inte.' });
       } else {
-        // Skapa objekt med tröjnummer + namn från query (DVW-namn)
         player = { id: null, name: queryName || null, username: null, jerseyNumber };
       }
 
@@ -721,11 +721,17 @@ export const playerStatsController = {
 
       // Parsa varje video och extrahera spelarens statistik
       const matches = [];
-      const totals = { serve: { total: 0, err: 0, pts: 0 }, attack: { total: 0, err: 0, blocked: 0, pts: 0 }, reception: { total: 0, pos: 0, exc: 0, err: 0 }, block: { pts: 0 }, dig: { total: 0, pos: 0, err: 0 }, totalPts: 0 };
+      const allPlayerActions = []; // Alla actions för avancerad analys
+      const scoreboards = [];
+      const totals = { serve: { total: 0, err: 0, pts: 0 }, attack: { total: 0, err: 0, blocked: 0, pts: 0 }, reception: { total: 0, pos: 0, exc: 0, err: 0 }, block: { pts: 0 }, dig: { total: 0, pos: 0, err: 0 }, totalPts: 0, matchCount: 0 };
+
+      // Samla lagstatistik för jämförelse
+      const teamPlayersMap = new Map();
 
       for (const video of videos) {
         try {
           const data = await getCachedScout(video.id, video.dvwPath, video.videoOffset || 0);
+
           // Matcha på namn (fungerar oavsett om LVC är hemma eller borta)
           const playerActions = data.actions.filter(a => {
             if (queryName) return a.playerName === queryName;
@@ -737,7 +743,6 @@ export const playerStatsController = {
           if (!player.name && playerActions.length > 0) {
             player.name = playerActions[0].playerName;
           }
-          // Uppdatera tröjnummer från denna match (kan variera mellan säsonger)
           if (!player.jerseyNumber && playerActions.length > 0) {
             player.jerseyNumber = playerActions[0].playerNumber;
           }
@@ -787,6 +792,36 @@ export const playerStatsController = {
           totals.block.pts += stats.block.pts;
           totals.totalPts += stats.totalPts;
 
+          // Samla actions med videoId för avancerad analys
+          for (const a of playerActions) {
+            allPlayerActions.push({ ...a, videoId: video.id });
+          }
+
+          // Samla scoreboard för pressningsstatistik
+          if (data.scoreboard) {
+            scoreboards.push({ videoId: video.id, scoreboard: data.scoreboard });
+          }
+
+          // Samla lagmedlemmars stats (för jämförelse)
+          const homeTeam = playerActions[0]?.team;
+          if (homeTeam) {
+            for (const a of data.actions.filter(act => act.team === homeTeam)) {
+              const key = a.playerName;
+              if (!teamPlayersMap.has(key)) {
+                teamPlayersMap.set(key, { serve: { total: 0, err: 0, pts: 0 }, attack: { total: 0, err: 0, blocked: 0, pts: 0 }, reception: { total: 0, pos: 0, exc: 0, err: 0 }, block: { pts: 0 }, dig: { total: 0, pos: 0, err: 0 }, totalPts: 0, matchCount: 0 });
+              }
+              const tp = teamPlayersMap.get(key);
+              const isErr = a.grade === '/' || a.grade === '=';
+              const isPerfect = a.grade === '#';
+              const isPositive = a.grade === '+';
+              if (a.skill === 'S') { tp.serve.total++; if (isPerfect) { tp.serve.pts++; tp.totalPts++; } if (isErr) tp.serve.err++; }
+              if (a.skill === 'A') { tp.attack.total++; if (isPerfect) { tp.attack.pts++; tp.totalPts++; } if (isErr) tp.attack.err++; if (a.grade === '/') tp.attack.blocked++; }
+              if (a.skill === 'R') { tp.reception.total++; if (isPerfect || isPositive) tp.reception.pos++; if (isPerfect) tp.reception.exc++; if (isErr) tp.reception.err++; }
+              if (a.skill === 'B' && isPerfect) { tp.block.pts++; tp.totalPts++; }
+              if (a.skill === 'D') { tp.dig.total++; if (isPerfect || isPositive) tp.dig.pos++; if (isErr) tp.dig.err++; }
+            }
+          }
+
           matches.push({
             videoId: video.id,
             title: video.title,
@@ -801,12 +836,34 @@ export const playerStatsController = {
         }
       }
 
-      // Om spelaren inte hittades i DB och inga matcher hittades i DVW
+      totals.matchCount = matches.length;
+
+      // Uppdatera lagstatistik med matchcount
+      for (const [, tp] of teamPlayersMap) {
+        tp.matchCount = matches.length;
+      }
+
       if (!player.name) {
         player.name = `#${player.jerseyNumber}`;
       }
 
-      res.json({ player, matches, totals, matchCount: matches.length });
+      // Avancerad statistik
+      const advanced = calculateAdvancedStats(allPlayerActions, [], scoreboards);
+      const trends = calculateMatchTrend(matches);
+      const teamComparison = calculateTeamComparison(totals, [...teamPlayersMap.values()]);
+
+      res.json({
+        player,
+        matches,
+        totals,
+        matchCount: matches.length,
+        // Nytt: avancerad statistik
+        advanced: {
+          ...advanced,
+          trends,
+          teamComparison,
+        }
+      });
     } catch (error) {
       logger.error('Spelarhistorik-fel:', error);
       res.status(500).json({ error: 'Kunde inte hämta spelarhistorik.' });

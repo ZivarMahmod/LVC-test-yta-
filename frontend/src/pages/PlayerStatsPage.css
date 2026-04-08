@@ -1,5 +1,8 @@
+/* =============================================
+   LVC Media Hub — Player Dashboard Styles
+   ============================================= */
 .psp-container {
-  max-width: 800px;
+  max-width: 900px;
   margin: 0 auto;
   padding: 20px 16px;
   color: #f1f5f9;
@@ -11,6 +14,8 @@
   font-size: 16px;
 }
 .psp-error { color: #ef4444; }
+
+/* Back button */
 .psp-back {
   background: #334155;
   color: #94a3b8;
@@ -22,19 +27,49 @@
   margin-bottom: 16px;
 }
 .psp-back:hover { background: #475569; color: #f1f5f9; }
-.psp-header h1 {
-  font-size: 24px;
-  margin: 0 0 4px;
+
+/* Header */
+.psp-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 16px;
 }
-.psp-jersey {
-  color: #3b82f6;
-  margin-right: 8px;
+.psp-header h1 { font-size: 24px; margin: 0 0 4px; }
+.psp-jersey { color: #3b82f6; margin-right: 8px; }
+.psp-header p { color: #64748b; margin: 0; font-size: 14px; }
+.psp-header-badge { text-align: center; }
+.psp-eff-badge { font-size: 32px; font-weight: 800; display: block; }
+.psp-eff-label { font-size: 11px; color: #64748b; }
+
+/* Tabs */
+.psp-tabs {
+  display: flex;
+  gap: 4px;
+  margin-bottom: 20px;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
 }
-.psp-header p {
-  color: #64748b;
-  margin: 0 0 20px;
-  font-size: 14px;
+.psp-tab {
+  background: #1e293b;
+  border: 1px solid #334155;
+  color: #94a3b8;
+  padding: 8px 16px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 500;
+  white-space: nowrap;
+  transition: all 0.15s;
 }
+.psp-tab:hover { background: #334155; color: #e2e8f0; }
+.psp-tab--active {
+  background: #3b82f6;
+  border-color: #3b82f6;
+  color: #fff;
+}
+
+/* Summary cards */
 .psp-summary {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(110px, 1fr));
@@ -47,62 +82,161 @@
   padding: 14px 12px;
   text-align: center;
 }
-.psp-stat-value {
-  font-size: 24px;
-  font-weight: 700;
-  line-height: 1.2;
-}
-.psp-stat-label {
-  font-size: 12px;
-  color: #64748b;
-  margin-top: 4px;
-}
-.psp-stat-sub {
-  font-size: 11px;
-  color: #475569;
-  margin-top: 2px;
-}
-.psp-details, .psp-trends, .psp-matches {
+.psp-stat-card--big { grid-column: span 1; }
+.psp-stat-value { font-size: 24px; font-weight: 700; line-height: 1.2; }
+.psp-stat-label { font-size: 12px; color: #64748b; margin-top: 4px; }
+.psp-stat-sub { font-size: 11px; color: #475569; margin-top: 2px; }
+
+/* Section */
+.psp-section {
   background: #1e293b;
-  border-radius: 10px;
-  padding: 16px;
+  border-radius: 12px;
+  padding: 20px;
   margin-bottom: 16px;
 }
-.psp-details h2, .psp-trends h2, .psp-matches h2 {
-  font-size: 16px;
-  margin: 0 0 12px;
-  color: #e2e8f0;
-}
-.psp-skill {
-  margin-bottom: 10px;
-}
-.psp-skill h4 {
-  margin: 0 0 4px;
-  font-size: 13px;
-  color: #94a3b8;
-}
-.psp-skill-row {
-  display: flex;
-  gap: 16px;
-  flex-wrap: wrap;
-  font-size: 13px;
-  color: #cbd5e1;
-}
-.psp-trend-grid {
+.psp-section h2 { font-size: 17px; margin: 0 0 4px; color: #e2e8f0; }
+.psp-section-desc { font-size: 13px; color: #64748b; margin: 0 0 16px; }
+
+/* ===== Zone Heatmap ===== */
+.psp-zone-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: 12px;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 16px;
 }
-.psp-trend-label {
-  font-size: 12px;
+.psp-zone-heatmap h4 {
+  font-size: 14px;
   color: #94a3b8;
-  margin-bottom: 4px;
+  margin: 0 0 10px;
+  font-weight: 500;
 }
-.psp-match-list {
+.psp-court {
+  position: relative;
+  border: 2px solid #334155;
+  border-radius: 8px;
+  overflow: hidden;
+}
+.psp-court-net {
+  text-align: center;
+  font-size: 10px;
+  color: #475569;
+  background: #0f172a;
+  padding: 3px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  border-bottom: 2px dashed #475569;
+}
+.psp-court-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+}
+.psp-court-zone {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  align-items: center;
+  justify-content: center;
+  padding: 12px 8px;
+  border: 1px solid #334155;
+  min-height: 70px;
+  gap: 2px;
+  transition: background 0.2s;
 }
+.psp-zone-id { font-size: 10px; color: #475569; font-weight: 600; }
+.psp-zone-pct { font-size: 20px; font-weight: 700; }
+.psp-zone-count { font-size: 11px; color: #64748b; }
+.psp-zone-empty { color: #334155; font-size: 18px; }
+
+/* ===== Skill Detail Cards ===== */
+.psp-skill-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 12px;
+}
+.psp-skill-card {
+  background: #0f172a;
+  border-radius: 10px;
+  padding: 14px;
+}
+.psp-skill-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+}
+.psp-skill-badge {
+  padding: 3px 10px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #fff;
+}
+.psp-skill-total { font-size: 13px; color: #64748b; }
+.psp-skill-bars { display: flex; flex-direction: column; gap: 5px; }
+.psp-skill-bar-row { display: flex; align-items: center; gap: 8px; }
+.psp-skill-bar-label { font-size: 11px; color: #94a3b8; width: 70px; flex-shrink: 0; }
+.psp-skill-bar-bg { flex: 1; height: 8px; background: #1e293b; border-radius: 4px; overflow: hidden; }
+.psp-skill-bar { height: 100%; border-radius: 4px; transition: width 0.5s ease; }
+.psp-skill-bar-val { font-size: 11px; color: #64748b; width: 60px; text-align: right; flex-shrink: 0; }
+.psp-skill-footer { margin-top: 10px; font-size: 12px; color: #94a3b8; }
+.psp-skill-footer strong { font-size: 14px; }
+
+/* ===== Trend Charts ===== */
+.psp-trend-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 16px;
+}
+.psp-trend { background: #0f172a; border-radius: 10px; padding: 12px; }
+.psp-trend-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; }
+.psp-trend-label { font-size: 13px; color: #94a3b8; font-weight: 500; }
+.psp-trend-current { font-size: 18px; font-weight: 700; }
+.psp-trend-labels { display: flex; justify-content: space-between; font-size: 10px; color: #475569; margin-top: 2px; }
+
+/* ===== Pressure Cards ===== */
+.psp-pressure-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 12px;
+}
+.psp-pressure-card {
+  background: #0f172a;
+  border-radius: 10px;
+  padding: 16px;
+  text-align: center;
+}
+.psp-pressure-icon { font-size: 24px; margin-bottom: 6px; }
+.psp-pressure-title { font-size: 14px; font-weight: 600; color: #e2e8f0; }
+.psp-pressure-desc { font-size: 11px; color: #64748b; margin: 2px 0 10px; }
+.psp-pressure-stat { display: flex; align-items: baseline; justify-content: center; gap: 4px; }
+.psp-pressure-value { font-size: 28px; font-weight: 800; }
+.psp-pressure-label { font-size: 12px; color: #94a3b8; }
+.psp-pressure-sub { font-size: 11px; color: #475569; margin-top: 6px; }
+
+/* ===== Team Comparison ===== */
+.psp-comparison-grid { display: flex; flex-direction: column; gap: 14px; }
+.psp-comparison-item { }
+.psp-comparison-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
+.psp-comparison-label { font-size: 13px; color: #94a3b8; }
+.psp-comparison-values { font-size: 14px; }
+.psp-comparison-vs { font-size: 12px; color: #64748b; margin-left: 8px; }
+.psp-comparison-bar-bg {
+  height: 10px;
+  background: #0f172a;
+  border-radius: 5px;
+  overflow: hidden;
+  position: relative;
+}
+.psp-comparison-bar { height: 100%; border-radius: 5px; transition: width 0.6s ease; }
+.psp-comparison-median {
+  position: absolute;
+  top: 0; left: 50%;
+  width: 2px;
+  height: 100%;
+  background: #475569;
+}
+.psp-comparison-percentile { font-size: 11px; color: #64748b; margin-top: 3px; }
+
+/* ===== Match List ===== */
+.psp-match-list { display: flex; flex-direction: column; gap: 6px; }
 .psp-match-row {
   display: flex;
   justify-content: space-between;
@@ -114,24 +248,20 @@
   transition: background 0.15s;
 }
 .psp-match-row:hover { background: #1a2744; }
-.psp-match-info {
-  display: flex;
-  gap: 10px;
-  align-items: center;
-  font-size: 13px;
-}
+.psp-match-info { display: flex; gap: 10px; align-items: center; font-size: 13px; }
 .psp-match-date { color: #64748b; }
 .psp-match-opponent { color: #e2e8f0; font-weight: 500; }
-.psp-match-team {
-  background: #334155;
-  padding: 2px 8px;
-  border-radius: 4px;
-  font-size: 11px;
-  color: #94a3b8;
-}
-.psp-match-stats {
-  display: flex;
-  gap: 12px;
-  font-size: 12px;
-  color: #94a3b8;
+.psp-match-team { background: #334155; padding: 2px 8px; border-radius: 4px; font-size: 11px; color: #94a3b8; }
+.psp-match-stats { display: flex; gap: 12px; font-size: 12px; color: #94a3b8; }
+.psp-match-pts { color: #22c55e; font-weight: 600; }
+
+/* Responsive */
+@media (max-width: 640px) {
+  .psp-summary { grid-template-columns: repeat(2, 1fr); }
+  .psp-header { flex-direction: column; gap: 8px; }
+  .psp-match-stats { gap: 6px; font-size: 11px; }
+  .psp-zone-grid { grid-template-columns: 1fr; }
+  .psp-skill-grid { grid-template-columns: 1fr; }
+  .psp-trend-grid { grid-template-columns: 1fr; }
+  .psp-pressure-grid { grid-template-columns: 1fr; }
 }
