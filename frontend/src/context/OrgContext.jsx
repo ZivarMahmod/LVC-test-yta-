@@ -8,16 +8,7 @@ import { supabase } from '../utils/supabaseClient.js';
 
 const OrgContext = createContext(null);
 
-// The main site hostname — this shows the landing page, not an org.
-// Set via env or fallback to known values.
-const MAIN_HOSTNAMES = [
-  'lvcmediahub.corevo.se',
-  'kvittra.se',
-  'www.kvittra.se',
-  import.meta.env.VITE_MAIN_HOSTNAME,
-].filter(Boolean);
-
-// Extract slug from hostname: "lvc.corevo.se" → "lvc"
+// Extract slug from hostname: "lvc.kvittra.se" → "lvc"
 function getSlugFromHostname() {
   const hostname = window.location.hostname;
 
@@ -27,23 +18,18 @@ function getSlugFromHostname() {
     return params.get('org') || null;
   }
 
-  // filipadmin.corevo.se or filipadmin.kvittra.se → superadmin
+  // filipadmin.kvittra.se → superadmin, not an org
   if (hostname.startsWith('filipadmin.')) {
     return '__superadmin__';
   }
 
-  // Main site hostname → landing page (not an org)
-  if (MAIN_HOSTNAMES.includes(hostname)) {
-    return null;
-  }
-
-  // Bare domain (no subdomain) → landing page
+  // kvittra.se (no subdomain) → landing page
   const parts = hostname.split('.');
   if (parts.length <= 2) {
-    return null;
+    return null; // main domain, no slug
   }
 
-  // lvc.corevo.se → "lvc"
+  // lvc.kvittra.se → "lvc"
   return parts[0];
 }
 
