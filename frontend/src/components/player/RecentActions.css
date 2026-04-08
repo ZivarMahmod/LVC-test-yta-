@@ -1,0 +1,66 @@
+/* =============================================
+   Kvittra — Recent Actions
+   ============================================= */
+.ra-container {
+  background: #1e293b;
+  border-radius: 12px;
+  padding: 20px;
+  margin-bottom: 16px;
+}
+.ra-container h3 {
+  font-size: 16px;
+  color: #e2e8f0;
+  margin: 0 0 14px;
+  font-weight: 600;
+}
+.ra-list { display: flex; flex-direction: column; gap: 8px; }
+.ra-match {
+  background: #0f172a;
+  border-radius: 10px;
+  padding: 14px;
+  cursor: pointer;
+  transition: background 0.15s, transform 0.1s;
+  border: 1px solid transparent;
+}
+.ra-match:hover {
+  background: #1a2744;
+  border-color: #334155;
+  transform: translateX(3px);
+}
+.ra-match-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+.ra-date { font-size: 12px; color: #64748b; }
+.ra-opponent { font-size: 14px; color: #e2e8f0; font-weight: 600; flex: 1; }
+.ra-pts {
+  font-size: 14px;
+  font-weight: 700;
+  color: #22c55e;
+}
+.ra-stats-row {
+  display: flex;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+.ra-mini-stat {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 12px;
+  color: #94a3b8;
+}
+.ra-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.ra-go {
+  font-size: 12px;
+  color: #3b82f6;
+  margin-top: 8px;
+  font-weight: 500;
+}

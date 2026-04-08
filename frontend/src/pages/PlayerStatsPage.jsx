@@ -7,6 +7,8 @@ import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { playerStatsApi } from '../utils/api.js';
 import PrecisionHeatmap from '../components/player/PrecisionHeatmap.jsx';
 import PlayerHero from '../components/player/PlayerHero.jsx';
+import SeasonGraph from '../components/player/SeasonGraph.jsx';
+import RecentActions from '../components/player/RecentActions.jsx';
 import './PlayerStatsPage.css';
 
 const pct = (num, den) => den > 0 ? Math.round((num / den) * 100) : 0;
@@ -331,6 +333,12 @@ export default function PlayerStatsPage() {
             <StatCard label="Block" value={totals.block.pts} />
             <StatCard label="Felfrekvens" value={`${advanced?.overview?.errorRate || 0}%`} color={advanced?.overview?.errorRate > 20 ? '#ef4444' : '#94a3b8'} />
           </div>
+
+          {/* Säsongsgraf */}
+          <SeasonGraph trends={advanced?.trends} />
+
+          {/* Senaste matcher */}
+          <RecentActions matches={matches} />
 
           <SkillDetailPanel skillDetails={advanced?.skillDetails} />
 

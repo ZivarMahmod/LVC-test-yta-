@@ -1,0 +1,55 @@
+/* =============================================
+   Kvittra — Season Graph
+   ============================================= */
+.sg-container {
+  background: #1e293b;
+  border-radius: 12px;
+  padding: 20px;
+  margin-bottom: 16px;
+}
+.sg-empty {
+  text-align: center;
+  color: #475569;
+  padding: 40px;
+  font-size: 14px;
+}
+.sg-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+.sg-header h3 {
+  font-size: 16px;
+  color: #e2e8f0;
+  margin: 0;
+  font-weight: 600;
+}
+.sg-metric-tabs {
+  display: flex;
+  gap: 4px;
+}
+.sg-metric-tab {
+  padding: 4px 12px;
+  border-radius: 6px;
+  border: 1px solid #334155;
+  background: transparent;
+  color: #94a3b8;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.sg-metric-tab:hover { background: #334155; color: #e2e8f0; }
+.sg-metric-tab--active {
+  color: #fff !important;
+}
+.sg-svg {
+  width: 100%;
+  max-height: 220px;
+}
+
+@media (max-width: 640px) {
+  .sg-header { flex-direction: column; gap: 8px; align-items: flex-start; }
+  .sg-container { padding: 14px; }
+}
