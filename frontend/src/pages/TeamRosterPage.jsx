@@ -78,6 +78,7 @@ export default function TeamRosterPage() {
   const [selectedTeam, setSelectedTeam] = useState(teamId || 'all');
   const [loading, setLoading] = useState(true);
   const [sortBy, setSortBy] = useState('totalPts');
+  const [viewMode, setViewMode] = useState('list');
   const [error, setError] = useState(null);
 
   useEffect(() => {
@@ -162,7 +163,7 @@ export default function TeamRosterPage() {
         </div>
       )}
 
-      {/* Sortering */}
+      {/* Sortering + view toggle */}
       <div className="tr-sort">
         <span className="tr-sort-label">Sortera:</span>
         {SORT_OPTIONS.map(opt => (
@@ -170,6 +171,10 @@ export default function TeamRosterPage() {
             {opt.label}
           </button>
         ))}
+        <div className="tr-view-toggle">
+          <button className={`tr-view-btn ${viewMode === 'list' ? 'tr-view-btn--active' : ''}`} onClick={() => setViewMode('list')} title="Listvy">☰</button>
+          <button className={`tr-view-btn ${viewMode === 'cards' ? 'tr-view-btn--active' : ''}`} onClick={() => setViewMode('cards')} title="Kortvy">⊞</button>
+        </div>
       </div>
 
       {/* Tabellhuvud */}
@@ -187,6 +192,47 @@ export default function TeamRosterPage() {
       {/* Spelarlista */}
       {sortedRoster.length === 0 ? (
         <div className="tr-empty">Ingen spelardata hittades. Ladda upp matcher med DVW-filer.</div>
+      ) : viewMode === 'cards' ? (
+        <div className="tr-cards-grid">
+          {sortedRoster.map((player, i) => {
+            const killColor = player.killPct >= 40 ? '#22c55e' : player.killPct >= 25 ? '#eab308' : '#ef4444';
+            const effColor = player.efficiency >= 25 ? '#22c55e' : player.efficiency >= 0 ? '#eab308' : '#ef4444';
+            return (
+              <div
+                key={player.playerName}
+                className="tr-card"
+                onClick={() => navigate(`/player/${player.playerNumber}?name=${encodeURIComponent(player.playerName)}`)}
+              >
+                <div className="tr-card-header">
+                  <div className="tr-card-avatar">
+                    {(player.playerName || '?').split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase()}
+                  </div>
+                  <div>
+                    <span className="tr-card-number">#{player.playerNumber}</span>
+                    <span className="tr-card-name">{player.playerName}</span>
+                  </div>
+                </div>
+                <div className="tr-card-stats">
+                  <div className="tr-card-stat">
+                    <span className="tr-card-stat-val" style={{ color: '#22c55e' }}>{player.totalPts}</span>
+                    <span className="tr-card-stat-lbl">Poäng</span>
+                  </div>
+                  <div className="tr-card-stat">
+                    <span className="tr-card-stat-val" style={{ color: killColor }}>{player.killPct}%</span>
+                    <span className="tr-card-stat-lbl">Kill</span>
+                  </div>
+                  <div className="tr-card-stat">
+                    <span className="tr-card-stat-val" style={{ color: effColor }}>{player.efficiency}%</span>
+                    <span className="tr-card-stat-lbl">Eff.</span>
+                  </div>
+                </div>
+                <div className="tr-card-footer">
+                  {player.matchCount} matcher · {player.ptsPerMatch} p/m
+                </div>
+              </div>
+            );
+          })}
+        </div>
       ) : (
         <div className="tr-player-list">
           {sortedRoster.map((player, i) => (
