@@ -8,6 +8,7 @@ import Layout from './components/layout/Layout.jsx';
 import LoginPage from './pages/LoginPage.jsx';
 import RegisterPage from './pages/RegisterPage.jsx';
 const KvittraLoginPage = React.lazy(() => import('./pages/KvittraLoginPage.jsx'));
+const PublicMatchesPage = React.lazy(() => import('./pages/PublicMatchesPage.jsx'));
 
 class ErrorBoundary extends React.Component {
   constructor(props) { super(props); this.state = { hasError: false }; }
@@ -85,6 +86,7 @@ export default function App() {
       <Routes>
         <Route path="/login" element={<LoginPage />} />
         <Route path="/kvittra/login" element={<Suspense fallback={fallback}><KvittraLoginPage /></Suspense>} />
+        <Route path="/public" element={<Suspense fallback={fallback}><PublicMatchesPage /></Suspense>} />
         <Route path="/register/:token" element={<RegisterPage />} />
         <Route
           path="/"

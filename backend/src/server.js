@@ -11,6 +11,7 @@ import cookieParser from 'cookie-parser';
 import path from 'path';
 import { fileURLToPath } from 'url';
 
+import prisma from './config/database.js';
 import { generalLimiter } from './middleware/rateLimiter.js';
 import { errorHandler, notFoundHandler } from './middleware/errorHandler.js';
 import logger from './utils/logger.js';
@@ -138,6 +139,24 @@ app.get('/api/admin/switch-users', authenticateToken, (req, res) => adminControl
 app.get('/api/kvittra/org/:slug', authenticateToken, (req, res) => kvittraOrgController.getOrg(req, res));
 app.get('/api/kvittra/features/:slug', authenticateToken, (req, res) => kvittraOrgController.getFeatures(req, res));
 app.get('/api/kvittra/orgs', authenticateToken, (req, res) => kvittraOrgController.listMyOrgs(req, res));
+
+// Publik API (ingen auth krävs)
+app.get('/api/public/matches', async (req, res) => {
+  try {
+    // Försök kvittra-schemat först, fallback till legacy
+    let matches = [];
+    try {
+      matches = await prisma.$queryRawUnsafe(
+        `SELECT id, title, match_date as "matchDate" FROM kvittra.matches WHERE visibility = 'public' ORDER BY match_date DESC LIMIT 50`
+      );
+    } catch {
+      // Kvittra-schemat finns inte ännu — returnera tom lista
+    }
+    res.json({ matches });
+  } catch {
+    res.json({ matches: [] });
+  }
+});
 
 // Thumbnail-bibliotek
 app.get('/api/thumbnail-library', authenticateToken, requireAdmin, thumbnailController.list);
