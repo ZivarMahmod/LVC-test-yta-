@@ -9,6 +9,8 @@ import LoginPage from './pages/LoginPage.jsx';
 import RegisterPage from './pages/RegisterPage.jsx';
 const KvittraLoginPage = React.lazy(() => import('./pages/KvittraLoginPage.jsx'));
 const PublicMatchesPage = React.lazy(() => import('./pages/PublicMatchesPage.jsx'));
+const LandingPage = React.lazy(() => import('./pages/LandingPage.jsx'));
+const SuperAdminPage = React.lazy(() => import('./pages/SuperAdminPage.jsx'));
 
 class ErrorBoundary extends React.Component {
   constructor(props) { super(props); this.state = { hasError: false }; }
@@ -87,6 +89,12 @@ export default function App() {
         <Route path="/login" element={<LoginPage />} />
         <Route path="/kvittra/login" element={<Suspense fallback={fallback}><KvittraLoginPage /></Suspense>} />
         <Route path="/public" element={<Suspense fallback={fallback}><PublicMatchesPage /></Suspense>} />
+        <Route path="/landing" element={<Suspense fallback={fallback}><LandingPage /></Suspense>} />
+        <Route path="/superadmin" element={
+          <ProtectedRoute requiredRole="admin">
+            <Suspense fallback={fallback}><SuperAdminPage /></Suspense>
+          </ProtectedRoute>
+        } />
         <Route path="/register/:token" element={<RegisterPage />} />
         <Route
           path="/"

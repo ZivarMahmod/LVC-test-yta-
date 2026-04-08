@@ -1,0 +1,69 @@
+/* =============================================
+   Kvittra — Superadmin
+   ============================================= */
+.sa-page {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 20px 16px;
+  color: #f1f5f9;
+}
+.sa-denied { text-align: center; padding: 80px; color: #ef4444; font-size: 18px; }
+.sa-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; }
+.sa-logo { display: flex; align-items: center; gap: 14px; }
+.sa-logo-icon { width: 44px; height: 44px; background: linear-gradient(135deg, #3b82f6, #8b5cf6); border-radius: 11px; display: inline-flex; align-items: center; justify-content: center; font-size: 22px; font-weight: 800; color: #fff; }
+.sa-header h1 { font-size: 22px; margin: 0; }
+.sa-header p { font-size: 13px; color: #64748b; margin: 2px 0 0; }
+
+.sa-message { background: rgba(34,197,94,0.1); border: 1px solid rgba(34,197,94,0.3); color: #4ade80; padding: 10px; border-radius: 8px; text-align: center; margin-bottom: 16px; font-size: 13px; }
+
+.sa-tabs { display: flex; gap: 4px; margin-bottom: 20px; }
+.sa-tab { background: #1e293b; border: 1px solid #334155; color: #94a3b8; padding: 8px 18px; border-radius: 8px; cursor: pointer; font-size: 13px; font-weight: 500; transition: all 0.15s; }
+.sa-tab:hover { background: #334155; color: #e2e8f0; }
+.sa-tab--active { background: #3b82f6; border-color: #3b82f6; color: #fff; }
+
+.sa-section { background: #1e293b; border-radius: 12px; padding: 20px; }
+.sa-section h2 { font-size: 18px; margin: 0 0 4px; }
+.sa-desc { font-size: 13px; color: #64748b; margin: 0 0 16px; }
+.sa-empty { color: #475569; font-size: 14px; }
+
+/* Orgs */
+.sa-org-list { display: flex; flex-direction: column; gap: 8px; }
+.sa-org-card { display: flex; justify-content: space-between; align-items: center; padding: 14px; background: #0f172a; border-radius: 10px; }
+.sa-org-name { font-weight: 600; font-size: 15px; display: block; }
+.sa-org-meta { font-size: 12px; color: #64748b; }
+.sa-org-badge { background: rgba(34,197,94,0.15); color: #4ade80; padding: 3px 10px; border-radius: 6px; font-size: 11px; font-weight: 600; }
+
+/* Users */
+.sa-users-list { display: flex; flex-direction: column; gap: 4px; }
+.sa-user-row { display: flex; align-items: center; gap: 12px; padding: 10px 14px; background: #0f172a; border-radius: 8px; }
+.sa-user-info { flex: 1; }
+.sa-user-name { font-weight: 500; font-size: 14px; display: block; }
+.sa-user-email { font-size: 12px; color: #64748b; }
+.sa-role-badge { padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 600; background: #334155; color: #94a3b8; }
+.sa-role-admin { background: rgba(239,68,68,0.15); color: #f87171; }
+.sa-role-coach { background: rgba(59,130,246,0.15); color: #60a5fa; }
+.sa-role-uploader { background: rgba(245,158,11,0.15); color: #fbbf24; }
+.sa-status { font-size: 11px; }
+.sa-status--active { color: #22c55e; }
+.sa-status--inactive { color: #ef4444; }
+
+/* Features */
+.sa-feature-list { display: flex; flex-direction: column; gap: 6px; }
+.sa-feature-row { display: flex; justify-content: space-between; align-items: center; padding: 12px 14px; background: #0f172a; border-radius: 8px; }
+.sa-feature-info { flex: 1; }
+.sa-feature-name { font-weight: 600; font-size: 14px; display: block; }
+.sa-feature-desc { font-size: 12px; color: #64748b; }
+.sa-feature-status { font-size: 11px; font-weight: 600; padding: 3px 10px; border-radius: 6px; }
+.sa-feature-status--on { background: rgba(34,197,94,0.15); color: #4ade80; }
+.sa-feature-status--off { background: rgba(239,68,68,0.15); color: #f87171; }
+
+/* Stats */
+.sa-stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 12px; }
+.sa-stat-card { background: #0f172a; border-radius: 10px; padding: 20px; text-align: center; }
+.sa-stat-value { font-size: 32px; font-weight: 800; color: #3b82f6; display: block; }
+.sa-stat-label { font-size: 12px; color: #64748b; margin-top: 4px; }
+
+@media (max-width: 640px) {
+  .sa-tabs { overflow-x: auto; }
+  .sa-user-row { flex-wrap: wrap; gap: 6px; }
+}
