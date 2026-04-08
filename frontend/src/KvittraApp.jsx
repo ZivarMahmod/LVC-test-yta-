@@ -41,6 +41,9 @@ const InboxPage = React.lazy(() => import('./pages/InboxPage.jsx'));
 const PlayerStatsPage = React.lazy(() => import('./pages/PlayerStatsPage.jsx'));
 const MultiScoutPage = React.lazy(() => import('./pages/MultiScoutPage.jsx'));
 const AnalysisPage = React.lazy(() => import('./pages/AnalysisPage.jsx'));
+const PlayerComparisonPage = React.lazy(() => import('./pages/PlayerComparisonPage.jsx'));
+const SuperadminPage = React.lazy(() => import('./pages/SuperadminPage.jsx'));
+const LandingPage = React.lazy(() => import('./pages/LandingPage.jsx'));
 
 // Protected route that checks org membership and roles
 function ProtectedRoute({ children, requiredRoles }) {
@@ -101,21 +104,32 @@ export default function KvittraApp() {
   if (isLandingPage) {
     return (
       <ErrorBoundary>
-        <Routes>
-          <Route path="/login" element={<KvittraLoginPage />} />
-          <Route path="*" element={<KvittraLoginPage />} />
-        </Routes>
+        <Suspense fallback={fallback}>
+          <Routes>
+            <Route path="/login" element={<KvittraLoginPage />} />
+            <Route path="/" element={<LandingPage />} />
+            <Route path="*" element={<LandingPage />} />
+          </Routes>
+        </Suspense>
       </ErrorBoundary>
     );
   }
 
-  // filipadmin.kvittra.se → superadmin (placeholder)
+  // filipadmin.kvittra.se → superadmin
   if (isSuperadmin) {
     return (
       <ErrorBoundary>
-        <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#0a1628', color: '#f4f5f7' }}>
-          <h1>Superadmin — Under uppbyggnad</h1>
-        </div>
+        <Suspense fallback={fallback}>
+          <Routes>
+            <Route path="/login" element={<KvittraLoginPage />} />
+            <Route path="/" element={
+              <ProtectedRoute>
+                <SuperadminPage />
+              </ProtectedRoute>
+            } />
+            <Route path="*" element={<Navigate to="/" replace />} />
+          </Routes>
+        </Suspense>
       </ErrorBoundary>
     );
   }
@@ -147,6 +161,14 @@ export default function KvittraApp() {
             <Route path="player/:playerId" element={<PlayerStatsPage />} />
             <Route path="changelog" element={<ChangelogPage />} />
             <Route path="inbox" element={<InboxPage />} />
+            <Route
+              path="jamfor"
+              element={
+                <ProtectedRoute requiredRoles={['admin', 'coach']}>
+                  <PlayerComparisonPage />
+                </ProtectedRoute>
+              }
+            />
             <Route
               path="upload"
               element={
