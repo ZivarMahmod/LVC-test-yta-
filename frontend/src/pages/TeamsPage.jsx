@@ -7,6 +7,7 @@ import { useNavigate } from 'react-router-dom';
 import { teamApi, teamAdminApi } from '../utils/api.js';
 import { useAuth } from '../context/AuthContext.jsx';
 import React from 'react';
+import SetupWizard from '../components/SetupWizard.jsx';
 import './TeamsPage.css';
 
 export default function TeamsPage() {
@@ -53,33 +54,17 @@ export default function TeamsPage() {
       <h1 className="teams-title">Välj lag</h1>
       {teams.length === 0 ? (
         <div className="teams-empty">
-          <div className="teams-onboarding">
-            <h2>Välkommen till LVC Media Hub</h2>
-            <p>Kom igång med volleybollanalys i 3 steg:</p>
-            <div className="teams-steps">
-              <div className="teams-step" onClick={() => isAdmin && navigate('/admin')}>
-                <span className="teams-step-num">1</span>
-                <div>
-                  <strong>Skapa lag & säsong</strong>
-                  <p>Gå till Admin → Lag & Säsonger</p>
-                </div>
-              </div>
-              <div className="teams-step" onClick={() => navigate('/upload')}>
-                <span className="teams-step-num">2</span>
-                <div>
-                  <strong>Ladda upp en match</strong>
-                  <p>Video + DVW scout-fil</p>
-                </div>
-              </div>
-              <div className="teams-step">
-                <span className="teams-step-num">3</span>
-                <div>
-                  <strong>Analysera</strong>
-                  <p>Heatmaps, statistik, spelarjämförelse</p>
-                </div>
-              </div>
+          {isAdmin ? (
+            <SetupWizard onComplete={async () => {
+              const data = await teamApi.listTeams();
+              setTeams(data.teams);
+            }} />
+          ) : (
+            <div className="teams-onboarding">
+              <h2>Välkommen till Kvittra</h2>
+              <p>Inga lag har skapats ännu. Kontakta din admin.</p>
             </div>
-          </div>
+          )}
         </div>
       ) : (
         <div className="teams-grid">
