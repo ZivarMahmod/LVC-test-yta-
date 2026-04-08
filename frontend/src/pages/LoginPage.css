@@ -60,3 +60,71 @@
   font-size: 0.78rem;
   color: var(--text-muted);
 }
+
+/* Kvittra login extras */
+.login-email-display {
+  text-align: center;
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+  margin-bottom: var(--space-md);
+  padding: var(--space-sm) var(--space-md);
+  background: rgba(255,255,255,0.05);
+  border-radius: var(--radius-sm);
+}
+
+.login-otp-info {
+  text-align: center;
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+  margin-bottom: var(--space-lg);
+  line-height: 1.5;
+}
+
+.btn-link.login-back {
+  display: block;
+  width: 100%;
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  font-size: 0.85rem;
+  padding: var(--space-sm);
+  cursor: pointer;
+  margin-top: var(--space-xs);
+  text-align: center;
+}
+.btn-link.login-back:hover {
+  color: var(--text-secondary);
+}
+
+.org-picker-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+}
+
+.org-picker-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+  padding: var(--space-md) var(--space-lg);
+  background: rgba(255,255,255,0.05);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-md);
+  color: var(--text-primary);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+.org-picker-item:hover {
+  background: rgba(255,255,255,0.1);
+  border-color: var(--brand-primary, var(--lvc-blue));
+}
+.org-picker-name {
+  font-weight: 600;
+  font-size: 1rem;
+}
+.org-picker-roles {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  text-transform: capitalize;
+}
