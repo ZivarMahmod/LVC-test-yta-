@@ -328,6 +328,43 @@ export function calculateMatchTrend(matchStats) {
 }
 
 /**
+ * Konsistensmetrik — hur stabil är spelarens prestation?
+ */
+export function calculateConsistency(matchStats) {
+  if (matchStats.length < 2) return null;
+
+  const pts = matchStats.map(m => m.stats.totalPts);
+  const kills = matchStats.filter(m => m.stats.attack.total >= 3).map(m => Math.round((m.stats.attack.pts / m.stats.attack.total) * 100));
+  const rec = matchStats.filter(m => m.stats.reception.total >= 3).map(m => Math.round((m.stats.reception.pos / m.stats.reception.total) * 100));
+
+  const stdDev = (arr) => {
+    if (arr.length < 2) return 0;
+    const mean = arr.reduce((a, b) => a + b, 0) / arr.length;
+    const variance = arr.reduce((sum, v) => sum + (v - mean) ** 2, 0) / arr.length;
+    return Math.round(Math.sqrt(variance) * 10) / 10;
+  };
+
+  const bestWorst = (arr) => {
+    if (arr.length === 0) return { best: 0, worst: 0, diff: 0 };
+    return { best: Math.max(...arr), worst: Math.min(...arr), diff: Math.max(...arr) - Math.min(...arr) };
+  };
+
+  // Formkurva (senaste 3 vs alla)
+  const recentPts = pts.slice(0, 3);
+  const allAvgPts = pts.reduce((a, b) => a + b, 0) / pts.length;
+  const recentAvgPts = recentPts.length > 0 ? recentPts.reduce((a, b) => a + b, 0) / recentPts.length : 0;
+  const formTrend = allAvgPts > 0 ? Math.round(((recentAvgPts - allAvgPts) / allAvgPts) * 100) : 0;
+
+  return {
+    points: { stdDev: stdDev(pts), ...bestWorst(pts), avg: Math.round(allAvgPts * 10) / 10 },
+    killPct: kills.length >= 2 ? { stdDev: stdDev(kills), ...bestWorst(kills) } : null,
+    recPosPct: rec.length >= 2 ? { stdDev: stdDev(rec), ...bestWorst(rec) } : null,
+    formTrend,
+    formLabel: formTrend > 10 ? 'Uppåt' : formTrend < -10 ? 'Nedåt' : 'Stabil',
+  };
+}
+
+/**
  * Jämför spelarens statistik med laggenomsnitt
  */
 export function calculateTeamComparison(playerStats, teamPlayerStats) {

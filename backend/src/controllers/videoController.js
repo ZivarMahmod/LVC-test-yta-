@@ -8,7 +8,7 @@ import path from 'path';
 import { mkdir, unlink, stat as fsStat } from 'fs/promises';
 import logger from '../utils/logger.js';
 import { formatVideoTitle } from '../utils/formatTitle.js';
-import { calculateAdvancedStats, calculateMatchTrend, calculateTeamComparison } from '../services/statsEngine.js';
+import { calculateAdvancedStats, calculateMatchTrend, calculateTeamComparison, calculateConsistency } from '../services/statsEngine.js';
 
 export const videoController = {
 
@@ -851,6 +851,7 @@ export const playerStatsController = {
       const advanced = calculateAdvancedStats(allPlayerActions, [], scoreboards);
       const trends = calculateMatchTrend(matches);
       const teamComparison = calculateTeamComparison(totals, [...teamPlayersMap.values()]);
+      const consistency = calculateConsistency(matches);
 
       // Koordinat-data för precisionsheatmap (slimmat — bara det som behövs)
       const coordActions = allPlayerActions
@@ -876,6 +877,7 @@ export const playerStatsController = {
           ...advanced,
           trends,
           teamComparison,
+          consistency,
         }
       });
     } catch (error) {

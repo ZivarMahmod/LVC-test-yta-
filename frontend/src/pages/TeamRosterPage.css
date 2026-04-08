@@ -23,6 +23,19 @@
   margin-bottom: 20px;
 }
 .tr-header h1 { font-size: 22px; margin: 0; }
+.tr-compare-btn {
+  background: #3b82f6;
+  color: #fff;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.tr-compare-btn:hover { background: #2563eb; }
+.tr-controls { display: flex; gap: 8px; align-items: center; }
 .tr-select {
   background: #1e293b;
   color: #e2e8f0;

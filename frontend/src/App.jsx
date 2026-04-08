@@ -40,6 +40,7 @@ const PlayerStatsPage = React.lazy(() => import('./pages/PlayerStatsPage.jsx'));
 const MultiScoutPage = React.lazy(() => import('./pages/MultiScoutPage.jsx'));
 const AnalysisPage = React.lazy(() => import('./pages/AnalysisPage.jsx'));
 const TeamRosterPage = React.lazy(() => import('./pages/TeamRosterPage.jsx'));
+const ComparePlayersPage = React.lazy(() => import('./pages/ComparePlayersPage.jsx'));
 
 function ProtectedRoute({ children, requiredRole }) {
   const { user, loading } = useAuth();
@@ -100,6 +101,7 @@ export default function App() {
           <Route path="analys" element={<AnalysisPage />} />
           <Route path="roster" element={<TeamRosterPage />} />
           <Route path="roster/:teamId" element={<TeamRosterPage />} />
+          <Route path="compare" element={<ComparePlayersPage />} />
           <Route path="player/:playerId" element={<PlayerStatsPage />} />
           <Route path="changelog" element={<ChangelogPage />} />
           <Route path="inbox" element={<InboxPage />} />

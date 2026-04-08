@@ -122,6 +122,7 @@ export default function TeamRosterPage() {
       <div className="tr-header">
         <h1>Lagöversikt</h1>
         <div className="tr-controls">
+          <button className="tr-compare-btn" onClick={() => navigate('/compare')}>Jämför spelare</button>
           <select className="tr-select" value={selectedTeam} onChange={e => setSelectedTeam(e.target.value)}>
             <option value="all">Alla lag</option>
             {teams.map(t => (

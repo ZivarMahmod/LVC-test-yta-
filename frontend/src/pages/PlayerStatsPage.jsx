@@ -348,6 +348,50 @@ export default function PlayerStatsPage() {
           </div>
 
           <SkillDetailPanel skillDetails={advanced?.skillDetails} />
+
+          {/* Konsistens & Form */}
+          {advanced?.consistency && (
+            <div className="psp-section">
+              <h2>Konsistens & Form</h2>
+              <div className="psp-consistency-grid">
+                <div className="psp-cons-card">
+                  <div className="psp-cons-label">Formkurva</div>
+                  <div className="psp-cons-value" style={{
+                    color: advanced.consistency.formTrend > 10 ? '#22c55e' : advanced.consistency.formTrend < -10 ? '#ef4444' : '#eab308'
+                  }}>
+                    {advanced.consistency.formTrend > 0 ? '+' : ''}{advanced.consistency.formTrend}%
+                  </div>
+                  <div className="psp-cons-desc">{advanced.consistency.formLabel} (senaste 3 matcher vs snitt)</div>
+                </div>
+                <div className="psp-cons-card">
+                  <div className="psp-cons-label">Poäng/match</div>
+                  <div className="psp-cons-value">{advanced.consistency.points.avg}</div>
+                  <div className="psp-cons-desc">
+                    Bäst: {advanced.consistency.points.best} | Sämst: {advanced.consistency.points.worst} | Spridning: {advanced.consistency.points.stdDev}
+                  </div>
+                </div>
+                {advanced.consistency.killPct && (
+                  <div className="psp-cons-card">
+                    <div className="psp-cons-label">Kill% variation</div>
+                    <div className="psp-cons-value">{advanced.consistency.killPct.stdDev}</div>
+                    <div className="psp-cons-desc">
+                      Bäst: {advanced.consistency.killPct.best}% | Sämst: {advanced.consistency.killPct.worst}% | Diff: {advanced.consistency.killPct.diff}%
+                    </div>
+                  </div>
+                )}
+                {advanced.consistency.recPosPct && (
+                  <div className="psp-cons-card">
+                    <div className="psp-cons-label">Mottagning variation</div>
+                    <div className="psp-cons-value">{advanced.consistency.recPosPct.stdDev}</div>
+                    <div className="psp-cons-desc">
+                      Bäst: {advanced.consistency.recPosPct.best}% | Sämst: {advanced.consistency.recPosPct.worst}% | Diff: {advanced.consistency.recPosPct.diff}%
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
           <TeamComparison comparison={advanced?.teamComparison} />
         </>
       )}

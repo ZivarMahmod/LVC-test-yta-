@@ -255,6 +255,21 @@
 .psp-match-stats { display: flex; gap: 12px; font-size: 12px; color: #94a3b8; }
 .psp-match-pts { color: #22c55e; font-weight: 600; }
 
+/* ===== Consistency ===== */
+.psp-consistency-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 10px;
+}
+.psp-cons-card {
+  background: #0f172a;
+  border-radius: 10px;
+  padding: 14px;
+}
+.psp-cons-label { font-size: 12px; color: #64748b; margin-bottom: 4px; }
+.psp-cons-value { font-size: 24px; font-weight: 800; color: #f1f5f9; }
+.psp-cons-desc { font-size: 11px; color: #475569; margin-top: 4px; }
+
 /* ===== Set Analysis ===== */
 .psp-set-grid {
   display: grid;
