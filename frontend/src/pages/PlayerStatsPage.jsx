@@ -6,6 +6,7 @@ import { useState, useEffect } from 'react';
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { playerStatsApi } from '../utils/api.js';
 import PrecisionHeatmap from '../components/player/PrecisionHeatmap.jsx';
+import PlayerHero from '../components/player/PlayerHero.jsx';
 import './PlayerStatsPage.css';
 
 const pct = (num, den) => den > 0 ? Math.round((num / den) * 100) : 0;
@@ -305,24 +306,8 @@ export default function PlayerStatsPage() {
     <div className="psp-container">
       <button className="psp-back" onClick={() => navigate(-1)}>Tillbaka</button>
 
-      {/* Header */}
-      <div className="psp-header">
-        <div className="psp-header-info">
-          <h1>
-            {player.jerseyNumber && <span className="psp-jersey">#{player.jerseyNumber}</span>}
-            {player.name}
-          </h1>
-          <p>{data.matchCount} matcher | {advanced?.overview?.totalActions || 0} aktioner</p>
-        </div>
-        {advanced?.overview && (
-          <div className="psp-header-badge">
-            <span className="psp-eff-badge" style={{ color: advanced.overview.efficiency >= 30 ? '#22c55e' : advanced.overview.efficiency >= 0 ? '#eab308' : '#ef4444' }}>
-              {advanced.overview.efficiency}%
-            </span>
-            <span className="psp-eff-label">total eff.</span>
-          </div>
-        )}
-      </div>
+      {/* Hero Section */}
+      <PlayerHero player={player} totals={totals} matchCount={data.matchCount} />
 
       {/* Tabs */}
       <div className="psp-tabs">
