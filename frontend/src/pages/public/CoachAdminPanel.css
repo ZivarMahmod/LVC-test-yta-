@@ -1,0 +1,352 @@
+/* ─── Coach & Admin Panel ─── */
+
+.coach-admin-panel {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 2rem 1.5rem;
+}
+
+.cap-heading {
+  font-size: 1.6rem;
+  font-weight: 700;
+  color: var(--lvc-white);
+  margin: 0 0 1.5rem;
+}
+
+/* ─── Tabs ─── */
+
+.panel-tabs {
+  display: flex;
+  gap: 0.25rem;
+  border-bottom: 2px solid var(--border-default);
+  margin-bottom: 1.5rem;
+}
+
+.panel-tab {
+  padding: 0.6rem 1.2rem;
+  background: none;
+  border: none;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -2px;
+  color: var(--lvc-gray-400);
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: color 0.2s, border-color 0.2s;
+  white-space: nowrap;
+}
+
+.panel-tab:hover {
+  color: var(--lvc-white);
+}
+
+.panel-tab.active {
+  color: var(--org-primary, var(--lvc-blue-light));
+  border-bottom-color: var(--org-primary, var(--lvc-blue-light));
+}
+
+/* ─── Shared ─── */
+
+.cap-loading {
+  display: flex;
+  justify-content: center;
+  padding: 3rem;
+}
+
+.cap-empty {
+  text-align: center;
+  padding: 3rem 1rem;
+  color: var(--lvc-gray-400);
+  font-size: 0.95rem;
+}
+
+.cap-tab-content {
+  min-height: 300px;
+}
+
+/* ─── Table ─── */
+
+.cap-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+}
+
+.cap-table thead th {
+  text-align: left;
+  padding: 0.6rem 0.75rem;
+  color: var(--lvc-gray-400);
+  font-weight: 600;
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  border-bottom: 1px solid var(--border-default);
+}
+
+.cap-table tbody tr {
+  border-bottom: 1px solid var(--border-default);
+  transition: background 0.15s;
+}
+
+.cap-table tbody tr:hover {
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.cap-table td {
+  padding: 0.65rem 0.75rem;
+  color: var(--lvc-white);
+  vertical-align: middle;
+}
+
+.cap-cell-title {
+  font-weight: 500;
+}
+
+.cap-row-inactive {
+  opacity: 0.5;
+}
+
+/* ─── Badges ─── */
+
+.cap-badge {
+  display: inline-block;
+  padding: 0.2rem 0.6rem;
+  border-radius: 9999px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+
+.cap-badge--public {
+  background: rgba(26, 95, 180, 0.2);
+  color: var(--lvc-blue-light);
+}
+
+.cap-badge--internal {
+  background: rgba(232, 168, 37, 0.15);
+  color: var(--lvc-gold);
+}
+
+.cap-badge--active {
+  background: rgba(46, 194, 126, 0.15);
+  color: #2ec27e;
+}
+
+.cap-badge--inactive {
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--lvc-gray-400);
+}
+
+/* ─── Buttons ─── */
+
+.cap-link-btn {
+  display: inline-block;
+  padding: 0.3rem 0.75rem;
+  background: var(--lvc-blue);
+  color: var(--lvc-white);
+  border-radius: 6px;
+  font-size: 0.8rem;
+  font-weight: 500;
+  text-decoration: none;
+  transition: background 0.2s;
+}
+
+.cap-link-btn:hover {
+  background: var(--lvc-blue-light);
+}
+
+.cap-toggle-btn {
+  padding: 0.3rem 0.85rem;
+  background: var(--surface-raised);
+  border: 1px solid var(--border-default);
+  color: var(--lvc-white);
+  border-radius: 6px;
+  font-size: 0.8rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.2s, border-color 0.2s;
+}
+
+.cap-toggle-btn:hover:not(:disabled) {
+  border-color: var(--org-primary, var(--lvc-blue));
+  background: rgba(26, 95, 180, 0.12);
+}
+
+.cap-toggle-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* ─── Roles chips ─── */
+
+.cap-roles {
+  display: flex;
+  gap: 0.35rem;
+  flex-wrap: wrap;
+}
+
+.cap-role-chip {
+  display: inline-block;
+  padding: 0.15rem 0.5rem;
+  background: rgba(255, 255, 255, 0.07);
+  border-radius: 4px;
+  font-size: 0.75rem;
+  color: var(--lvc-gray-300);
+  font-weight: 500;
+}
+
+/* ─── Player Comparison ─── */
+
+.cap-comparison {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.cap-comparison-selectors {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.cap-comparison-selectors select {
+  flex: 1;
+  min-width: 180px;
+  padding: 0.55rem 0.75rem;
+  background: var(--surface-raised);
+  border: 1px solid var(--border-default);
+  border-radius: 8px;
+  color: var(--lvc-white);
+  font-size: 0.9rem;
+  cursor: pointer;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath fill='%239ca3af' d='M1 1l5 5 5-5'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 0.75rem center;
+  padding-right: 2rem;
+}
+
+.cap-comparison-selectors select:focus {
+  outline: none;
+  border-color: var(--org-primary, var(--lvc-blue));
+}
+
+.cap-vs {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--lvc-gray-500);
+  text-transform: uppercase;
+}
+
+.cap-comparison-grid {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  gap: 0;
+  background: var(--surface-raised);
+  border: 1px solid var(--border-default);
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.cap-stat-col {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 1.25rem 1rem;
+  gap: 1rem;
+}
+
+.cap-stat-player-name {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--org-primary, var(--lvc-blue-light));
+  text-align: center;
+  min-height: 1.4em;
+}
+
+.cap-stat-value {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: var(--lvc-white);
+  min-height: 1.4em;
+}
+
+.cap-stat-empty {
+  color: var(--lvc-gray-600);
+}
+
+.cap-comparison-labels {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 1.25rem 1.5rem;
+  gap: 1rem;
+  border-left: 1px solid var(--border-default);
+  border-right: 1px solid var(--border-default);
+  color: var(--lvc-gray-400);
+  font-size: 0.8rem;
+}
+
+.cap-stat-label-header {
+  font-weight: 600;
+  color: var(--lvc-gray-300);
+  font-size: 0.85rem;
+  min-height: 1.4em;
+}
+
+.cap-comparison-labels span {
+  min-height: 1.4em;
+  display: flex;
+  align-items: center;
+}
+
+/* ─── Responsive ─── */
+
+@media (max-width: 768px) {
+  .coach-admin-panel {
+    padding: 1.25rem 1rem;
+  }
+
+  .panel-tabs {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .panel-tab {
+    padding: 0.5rem 0.85rem;
+    font-size: 0.82rem;
+  }
+
+  .cap-table {
+    font-size: 0.82rem;
+  }
+
+  .cap-table thead th,
+  .cap-table td {
+    padding: 0.5rem;
+  }
+
+  .cap-comparison-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .cap-comparison-labels {
+    border-left: none;
+    border-right: none;
+    border-top: 1px solid var(--border-default);
+    border-bottom: 1px solid var(--border-default);
+    flex-direction: row;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 0.5rem;
+    padding: 0.75rem;
+  }
+
+  .cap-stat-col {
+    flex-direction: row;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 0.75rem;
+  }
+}

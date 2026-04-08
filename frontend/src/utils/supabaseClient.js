@@ -10,3 +10,8 @@ if (!supabaseUrl || !supabaseAnonKey) {
 }
 
 export const supabase = createClient(supabaseUrl, supabaseAnonKey);
+
+// Separate client for kvittra schema
+export const supabaseKvittra = createClient(supabaseUrl, supabaseAnonKey, {
+  db: { schema: 'kvittra' }
+});

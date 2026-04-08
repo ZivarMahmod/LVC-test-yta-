@@ -1,0 +1,148 @@
+.public-loading {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  background: var(--surface-base);
+}
+
+.public-error {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  background: var(--surface-base);
+  color: var(--lvc-white);
+  gap: 0.5rem;
+}
+
+.public-error h1 {
+  font-size: 4rem;
+  font-weight: 700;
+  color: var(--org-primary, var(--lvc-blue));
+  margin: 0;
+}
+
+.public-error p {
+  color: var(--lvc-gray-300);
+  font-size: 1.1rem;
+}
+
+.public-error a {
+  margin-top: 1rem;
+  color: var(--org-primary, var(--lvc-blue-light));
+}
+
+/* Layout */
+.public-layout {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background: var(--surface-base);
+  color: var(--lvc-white);
+}
+
+/* Header */
+.public-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.75rem 1.5rem;
+  background: var(--surface-raised);
+  border-bottom: 1px solid var(--border-default);
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+
+.public-header-brand {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  text-decoration: none;
+  color: var(--lvc-white);
+}
+
+.public-header-logo {
+  width: 40px;
+  height: 40px;
+  border-radius: 8px;
+  object-fit: contain;
+}
+
+.public-header-logo-placeholder {
+  width: 40px;
+  height: 40px;
+  border-radius: 8px;
+  background: var(--org-primary, var(--lvc-blue));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 1.2rem;
+  color: white;
+}
+
+.public-header-name {
+  font-size: 1.2rem;
+  font-weight: 600;
+}
+
+.public-header-nav {
+  display: flex;
+  gap: 1.5rem;
+}
+
+.public-header-nav a {
+  color: var(--lvc-gray-300);
+  text-decoration: none;
+  font-size: 0.9rem;
+  font-weight: 500;
+  transition: color 0.15s;
+}
+
+.public-header-nav a:hover {
+  color: var(--lvc-white);
+}
+
+/* Main */
+.public-main {
+  flex: 1;
+  padding: 2rem 1.5rem;
+  max-width: 1100px;
+  width: 100%;
+  margin: 0 auto;
+}
+
+/* Footer */
+.public-footer {
+  text-align: center;
+  padding: 1.5rem;
+  color: var(--lvc-gray-500);
+  font-size: 0.8rem;
+  border-top: 1px solid var(--border-default);
+}
+
+.public-footer a {
+  color: var(--org-primary, var(--lvc-blue-light));
+  text-decoration: none;
+}
+
+.public-footer a:hover {
+  text-decoration: underline;
+}
+
+@media (max-width: 768px) {
+  .public-header {
+    padding: 0.5rem 1rem;
+  }
+
+  .public-main {
+    padding: 1rem;
+  }
+
+  .public-header-name {
+    font-size: 1rem;
+  }
+}

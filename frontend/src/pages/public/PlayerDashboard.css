@@ -1,0 +1,388 @@
+/* ===========================================
+   LVC Media Hub — Player Dashboard
+   =========================================== */
+
+/* ── Container ── */
+.pd-container {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 24px 16px 60px;
+  font-family: var(--font-body, 'DM Sans', sans-serif);
+  color: var(--lvc-white, #f4f5f7);
+}
+
+/* ── Loading / Error ── */
+.pd-loading,
+.pd-error {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 40vh;
+  text-align: center;
+  padding: 40px 20px;
+  color: var(--lvc-gray-400, #94a3b8);
+  font-family: var(--font-body, 'DM Sans', sans-serif);
+}
+
+.pd-error h2 {
+  color: #ef4444;
+  font-size: 1.25rem;
+  margin: 0 0 8px;
+}
+
+.pd-error p {
+  color: var(--lvc-gray-400, #94a3b8);
+  margin: 0;
+}
+
+.pd-loading p {
+  margin-top: 12px;
+  font-size: 0.9rem;
+}
+
+.pd-empty-text {
+  color: var(--lvc-gray-400, #94a3b8);
+  font-size: 0.9rem;
+  text-align: center;
+  padding: 24px 0;
+  margin: 0;
+}
+
+/* ── Hero Section ── */
+.pd-hero {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  padding: 28px 24px;
+  background: var(--surface-raised, #111f3a);
+  border: 1px solid var(--border-default, rgba(255, 255, 255, 0.08));
+  border-radius: 16px;
+  margin-bottom: 28px;
+}
+
+.pd-hero-photo-wrap {
+  flex-shrink: 0;
+}
+
+.pd-hero-photo {
+  width: 100px;
+  height: 100px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 3px solid var(--org-primary, var(--lvc-blue, #1a5fb4));
+}
+
+.pd-hero-photo-placeholder {
+  width: 100px;
+  height: 100px;
+  border-radius: 50%;
+  background: var(--lvc-gray-700, #334155);
+  border: 3px solid var(--org-primary, var(--lvc-blue, #1a5fb4));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 2rem;
+  font-weight: 700;
+  color: var(--lvc-gray-300, #cbd5e1);
+}
+
+.pd-hero-info {
+  min-width: 0;
+}
+
+.pd-hero-name {
+  font-size: 1.6rem;
+  font-weight: 700;
+  margin: 0 0 6px;
+  line-height: 1.2;
+}
+
+.pd-hero-meta {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.pd-hero-jersey {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--org-primary, var(--lvc-blue-light, #3584e4));
+}
+
+.pd-hero-position {
+  font-size: 0.9rem;
+  color: var(--lvc-gray-400, #94a3b8);
+  background: var(--lvc-gray-800, #1e293b);
+  padding: 2px 10px;
+  border-radius: 20px;
+}
+
+.pd-hero-bio {
+  margin: 10px 0 0;
+  color: var(--lvc-gray-300, #cbd5e1);
+  font-size: 0.9rem;
+  line-height: 1.5;
+}
+
+/* ── Sections ── */
+.pd-section {
+  margin-bottom: 28px;
+}
+
+.pd-section-title {
+  font-size: 1.1rem;
+  font-weight: 600;
+  margin: 0 0 12px;
+  color: var(--lvc-white, #f4f5f7);
+}
+
+.pd-card {
+  background: var(--surface-raised, #111f3a);
+  border: 1px solid var(--border-default, rgba(255, 255, 255, 0.08));
+  border-radius: 12px;
+  padding: 20px;
+}
+
+/* ── Stats Grid ── */
+.pd-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 12px;
+}
+
+.pd-stat-card {
+  background: var(--surface-raised, #111f3a);
+  border: 1px solid var(--border-default, rgba(255, 255, 255, 0.08));
+  border-radius: 12px;
+  padding: 20px 16px;
+  text-align: center;
+  transition: border-color 0.2s, transform 0.15s;
+}
+
+.pd-stat-card:hover {
+  border-color: var(--org-primary, var(--lvc-blue, #1a5fb4));
+  transform: translateY(-2px);
+}
+
+.pd-stat-value {
+  font-size: 1.8rem;
+  font-weight: 700;
+  line-height: 1.2;
+  font-variant-numeric: tabular-nums;
+}
+
+.pd-stat-label {
+  font-size: 0.78rem;
+  color: var(--lvc-gray-400, #94a3b8);
+  margin-top: 6px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+/* ── Season Bar Chart ── */
+.pd-chart {
+  width: 100%;
+  overflow-x: auto;
+}
+
+.pd-chart-bars {
+  display: flex;
+  align-items: flex-end;
+  gap: 8px;
+  height: 180px;
+  padding-top: 24px;
+}
+
+.pd-chart-col {
+  flex: 1;
+  min-width: 40px;
+  max-width: 70px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  height: 100%;
+  justify-content: flex-end;
+}
+
+.pd-chart-count {
+  font-size: 0.72rem;
+  color: var(--lvc-gray-300, #cbd5e1);
+  margin-bottom: 4px;
+  font-variant-numeric: tabular-nums;
+}
+
+.pd-chart-bar {
+  width: 100%;
+  max-width: 36px;
+  min-height: 4px;
+  background: linear-gradient(
+    180deg,
+    var(--org-primary, var(--lvc-blue-light, #3584e4)),
+    var(--lvc-blue, #1a5fb4)
+  );
+  border-radius: 4px 4px 0 0;
+  transition: height 0.6s ease-out;
+}
+
+.pd-chart-label {
+  font-size: 0.68rem;
+  color: var(--lvc-gray-400, #94a3b8);
+  margin-top: 6px;
+  white-space: nowrap;
+  text-transform: capitalize;
+}
+
+/* ── Radar Placeholder ── */
+.pd-radar-placeholder {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 200px;
+  gap: 12px;
+  color: var(--lvc-gray-400, #94a3b8);
+}
+
+.pd-radar-icon {
+  opacity: 0.35;
+  color: var(--lvc-gray-400, #94a3b8);
+}
+
+.pd-radar-placeholder p {
+  margin: 0;
+  font-size: 0.95rem;
+  font-style: italic;
+}
+
+/* ── Recent Actions Table ── */
+.pd-table-wrap {
+  overflow-x: auto;
+}
+
+.pd-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.88rem;
+}
+
+.pd-table th {
+  text-align: left;
+  padding: 8px 12px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--lvc-gray-400, #94a3b8);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  border-bottom: 1px solid var(--border-default, rgba(255, 255, 255, 0.08));
+}
+
+.pd-table td {
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--border-default, rgba(255, 255, 255, 0.08));
+  color: var(--lvc-gray-300, #cbd5e1);
+}
+
+.pd-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.pd-table tbody tr:hover {
+  background: rgba(255, 255, 255, 0.03);
+}
+
+/* Result badges */
+.pd-result {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 0.78rem;
+  font-weight: 600;
+}
+
+.pd-result-perfect {
+  background: rgba(74, 222, 128, 0.15);
+  color: #4ade80;
+}
+
+.pd-result-positive {
+  background: rgba(56, 189, 248, 0.15);
+  color: #38bdf8;
+}
+
+.pd-result-ok {
+  background: rgba(250, 204, 21, 0.15);
+  color: #facc15;
+}
+
+.pd-result-negative {
+  background: rgba(251, 146, 60, 0.15);
+  color: #fb923c;
+}
+
+.pd-result-error {
+  background: rgba(248, 113, 113, 0.15);
+  color: #f87171;
+}
+
+.pd-result-unknown {
+  background: rgba(148, 163, 184, 0.1);
+  color: var(--lvc-gray-400, #94a3b8);
+}
+
+/* Video link */
+.pd-video-link {
+  color: var(--org-primary, var(--lvc-blue-light, #3584e4));
+  text-decoration: none;
+  font-size: 0.82rem;
+  font-weight: 500;
+  white-space: nowrap;
+  transition: color 0.15s;
+}
+
+.pd-video-link:hover {
+  color: var(--lvc-gold, #e8a825);
+  text-decoration: underline;
+}
+
+/* ── Responsive ── */
+@media (max-width: 600px) {
+  .pd-hero {
+    flex-direction: column;
+    text-align: center;
+    padding: 20px 16px;
+    gap: 16px;
+  }
+
+  .pd-hero-meta {
+    justify-content: center;
+  }
+
+  .pd-hero-name {
+    font-size: 1.3rem;
+  }
+
+  .pd-hero-photo,
+  .pd-hero-photo-placeholder {
+    width: 80px;
+    height: 80px;
+    font-size: 1.6rem;
+  }
+
+  .pd-stats-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .pd-stat-value {
+    font-size: 1.4rem;
+  }
+
+  .pd-chart-bars {
+    height: 140px;
+  }
+
+  .pd-chart-col {
+    min-width: 32px;
+  }
+}
