@@ -269,6 +269,32 @@ export const videoController = {
     }
   },
 
+  // Publicera/avpublicera match (admin)
+  async updateVisibility(req, res) {
+    try {
+      const { id } = req.params;
+      const { visibility } = req.body;
+      if (!['internal', 'public'].includes(visibility)) {
+        return res.status(400).json({ error: 'Visibility måste vara "internal" eller "public".' });
+      }
+      const video = await prisma.video.findUnique({ where: { id } });
+      if (!video) return res.status(404).json({ error: 'Videon hittades inte.' });
+
+      // Lagra i matchType-fältet (vi återanvänder befintligt fält)
+      // I framtiden: separat visibility-fält
+      const updated = await prisma.video.update({
+        where: { id },
+        data: { description: visibility === 'public' ? `[PUBLIC] ${(video.description || '').replace('[PUBLIC] ', '')}` : (video.description || '').replace('[PUBLIC] ', '') }
+      });
+
+      logger.info('Synlighet uppdaterad', { videoId: id, visibility });
+      res.json({ visibility, videoId: id });
+    } catch (error) {
+      logger.error('Visibility update-fel:', error);
+      res.status(500).json({ error: 'Kunde inte uppdatera synlighet.' });
+    }
+  },
+
   async list(req, res) {
     try {
       const page = parseInt(req.query.page) || 1;

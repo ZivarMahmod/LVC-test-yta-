@@ -9,6 +9,7 @@ import PrecisionHeatmap from '../components/player/PrecisionHeatmap.jsx';
 import PlayerHero from '../components/player/PlayerHero.jsx';
 import SeasonGraph from '../components/player/SeasonGraph.jsx';
 import RecentActions from '../components/player/RecentActions.jsx';
+import StatsExport from '../components/player/StatsExport.jsx';
 import './PlayerStatsPage.css';
 
 const pct = (num, den) => den > 0 ? Math.round((num / den) * 100) : 0;
@@ -306,7 +307,10 @@ export default function PlayerStatsPage() {
 
   return (
     <div className="psp-container">
-      <button className="psp-back" onClick={() => navigate(-1)}>Tillbaka</button>
+      <div className="psp-topbar">
+        <button className="psp-back" onClick={() => navigate(-1)}>Tillbaka</button>
+        <StatsExport player={player} totals={totals} matchCount={data.matchCount} advanced={advanced} />
+      </div>
 
       {/* Hero Section */}
       <PlayerHero player={player} totals={totals} matchCount={data.matchCount} />

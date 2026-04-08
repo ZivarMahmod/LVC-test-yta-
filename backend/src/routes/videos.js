@@ -103,6 +103,14 @@ router.patch('/:id/title',
   videoController.updateTitle
 );
 
+// Publicera/avpublicera match (admin)
+router.patch('/:id/visibility',
+  authenticateToken,
+  requireAdmin,
+  csrfProtection,
+  videoController.updateVisibility
+);
+
 // Uppdatera offset (admin)
 router.patch('/:id/offset',
   authenticateToken,

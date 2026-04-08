@@ -238,6 +238,14 @@ export const videoApi = {
     if (!res.ok) throw new Error('Kunde inte ladda upp DVW-fil');
     return res.json();
   },
+  async updateVisibility(videoId, visibility) {
+    const res = await apiFetch(`/api/videos/${videoId}/visibility`, {
+      method: 'PATCH',
+      body: JSON.stringify({ visibility })
+    });
+    if (!res.ok) throw new Error('Kunde inte uppdatera synlighet');
+    return res.json();
+  },
   async updateTitle(videoId, title) {
     const res = await apiFetch(`/api/videos/${videoId}/title`, {
       method: 'PATCH',

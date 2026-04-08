@@ -16,6 +16,12 @@
 .psp-error { color: #ef4444; }
 
 /* Back button */
+.psp-topbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
 .psp-back {
   background: #334155;
   color: #94a3b8;
