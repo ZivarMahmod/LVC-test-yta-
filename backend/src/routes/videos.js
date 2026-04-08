@@ -35,6 +35,13 @@ router.get('/player-stats/:playerId',
   playerStatsController.getPlayerHistory
 );
 
+// Lagöversikt — alla spelares nyckeltal
+router.get('/team-roster/:teamId',
+  authenticateToken,
+  requireViewer,
+  playerStatsController.getTeamRoster
+);
+
 // Lista videor
 router.get('/',
   authenticateToken,

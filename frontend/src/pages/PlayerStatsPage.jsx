@@ -5,6 +5,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { playerStatsApi } from '../utils/api.js';
+import PrecisionHeatmap from '../components/player/PrecisionHeatmap.jsx';
 import './PlayerStatsPage.css';
 
 const pct = (num, den) => den > 0 ? Math.round((num / den) * 100) : 0;
@@ -289,7 +290,7 @@ export default function PlayerStatsPage() {
   if (error) return <div className="psp-error">{error}</div>;
   if (!data || data.matchCount === 0) return <div className="psp-empty">Ingen matchdata hittades för denna spelare.</div>;
 
-  const { player, matches, totals, advanced } = data;
+  const { player, matches, totals, advanced, coordActions } = data;
   const tabs = [
     { id: 'overview', label: 'Översikt' },
     { id: 'zones', label: 'Zonanalys' },
@@ -353,16 +354,31 @@ export default function PlayerStatsPage() {
 
       {/* Zonanalys */}
       {activeTab === 'zones' && (
-        <div className="psp-section">
-          <h2>Zonanalys</h2>
-          <p className="psp-section-desc">Var på planen presterar spelaren bäst?</p>
-          <div className="psp-zone-grid">
-            <ZoneHeatmap zones={advanced?.zoneAnalysis?.attack} type="attack" title="Angrepp per zon (Kill%)" />
-            <ZoneHeatmap zones={advanced?.zoneAnalysis?.serve} type="serve" title="Serve landning (Ess%)" />
-            <ZoneHeatmap zones={advanced?.zoneAnalysis?.reception} type="reception" title="Mottagning per zon (Pos%)" />
-            <ZoneHeatmap zones={advanced?.zoneAnalysis?.dig} type="dig" title="Försvar per zon (Pos%)" />
+        <>
+          <div className="psp-section">
+            <h2>Zonanalys</h2>
+            <p className="psp-section-desc">Var på planen presterar spelaren bäst?</p>
+            <div className="psp-zone-grid">
+              <ZoneHeatmap zones={advanced?.zoneAnalysis?.attack} type="attack" title="Angrepp per zon (Kill%)" />
+              <ZoneHeatmap zones={advanced?.zoneAnalysis?.serve} type="serve" title="Serve landning (Ess%)" />
+              <ZoneHeatmap zones={advanced?.zoneAnalysis?.reception} type="reception" title="Mottagning per zon (Pos%)" />
+              <ZoneHeatmap zones={advanced?.zoneAnalysis?.dig} type="dig" title="Försvar per zon (Pos%)" />
+            </div>
           </div>
-        </div>
+
+          {coordActions && coordActions.length > 0 && (
+            <div className="psp-section">
+              <h2>Exakta placeringar</h2>
+              <p className="psp-section-desc">Varje prick = en aktion. Grönt = lyckad, rött = fel. Baserat på DVW-koordinater.</p>
+              <div className="psp-zone-grid">
+                <PrecisionHeatmap actions={coordActions} skillFilter="A" coordType="start" title="Angrepp (startposition)" />
+                <PrecisionHeatmap actions={coordActions} skillFilter="S" coordType="end" title="Serve (landning)" showTrails />
+                <PrecisionHeatmap actions={coordActions} skillFilter="R" coordType="start" title="Mottagning (position)" />
+                <PrecisionHeatmap actions={coordActions} skillFilter="D" coordType="start" title="Försvar (position)" />
+              </div>
+            </div>
+          )}
+        </>
       )}
 
       {/* Utveckling */}

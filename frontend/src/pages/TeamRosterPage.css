@@ -1,0 +1,170 @@
+/* =============================================
+   LVC Media Hub — Team Roster Styles
+   ============================================= */
+.tr-container {
+  max-width: 1000px;
+  margin: 0 auto;
+  padding: 20px 16px;
+  color: #f1f5f9;
+}
+.tr-loading, .tr-error, .tr-empty {
+  text-align: center;
+  padding: 60px 20px;
+  color: #94a3b8;
+  font-size: 16px;
+}
+.tr-error { color: #ef4444; }
+
+/* Header */
+.tr-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+.tr-header h1 { font-size: 22px; margin: 0; }
+.tr-select {
+  background: #1e293b;
+  color: #e2e8f0;
+  border: 1px solid #334155;
+  border-radius: 8px;
+  padding: 8px 12px;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+/* Summary */
+.tr-summary {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+  gap: 8px;
+  margin-bottom: 20px;
+}
+.tr-summary-card {
+  background: #1e293b;
+  border-radius: 10px;
+  padding: 12px;
+  text-align: center;
+}
+.tr-summary-value { font-size: 22px; font-weight: 700; display: block; }
+.tr-summary-label { font-size: 11px; color: #64748b; }
+
+/* Sort */
+.tr-sort {
+  display: flex;
+  gap: 4px;
+  align-items: center;
+  margin-bottom: 12px;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+.tr-sort-label { font-size: 12px; color: #64748b; margin-right: 4px; white-space: nowrap; }
+.tr-sort-btn {
+  background: transparent;
+  border: 1px solid #334155;
+  color: #94a3b8;
+  padding: 4px 10px;
+  border-radius: 6px;
+  font-size: 11px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.15s;
+}
+.tr-sort-btn:hover { background: #334155; color: #e2e8f0; }
+.tr-sort-btn--active { background: #3b82f6; border-color: #3b82f6; color: #fff; }
+
+/* Table header */
+.tr-table-header {
+  display: flex;
+  align-items: center;
+  padding: 8px 12px;
+  font-size: 11px;
+  color: #475569;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+.tr-th-rank { width: 30px; text-align: center; }
+.tr-th-name { flex: 1; min-width: 120px; }
+.tr-th-stat { width: 70px; text-align: center; }
+
+/* Player rows */
+.tr-player-list { display: flex; flex-direction: column; gap: 4px; }
+.tr-player-row {
+  display: flex;
+  align-items: center;
+  padding: 10px 12px;
+  background: #1e293b;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background 0.15s, transform 0.1s;
+}
+.tr-player-row:hover { background: #1a2744; transform: translateX(2px); }
+.tr-player-rank {
+  width: 30px;
+  text-align: center;
+  font-size: 14px;
+  font-weight: 700;
+  color: #475569;
+}
+.tr-player-row:nth-child(1) .tr-player-rank { color: #fbbf24; }
+.tr-player-row:nth-child(2) .tr-player-rank { color: #94a3b8; }
+.tr-player-row:nth-child(3) .tr-player-rank { color: #cd7f32; }
+
+.tr-player-info {
+  flex: 1;
+  min-width: 120px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.tr-player-number { color: #3b82f6; font-weight: 700; font-size: 14px; }
+.tr-player-name { color: #e2e8f0; font-weight: 500; font-size: 14px; }
+.tr-player-matches { color: #475569; font-size: 11px; }
+
+.tr-player-stats {
+  display: flex;
+  gap: 4px;
+}
+.tr-stat-cell {
+  width: 70px;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+.tr-stat-value { font-size: 15px; font-weight: 600; }
+.tr-stat-sub { font-size: 10px; color: #475569; }
+.tr-stat-pts .tr-stat-value { color: #22c55e; }
+
+/* Efficiency bar */
+.tr-eff-bar-bg {
+  width: 50px;
+  height: 4px;
+  background: #0f172a;
+  border-radius: 2px;
+  overflow: hidden;
+  margin-top: 2px;
+}
+.tr-eff-bar { height: 100%; border-radius: 2px; transition: width 0.5s ease; }
+
+.tr-stat-eff { min-width: 70px; }
+
+/* Footer */
+.tr-footer {
+  text-align: center;
+  color: #475569;
+  font-size: 12px;
+  margin-top: 16px;
+  padding: 8px;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .tr-header { flex-direction: column; gap: 10px; align-items: flex-start; }
+  .tr-player-row { flex-wrap: wrap; gap: 6px; }
+  .tr-player-stats { width: 100%; overflow-x: auto; padding-left: 30px; }
+  .tr-stat-cell { min-width: 55px; width: auto; }
+  .tr-table-header { display: none; }
+  .tr-summary { grid-template-columns: repeat(3, 1fr); }
+}

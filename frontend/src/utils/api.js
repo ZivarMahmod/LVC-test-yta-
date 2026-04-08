@@ -561,6 +561,11 @@ export const playerStatsApi = {
     const res = await apiFetch(`/api/videos/player-stats/${playerId}${qs ? '?' + qs : ''}`);
     if (!res.ok) throw new Error('Kunde inte hämta spelarhistorik');
     return res.json();
+  },
+  async getTeamRoster(teamId = 'all') {
+    const res = await apiFetch(`/api/videos/team-roster/${teamId}`);
+    if (!res.ok) throw new Error('Kunde inte hämta lagöversikt');
+    return res.json();
   }
 };
 

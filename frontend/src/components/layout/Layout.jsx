@@ -148,6 +148,9 @@ export default function Layout() {
             <NavLink to="/analys" className="nav-link">
               Analys
             </NavLink>
+            <NavLink to="/roster" className="nav-link">
+              Spelare
+            </NavLink>
             <NavLink to="/inbox" className="nav-link" style={{ position: 'relative' }}>
               Inbox
               {unreadCount > 0 && (
@@ -293,6 +296,9 @@ export default function Layout() {
             )}
             <NavLink to="/analys" className="mobile-nav-link" onClick={closeMenu}>
               Analys
+            </NavLink>
+            <NavLink to="/roster" className="mobile-nav-link" onClick={closeMenu}>
+              Spelare
             </NavLink>
             <NavLink to="/inbox" className="mobile-nav-link" onClick={closeMenu} style={{ position: 'relative' }}>
               Inbox {unreadCount > 0 && <span style={{

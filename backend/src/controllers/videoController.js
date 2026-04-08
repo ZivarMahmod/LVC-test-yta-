@@ -852,11 +852,25 @@ export const playerStatsController = {
       const trends = calculateMatchTrend(matches);
       const teamComparison = calculateTeamComparison(totals, [...teamPlayersMap.values()]);
 
+      // Koordinat-data för precisionsheatmap (slimmat — bara det som behövs)
+      const coordActions = allPlayerActions
+        .filter(a => a.startCoord || a.endCoord)
+        .map(a => ({
+          skill: a.skill,
+          grade: a.grade,
+          startCoord: a.startCoord,
+          endCoord: a.endCoord,
+          startZone: a.startZone,
+          endZone: a.endZone,
+          playerName: a.playerName,
+        }));
+
       res.json({
         player,
         matches,
         totals,
         matchCount: matches.length,
+        coordActions,
         // Nytt: avancerad statistik
         advanced: {
           ...advanced,
@@ -867,6 +881,126 @@ export const playerStatsController = {
     } catch (error) {
       logger.error('Spelarhistorik-fel:', error);
       res.status(500).json({ error: 'Kunde inte hämta spelarhistorik.' });
+    }
+  },
+
+  // Lagöversikt — alla spelares nyckeltal från DVW-data
+  async getTeamRoster(req, res) {
+    try {
+      const { teamId } = req.params;
+
+      const where = { dvwPath: { not: null }, deletedAt: null };
+      if (teamId && teamId !== 'all') where.teamId = parseInt(teamId);
+
+      const videos = await prisma.video.findMany({
+        where,
+        orderBy: { matchDate: 'desc' },
+        select: { id: true, opponent: true, matchDate: true, dvwPath: true, videoOffset: true },
+        take: 50
+      });
+
+      const playersMap = new Map();
+
+      for (const video of videos) {
+        try {
+          const data = await getCachedScout(video.id, video.dvwPath, video.videoOffset || 0);
+
+          // Samla statistik per spelare (hemmalag)
+          for (const action of data.actions) {
+            if (action.team !== 'H') continue;
+
+            const key = action.playerName;
+            if (!playersMap.has(key)) {
+              playersMap.set(key, {
+                playerName: action.playerName,
+                playerNumber: action.playerNumber,
+                matches: new Set(),
+                serve: { total: 0, pts: 0, err: 0 },
+                attack: { total: 0, pts: 0, err: 0, blocked: 0 },
+                reception: { total: 0, pos: 0, exc: 0, err: 0 },
+                block: { pts: 0 },
+                dig: { total: 0, pos: 0, err: 0 },
+                totalPts: 0,
+                totalActions: 0,
+                positives: 0,
+                errors: 0,
+              });
+            }
+
+            const p = playersMap.get(key);
+            p.matches.add(video.id);
+            p.totalActions++;
+
+            const isErr = action.grade === '/' || action.grade === '=';
+            const isPerfect = action.grade === '#';
+            const isPositive = action.grade === '+';
+
+            if (isPerfect || isPositive) p.positives++;
+            if (isErr) p.errors++;
+
+            switch (action.skill) {
+              case 'S':
+                p.serve.total++;
+                if (isPerfect) { p.serve.pts++; p.totalPts++; }
+                if (isErr) p.serve.err++;
+                break;
+              case 'A':
+                p.attack.total++;
+                if (isPerfect) { p.attack.pts++; p.totalPts++; }
+                if (isErr) p.attack.err++;
+                if (action.grade === '/') p.attack.blocked++;
+                break;
+              case 'R':
+                p.reception.total++;
+                if (isPerfect || isPositive) p.reception.pos++;
+                if (isPerfect) p.reception.exc++;
+                if (isErr) p.reception.err++;
+                break;
+              case 'B':
+                if (isPerfect) { p.block.pts++; p.totalPts++; }
+                break;
+              case 'D':
+                p.dig.total++;
+                if (isPerfect || isPositive) p.dig.pos++;
+                if (isErr) p.dig.err++;
+                break;
+            }
+          }
+        } catch {
+          // Skippa videor med oläsliga DVW-filer
+        }
+      }
+
+      // Konvertera till array med beräknade procent
+      const roster = [...playersMap.values()]
+        .map(p => ({
+          playerName: p.playerName,
+          playerNumber: p.playerNumber,
+          matchCount: p.matches.size,
+          totalPts: p.totalPts,
+          ptsPerMatch: p.matches.size > 0 ? Math.round((p.totalPts / p.matches.size) * 10) / 10 : 0,
+          killPct: p.attack.total > 0 ? Math.round((p.attack.pts / p.attack.total) * 100) : 0,
+          attackEff: p.attack.total > 0 ? Math.round(((p.attack.pts - p.attack.err - p.attack.blocked) / p.attack.total) * 100) : 0,
+          recPosPct: p.reception.total > 0 ? Math.round((p.reception.pos / p.reception.total) * 100) : 0,
+          recExcPct: p.reception.total > 0 ? Math.round((p.reception.exc / p.reception.total) * 100) : 0,
+          servePts: p.serve.pts,
+          serveErrPct: p.serve.total > 0 ? Math.round((p.serve.err / p.serve.total) * 100) : 0,
+          blockPts: p.block.pts,
+          digPosPct: p.dig.total > 0 ? Math.round((p.dig.pos / p.dig.total) * 100) : 0,
+          efficiency: p.totalActions > 0 ? Math.round(((p.positives - p.errors) / p.totalActions) * 100) : 0,
+          totalActions: p.totalActions,
+          serve: p.serve,
+          attack: p.attack,
+          reception: p.reception,
+          dig: p.dig,
+        }))
+        .filter(p => p.matchCount >= 1)
+        .sort((a, b) => b.totalPts - a.totalPts);
+
+      res.json({ roster, videoCount: videos.length });
+    } catch (error) {
+      logger.error('Lagöversikt-fel:', error);
+      res.status(500).json({ error: 'Kunde inte hämta lagöversikt.' });
     }
   }
 };
