@@ -27,13 +27,24 @@ cp .env.example .env
 nano .env
 ```
 
-Fyll i:
+Generera Supabase-nycklar:
+```bash
+node scripts/generate-supabase-keys.js
+```
+
+Fyll i `.env` med output + lösenord:
 ```env
 POSTGRES_USER=lvc
 POSTGRES_PASSWORD=<starkt lösenord>
 POSTGRES_DB=lvcmediahub
 SITE_ADDRESS=:80              # Bara HTTP
 # SITE_ADDRESS=dindomän.se    # Auto-HTTPS via Let's Encrypt
+
+# Kopiera från generate-supabase-keys.js:
+SUPABASE_JWT_SECRET=<från scriptet>
+SUPABASE_ANON_KEY=<från scriptet>
+SUPABASE_SERVICE_ROLE_KEY=<från scriptet>
+FRONTEND_URL=http://<din-ip>:3001
 ```
 
 ### Backend .env

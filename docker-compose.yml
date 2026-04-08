@@ -1,6 +1,6 @@
 # ===========================================
 # LVC Media Hub — Docker Compose (Production)
-# PostgreSQL + App + Supabase Studio
+# Full Supabase Stack + App + Caddy
 # ===========================================
 services:
   # --- PostgreSQL ---
@@ -21,7 +21,49 @@ services:
       retries: 5
       start_period: 10s
 
-  # --- Supabase Meta (krävs av Studio) ---
+  # --- Supabase Auth (GoTrue) ---
+  supabase-auth:
+    image: supabase/gotrue:v2.158.1
+    container_name: lvc-supabase-auth
+    restart: unless-stopped
+    environment:
+      GOTRUE_API_HOST: 0.0.0.0
+      GOTRUE_API_PORT: 9999
+      API_EXTERNAL_URL: ${SUPABASE_PUBLIC_URL:-http://localhost:8000}
+      GOTRUE_DB_DRIVER: postgres
+      GOTRUE_DB_DATABASE_URL: postgresql://${POSTGRES_USER:-lvc}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-lvcmediahub}?search_path=auth
+      GOTRUE_SITE_URL: ${FRONTEND_URL:-http://localhost:3001}
+      GOTRUE_URI_ALLOW_LIST: ""
+      GOTRUE_DISABLE_SIGNUP: "false"
+      GOTRUE_JWT_ADMIN_ROLES: service_role
+      GOTRUE_JWT_AUD: authenticated
+      GOTRUE_JWT_DEFAULT_GROUP_NAME: authenticated
+      GOTRUE_JWT_EXP: 3600
+      GOTRUE_JWT_SECRET: ${SUPABASE_JWT_SECRET:?Kör node scripts/generate-supabase-keys.js}
+      GOTRUE_EXTERNAL_EMAIL_ENABLED: "false"
+      GOTRUE_MAILER_AUTOCONFIRM: "true"
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  # --- Supabase REST API (PostgREST) ---
+  supabase-rest:
+    image: postgrest/postgrest:v12.2.3
+    container_name: lvc-supabase-rest
+    restart: unless-stopped
+    environment:
+      PGRST_DB_URI: postgresql://${POSTGRES_USER:-lvc}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-lvcmediahub}
+      PGRST_DB_SCHEMAS: public,storage
+      PGRST_DB_ANON_ROLE: anon
+      PGRST_JWT_SECRET: ${SUPABASE_JWT_SECRET}
+      PGRST_DB_USE_LEGACY_GUCS: "false"
+      PGRST_APP_SETTINGS_JWT_SECRET: ${SUPABASE_JWT_SECRET}
+      PGRST_APP_SETTINGS_JWT_EXP: 3600
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  # --- Supabase Meta (pg-meta, krävs av Studio) ---
   supabase-meta:
     image: supabase/postgres-meta:v0.84.2
     container_name: lvc-supabase-meta
@@ -49,12 +91,17 @@ services:
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
       DEFAULT_ORGANIZATION_NAME: "LVC Media Hub"
       DEFAULT_PROJECT_NAME: "lvcmediahub"
-      SUPABASE_URL: http://localhost:3001
-      SUPABASE_PUBLIC_URL: http://localhost:3001
+      SUPABASE_URL: http://supabase-rest:3000
+      SUPABASE_PUBLIC_URL: http://localhost:3040
+      SUPABASE_REST_URL: http://supabase-rest:3000
       NEXT_PUBLIC_ENABLE_LOGS: "false"
       NEXT_ANALYTICS_BACKEND_PROVIDER: ""
+      SUPABASE_ANON_KEY: ${SUPABASE_ANON_KEY:-}
+      SUPABASE_SERVICE_ROLE_KEY: ${SUPABASE_SERVICE_ROLE_KEY:-}
     depends_on:
       - supabase-meta
+      - supabase-rest
+      - supabase-auth
 
   # --- Caddy Reverse Proxy (HTTP/HTTPS → App) ---
   caddy:
