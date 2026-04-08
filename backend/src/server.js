@@ -24,6 +24,7 @@ import changelogRoutes from './routes/changelog.js';
 import settingsRoutes from './routes/settings.js';
 import { thumbnailController } from './controllers/thumbnailController.js';
 import { adminController } from './controllers/adminController.js';
+import { kvittraOrgController } from './controllers/kvittraOrgController.js';
 import { authenticateToken, requireAdmin } from './middleware/auth.js';
 import { trackActivity } from './middleware/activityTracker.js';
 import { csrfProtection } from './middleware/csrf.js';
@@ -130,6 +131,13 @@ app.use('/api/reviews', reviewRoutes);
 app.post('/api/admin/stop-impersonate', authenticateToken, csrfProtection, (req, res) => adminController.stopImpersonate(req, res));
 app.post('/api/admin/switch-user/:id', authenticateToken, csrfProtection, (req, res) => adminController.switchUser(req, res));
 app.get('/api/admin/switch-users', authenticateToken, (req, res) => adminController.listUsersForSwitch(req, res));
+
+// ===========================================
+// Kvittra API Routes
+// ===========================================
+app.get('/api/kvittra/org/:slug', authenticateToken, (req, res) => kvittraOrgController.getOrg(req, res));
+app.get('/api/kvittra/features/:slug', authenticateToken, (req, res) => kvittraOrgController.getFeatures(req, res));
+app.get('/api/kvittra/orgs', authenticateToken, (req, res) => kvittraOrgController.listMyOrgs(req, res));
 
 // Thumbnail-bibliotek
 app.get('/api/thumbnail-library', authenticateToken, requireAdmin, thumbnailController.list);
