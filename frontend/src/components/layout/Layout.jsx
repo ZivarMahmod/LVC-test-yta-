@@ -151,6 +151,9 @@ export default function Layout() {
             <NavLink to="/roster" className="nav-link">
               Spelare
             </NavLink>
+            <button className="nav-link" onClick={() => window.dispatchEvent(new KeyboardEvent('keydown', { key: 'k', ctrlKey: true }))} style={{ background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'inherit', padding: 0 }}>
+              Sök <kbd style={{ background: '#334155', padding: '1px 5px', borderRadius: 3, fontSize: 10, marginLeft: 4, color: '#64748b' }}>⌘K</kbd>
+            </button>
             <NavLink to="/inbox" className="nav-link" style={{ position: 'relative' }}>
               Inbox
               {unreadCount > 0 && (
