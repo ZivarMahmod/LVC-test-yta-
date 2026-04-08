@@ -1,4 +1,29 @@
+# ===========================================
+# LVC Media Hub — Docker Compose (Development)
+# PostgreSQL + App (port 3002)
+# ===========================================
 services:
+  # --- PostgreSQL (dev) ---
+  postgres-dev:
+    image: postgres:16-alpine
+    container_name: lvc-postgres-dev
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-lvc}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-devpassword}
+      POSTGRES_DB: ${POSTGRES_DB:-lvcmediahub_dev}
+    volumes:
+      - lvc-pgdata-dev:/var/lib/postgresql/data
+    ports:
+      - "5433:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-lvc} -d ${POSTGRES_DB:-lvcmediahub_dev}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+  # --- LVC Media Hub App (dev) ---
   lvc-media-hub-dev:
     build: .
     container_name: lvc-media-hub-dev
@@ -8,18 +33,24 @@ services:
     env_file:
       - ./backend/.env.dev
     environment:
-      - DATABASE_URL=file:/app/data/lvc-media-hub.db
+      - DATABASE_URL=postgresql://${POSTGRES_USER:-lvc}:${POSTGRES_PASSWORD:-devpassword}@postgres-dev:5432/${POSTGRES_DB:-lvcmediahub_dev}?schema=public
+      - DIRECT_URL=postgresql://${POSTGRES_USER:-lvc}:${POSTGRES_PASSWORD:-devpassword}@postgres-dev:5432/${POSTGRES_DB:-lvcmediahub_dev}?schema=public
     volumes:
-      - lvc-data-dev:/app/data
+      - lvc-storage-dev:/storage
       - lvc-logs-dev:/app/backend/logs
-      - /mnt/nas-matcher/dev:/storage
+      - lvc-thumbnails-dev:/app/backend/thumbnails
+    depends_on:
+      postgres-dev:
+        condition: service_healthy
     healthcheck:
       test: ["CMD", "wget", "-qO-", "http://localhost:3001/api/health"]
       interval: 30s
       timeout: 5s
       retries: 3
-      start_period: 10s
+      start_period: 20s
 
 volumes:
-  lvc-data-dev:
+  lvc-pgdata-dev:
+  lvc-storage-dev:
   lvc-logs-dev:
+  lvc-thumbnails-dev:

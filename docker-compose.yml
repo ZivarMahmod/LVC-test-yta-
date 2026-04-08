@@ -1,7 +1,27 @@
 # ===========================================
-# LVC Media Hub — Docker Compose
+# LVC Media Hub — Docker Compose (Production)
+# PostgreSQL + App
 # ===========================================
 services:
+  # --- PostgreSQL (Supabase-kompatibel) ---
+  postgres:
+    image: postgres:16-alpine
+    container_name: lvc-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-lvc}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Ange POSTGRES_PASSWORD i .env}
+      POSTGRES_DB: ${POSTGRES_DB:-lvcmediahub}
+    volumes:
+      - lvc-pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-lvc} -d ${POSTGRES_DB:-lvcmediahub}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+  # --- LVC Media Hub App ---
   lvc-media-hub:
     build: .
     container_name: lvc-media-hub
@@ -11,29 +31,24 @@ services:
     env_file:
       - ./backend/.env
     environment:
-      - DATABASE_URL=file:/app/data/lvc-media-hub.db
+      - DATABASE_URL=postgresql://${POSTGRES_USER:-lvc}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-lvcmediahub}?schema=public
+      - DIRECT_URL=postgresql://${POSTGRES_USER:-lvc}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-lvcmediahub}?schema=public
     volumes:
-      - lvc-data:/app/data
+      - lvc-storage:/storage
       - lvc-logs:/app/backend/logs
-      - /etc/letsencrypt:/etc/letsencrypt:ro
-      - /mnt/nas-matcher:/storage
+      - lvc-thumbnails:/app/backend/thumbnails
+    depends_on:
+      postgres:
+        condition: service_healthy
     healthcheck:
       test: ["CMD", "wget", "-qO-", "http://localhost:3001/api/health"]
       interval: 30s
       timeout: 5s
       retries: 3
-      start_period: 10s
-
-  acme:
-    image: neilpang/acme.sh
-    container_name: acme
-    restart: unless-stopped
-    volumes:
-      - /root/certs:/acme.sh
-    env_file:
-      - ./acme.env
-    command: daemon
+      start_period: 20s
 
 volumes:
-  lvc-data:
+  lvc-pgdata:
+  lvc-storage:
   lvc-logs:
+  lvc-thumbnails:

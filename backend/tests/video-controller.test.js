@@ -174,9 +174,9 @@ describe('videoController.list', () => {
 
     const whereArg = prisma.video.findMany.mock.calls[0][0].where;
     expect(whereArg.OR).toEqual([
-      { opponent: { contains: 'Linkoping' } },
-      { title: { contains: 'Linkoping' } },
-      { description: { contains: 'Linkoping' } }
+      { opponent: { contains: 'Linkoping', mode: 'insensitive' } },
+      { title: { contains: 'Linkoping', mode: 'insensitive' } },
+      { description: { contains: 'Linkoping', mode: 'insensitive' } }
     ]);
     expect(whereArg.deletedAt).toBeNull();
   });

@@ -1,23 +1,33 @@
 #!/bin/sh
 # ===========================================
 # LVC Media Hub — Docker Entrypoint
+# PostgreSQL + Prisma
 # ===========================================
 set -e
 echo "🏐 LVC Media Hub startar..."
-echo "   Kör databasmigrering..."
 cd /app/backend
-# Om databasen skapades med db push (ingen _prisma_migrations-tabell),
-# markera befintliga migrationer som redan körda (baseline).
-if ! npx prisma migrate deploy 2>/dev/null; then
-  echo "   Baselines befintliga migrationer..."
-  for dir in prisma/migrations/*/; do
-    name=$(basename "$dir")
-    [ "$name" = "migration_lock.toml" ] && continue
-    npx prisma migrate resolve --applied "$name" 2>/dev/null || true
-  done
-  npx prisma migrate deploy
-fi
+
+# Vänta på att PostgreSQL är redo (backup om docker healthcheck inte räcker)
+echo "   Väntar på databasanslutning..."
+MAX_RETRIES=30
+RETRY_COUNT=0
+until npx prisma migrate deploy 2>/dev/null; do
+  RETRY_COUNT=$((RETRY_COUNT + 1))
+  if [ "$RETRY_COUNT" -ge "$MAX_RETRIES" ]; then
+    echo "   ❌ Kunde inte ansluta/migrera databasen efter $MAX_RETRIES försök"
+    exit 1
+  fi
+  echo "   Väntar på PostgreSQL... (försök $RETRY_COUNT/$MAX_RETRIES)"
+  sleep 2
+done
+echo "   ✅ Databasmigrering klar"
+
 echo "   Kontrollerar admin-konto..."
 node src/utils/seedAdmin.js 2>/dev/null || true
+
+# Skapa storage-mappar om de inte finns
+mkdir -p /storage/documents
+mkdir -p /app/backend/thumbnails
+
 echo "   Startar server..."
 exec node src/server.js

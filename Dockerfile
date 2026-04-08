@@ -1,6 +1,7 @@
 # ===========================================
 # LVC Media Hub — Dockerfile
 # Multi-stage build: bygg frontend → kör backend
+# PostgreSQL via extern container (docker-compose)
 # ===========================================
 
 # --- Steg 1: Bygg frontend ---
@@ -37,11 +38,8 @@ RUN npx prisma generate
 # Kopiera färdigbyggd frontend från steg 1
 COPY --from=frontend-build /app/frontend/dist /app/frontend/dist
 
-# Skapa mappar för loggar och databas
-RUN mkdir -p /app/backend/logs /app/data
-
-# Prisma-databasen pekar på /app/data så den kan monteras som volym
-ENV DATABASE_URL="file:/app/data/lvc-media-hub.db"
+# Skapa mappar för loggar, storage och thumbnails
+RUN mkdir -p /app/backend/logs /app/backend/thumbnails /storage
 
 # Kopiera entrypoint
 COPY CHANGELOG.md /app/CHANGELOG.md
@@ -52,8 +50,8 @@ RUN chmod +x /app/entrypoint.sh
 EXPOSE 3001
 
 # Healthcheck
-HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
+HEALTHCHECK --interval=30s --timeout=5s --start-period=20s --retries=3 \
   CMD wget -qO- http://localhost:3001/api/health || exit 1
 
-# Starta via entrypoint (migrering + seed + server)
+# Starta via entrypoint (vänta på DB + migrering + seed + server)
 ENTRYPOINT ["/app/entrypoint.sh"]

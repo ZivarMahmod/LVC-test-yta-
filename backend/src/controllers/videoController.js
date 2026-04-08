@@ -280,9 +280,9 @@ export const videoController = {
       const where = { deletedAt: null };
       if (search) {
         where.OR = [
-          { opponent: { contains: search } },
-          { title: { contains: search } },
-          { description: { contains: search } }
+          { opponent: { contains: search, mode: 'insensitive' } },
+          { title: { contains: search, mode: 'insensitive' } },
+          { description: { contains: search, mode: 'insensitive' } }
         ];
       }
       if (teamId) where.teamId = teamId;
