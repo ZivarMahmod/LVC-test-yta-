@@ -673,28 +673,23 @@ export const changelogApi = {
 // -------- Multi Scout API --------
 export const multiScoutApi = {
   async fetch(ids) {
-    // Fetch DVW data for multiple videos
     const { data, error } = await supabase
       .from('videos')
       .select('id, title, opponent, match_date, dvw_path, video_offset, match_type')
       .in('id', ids);
     if (error) throw new Error('Kunde inte hämta scout-data');
 
-    // For each video with a dvw_path, download and parse the DVW file
+    // Parse DVW files via Edge Function in parallel
     const results = await Promise.all(
       (data || []).map(async (video) => {
         if (!video.dvw_path) return { ...mapVideoRow(video), scout: null };
 
-        const { data: dvwData, error: dlErr } = await supabase.storage
-          .from('dvw-files')
-          .download(video.dvw_path);
+        const { data: parsed, error: fnErr } = await supabase.functions.invoke('parse-dvw', {
+          body: { dvwPath: video.dvw_path, videoOffset: video.video_offset }
+        });
 
-        if (dlErr || !dvwData) return { ...mapVideoRow(video), scout: null };
-
-        const text = await dvwData.text();
-        // DVW parsing will be done by Edge Function (Step 5).
-        // For now, return raw text — the frontend can parse client-side.
-        return { ...mapVideoRow(video), dvwRaw: text };
+        if (fnErr) return { ...mapVideoRow(video), scout: null };
+        return { ...mapVideoRow(video), scout: parsed };
       })
     );
 
@@ -892,15 +887,13 @@ export const scoutApi = {
       .single();
     if (error || !video?.dvw_path) throw new Error('Ingen scout-fil');
 
-    const { data: dvwData, error: dlErr } = await supabase.storage
-      .from('dvw-files')
-      .download(video.dvw_path);
-    if (dlErr || !dvwData) throw new Error('Kunde inte ladda DVW-fil');
+    // Parse DVW via Edge Function
+    const { data: parsed, error: fnErr } = await supabase.functions.invoke('parse-dvw', {
+      body: { dvwPath: video.dvw_path, videoOffset: video.video_offset }
+    });
+    if (fnErr) throw new Error('Kunde inte parsa DVW-fil');
 
-    const text = await dvwData.text();
-    // DVW parsing will move to Edge Function in Step 5.
-    // Return raw text + offset for now.
-    return { dvwRaw: text, videoOffset: video.video_offset };
+    return { ...parsed, videoOffset: video.video_offset };
   },
 
   async updateOffset(id, offset) {
