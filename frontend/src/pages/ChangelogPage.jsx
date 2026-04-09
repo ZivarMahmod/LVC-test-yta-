@@ -19,7 +19,7 @@ export default function ChangelogPage() {
   const load = async () => {
     try {
       const data = await changelogApi.list();
-      setEntries(data.entries || []);
+      setEntries(Array.isArray(data) ? data : (data?.entries || []));
     } catch { }
     finally { setLoading(false); }
   };

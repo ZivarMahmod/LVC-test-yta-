@@ -1,8 +1,8 @@
 // ===========================================
-// Kvittra — Generate OTP Edge Function
+// CorevoSports — Generate OTP Edge Function
 // Called after successful password auth.
 // Generates 6-digit code, stores hash in DB,
-// sends code via email.
+// sends code via SMTP (one.com) to recovery_email.
 // ===========================================
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { corsHeaders } from "../_shared/cors.ts";
@@ -74,43 +74,86 @@ Deno.serve(async (req: Request) => {
       }
     }
 
-    // Send email with OTP code
-    // Configure SMTP or Resend in env vars:
-    //   SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASS, SMTP_FROM
-    //   or RESEND_API_KEY
-    const resendKey = Deno.env.get("RESEND_API_KEY");
+    // Look up recovery_email from organization_members
+    const { data: memberData } = await supabase
+      .schema("kvittra" as any)
+      .from("organization_members")
+      .select("recovery_email")
+      .eq("user_id", userId)
+      .not("recovery_email", "is", null)
+      .limit(1)
+      .single();
 
-    if (resendKey) {
-      // Send via Resend
-      const emailRes = await fetch("https://api.resend.com/emails", {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${resendKey}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          from: "support@kvittra.se",
-          to: email,
-          subject: `Din inloggningskod — ${code}`,
-          html: `
-            <div style="font-family: sans-serif; max-width: 400px; margin: 0 auto; padding: 2rem;">
-              <h2 style="color: #1a1a2e;">Kvittra</h2>
-              <p>Din inloggningskod:</p>
-              <div style="font-size: 2rem; font-weight: bold; letter-spacing: 0.5rem; padding: 1rem; background: #f0f0f0; border-radius: 8px; text-align: center; margin: 1rem 0;">
-                ${code}
-              </div>
-              <p style="color: #666; font-size: 0.9rem;">Koden är giltig i 10 minuter.</p>
+    const recipientEmail = memberData?.recovery_email || email;
+
+    // Send OTP via SMTP (one.com)
+    const smtpHost = Deno.env.get("SMTP_HOST") || "send.one.com";
+    const smtpPort = Number(Deno.env.get("SMTP_PORT") || "465");
+    const smtpUser = Deno.env.get("SMTP_USER") || "support.volleybol@corevo.se";
+    const smtpPass = Deno.env.get("SMTP_PASSWORD");
+    const smtpFrom = Deno.env.get("SMTP_FROM") || "support.volleybol@corevo.se";
+
+    if (smtpPass) {
+      try {
+        // Connect to SMTP via Deno TLS
+        const conn = await Deno.connectTls({ hostname: smtpHost, port: smtpPort });
+        const encoder = new TextEncoder();
+        const decoder = new TextDecoder();
+
+        const read = async () => {
+          const buf = new Uint8Array(1024);
+          const n = await conn.read(buf);
+          return decoder.decode(buf.subarray(0, n || 0));
+        };
+
+        const write = async (cmd: string) => {
+          await conn.write(encoder.encode(cmd + "\r\n"));
+          return await read();
+        };
+
+        await read(); // greeting
+        await write(`EHLO corevosports`);
+        await write(`AUTH LOGIN`);
+        await write(btoa(smtpUser));
+        await write(btoa(smtpPass));
+        await write(`MAIL FROM:<${smtpFrom}>`);
+        await write(`RCPT TO:<${recipientEmail}>`);
+        await write(`DATA`);
+
+        const htmlBody = `
+          <div style="font-family: sans-serif; max-width: 400px; margin: 0 auto; padding: 2rem;">
+            <h2 style="color: #1a1a2e;">Corevosports</h2>
+            <p>Din inloggningskod:</p>
+            <div style="font-size: 2rem; font-weight: bold; letter-spacing: 0.5rem; padding: 1rem; background: #f0f0f0; border-radius: 8px; text-align: center; margin: 1rem 0;">
+              ${code}
             </div>
-          `,
-        }),
-      });
+            <p style="color: #666; font-size: 0.9rem;">Koden är giltig i 10 minuter.</p>
+          </div>
+        `;
 
-      if (!emailRes.ok) {
-        console.error("Resend error:", await emailRes.text());
+        const message = [
+          `From: Corevosports <${smtpFrom}>`,
+          `To: ${recipientEmail}`,
+          `Subject: Din inloggningskod för Corevosports`,
+          `MIME-Version: 1.0`,
+          `Content-Type: text/html; charset=UTF-8`,
+          ``,
+          htmlBody,
+          `.`,
+        ].join("\r\n");
+
+        await write(message);
+        await write(`QUIT`);
+        conn.close();
+
+        console.log(`OTP email sent to ${recipientEmail}`);
+      } catch (smtpErr) {
+        // Mail error should not block login flow
+        console.error("SMTP error (non-blocking):", (smtpErr as Error).message);
       }
     } else {
-      // Log code for development (remove in production)
-      console.log(`[DEV] OTP for ${email}: ${code}`);
+      // Log code for development (no SMTP_PASSWORD configured)
+      console.log(`[DEV] OTP for ${recipientEmail}: ${code}`);
     }
 
     return new Response(

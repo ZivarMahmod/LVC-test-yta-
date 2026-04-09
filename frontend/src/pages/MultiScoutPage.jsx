@@ -252,7 +252,7 @@ export default function MultiScoutPage() {
   return (
     <div className="video-player-page">
       <nav style={{ padding: '0.5rem 1rem', fontSize: '0.85rem' }}>
-        <Link to="/" style={{ color: 'var(--text-muted)' }}>Tillbaka</Link>
+        <Link to="." style={{ color: 'var(--text-muted)' }}>Tillbaka</Link>
         <span style={{ color: 'var(--text-muted)', margin: '0 0.5rem' }}>›</span>
         <span>Flermatchsvy ({data.matches.length} matcher)</span>
       </nav>

@@ -110,7 +110,7 @@ export default function VideosPage() {
 
   const openMultiScout = (ids) => {
     if (ids.length < 1) return;
-    navigate('/multi-scout?ids=' + ids.join(','));
+    navigate('multi-scout?ids=' + ids.join(','));
   };
 
   const filteredVideos = filterMatchType === 'all' ? videos : videos.filter(v => (v.matchType || 'own') === filterMatchType);
@@ -215,7 +215,7 @@ export default function VideosPage() {
       <div className="page-header">
         {teamId && (
           <nav className="videos-breadcrumb">
-            <Link to="/">Lag</Link>
+            <Link to=".">Lag</Link>
             <span className="breadcrumb-sep">›</span>
             {seasonId ? (
               <>

@@ -1,8 +1,8 @@
 // ===========================================
-// Kvittra — Superadmin Page (filipadmin.kvittra.se)
+// CorevoSports — Superadmin Page (filipadmin.corevo.se)
 // ===========================================
 import { useState, useEffect } from 'react';
-import { supabase, supabaseKvittra } from '../utils/supabaseClient.js';
+import { supabase, supabaseAdmin, supabaseAdminKvittra } from '../utils/supabaseClient.js';
 import './SuperadminPage.css';
 
 const TABS = ['Organisationer', 'Branding', 'Features', 'Användare', 'Statistik'];
@@ -24,7 +24,7 @@ function OrgsTab() {
   const [loading, setLoading] = useState(true);
 
   const fetchOrgs = async () => {
-    const { data } = await supabaseKvittra.from('organizations').select('*').order('created_at');
+    const { data } = await supabaseAdminKvittra.from('organizations').select('*').order('created_at');
     setOrgs(data || []);
     setLoading(false);
   };
@@ -34,7 +34,7 @@ function OrgsTab() {
   const createOrg = async (e) => {
     e.preventDefault();
     const tpl = TEMPLATES[template] || TEMPLATES.dark_blue;
-    const { error } = await supabaseKvittra.from('organizations').insert({
+    const { error } = await supabaseAdminKvittra.from('organizations').insert({
       name, slug: slug.toLowerCase().replace(/[^a-z0-9-]/g, ''),
       branding_config: tpl, features_config: {},
     });
@@ -44,7 +44,7 @@ function OrgsTab() {
   };
 
   const toggleActive = async (org) => {
-    await supabaseKvittra.from('organizations').update({ is_active: !org.is_active }).eq('id', org.id);
+    await supabaseAdminKvittra.from('organizations').update({ is_active: !org.is_active }).eq('id', org.id);
     fetchOrgs();
   };
 
@@ -68,7 +68,7 @@ function OrgsTab() {
           {orgs.map(org => (
             <tr key={org.id}>
               <td>{org.name}</td>
-              <td><code>{org.slug}.kvittra.se</code></td>
+              <td><code>/app/{org.slug}</code></td>
               <td>{org.is_active ? 'Ja' : 'Nej'}</td>
               <td>{new Date(org.created_at).toLocaleDateString('sv-SE')}</td>
               <td><button className="btn-sm" onClick={() => toggleActive(org)}>{org.is_active ? 'Inaktivera' : 'Aktivera'}</button></td>
@@ -87,7 +87,7 @@ function BrandingTab() {
   const [branding, setBranding] = useState({});
 
   useEffect(() => {
-    supabaseKvittra.from('organizations').select('id, name, slug, branding_config').order('name').then(({ data }) => setOrgs(data || []));
+    supabaseAdminKvittra.from('organizations').select('id, name, slug, branding_config').order('name').then(({ data }) => setOrgs(data || []));
   }, []);
 
   useEffect(() => {
@@ -98,7 +98,7 @@ function BrandingTab() {
   const updateField = (key, value) => setBranding(prev => ({ ...prev, [key]: value }));
 
   const save = async () => {
-    const { error } = await supabaseKvittra.from('organizations').update({ branding_config: branding }).eq('id', selectedOrg);
+    const { error } = await supabaseAdminKvittra.from('organizations').update({ branding_config: branding }).eq('id', selectedOrg);
     if (error) alert(error.message);
     else alert('Sparat!');
   };
@@ -178,12 +178,12 @@ function FeaturesTab() {
   const [newKey, setNewKey] = useState('');
 
   const fetchFeatures = async () => {
-    const { data } = await supabaseKvittra.from('features_config').select('*').order('feature_key');
+    const { data } = await supabaseAdminKvittra.from('features_config').select('*').order('feature_key');
     setFeatures(data || []);
   };
 
   useEffect(() => {
-    supabaseKvittra.from('organizations').select('id, name').order('name').then(({ data }) => setOrgs(data || []));
+    supabaseAdminKvittra.from('organizations').select('id, name').order('name').then(({ data }) => setOrgs(data || []));
     fetchFeatures();
   }, []);
 
@@ -193,7 +193,7 @@ function FeaturesTab() {
   });
 
   const toggleFeature = async (feature) => {
-    await supabaseKvittra.from('features_config').update({ is_enabled: !feature.is_enabled }).eq('id', feature.id);
+    await supabaseAdminKvittra.from('features_config').update({ is_enabled: !feature.is_enabled }).eq('id', feature.id);
     fetchFeatures();
   };
 
@@ -201,7 +201,7 @@ function FeaturesTab() {
     e.preventDefault();
     if (!newKey) return;
     const orgId = selectedOrg === '__global__' ? null : selectedOrg;
-    await supabaseKvittra.from('features_config').insert({ org_id: orgId, feature_key: newKey, is_enabled: false });
+    await supabaseAdminKvittra.from('features_config').insert({ org_id: orgId, feature_key: newKey, is_enabled: false });
     setNewKey('');
     fetchFeatures();
   };
@@ -235,18 +235,23 @@ function FeaturesTab() {
 }
 
 // ---- Tab: Användare ----
+const ROLE_OPTIONS = ['admin', 'coach', 'uploader', 'player'];
+
 function UsersTab() {
   const [orgs, setOrgs] = useState([]);
   const [members, setMembers] = useState([]);
   const [email, setEmail] = useState('');
+  const [recoveryEmail, setRecoveryEmail] = useState('');
   const [selectedOrg, setSelectedOrg] = useState('');
+  const [roles, setRoles] = useState(['admin']);
   const [loading, setLoading] = useState(true);
+  const [result, setResult] = useState(null); // { email, tempPwd, roles, isNew }
 
   const fetchAll = async () => {
     const [orgsRes, membersRes] = await Promise.all([
-      supabaseKvittra.from('organizations').select('id, name').order('name'),
-      supabaseKvittra.from('organization_members').select(`
-        id, user_id, roles, is_active, org_id,
+      supabaseAdminKvittra.from('organizations').select('id, name').order('name'),
+      supabaseAdminKvittra.from('organization_members').select(`
+        id, user_id, roles, is_active, org_id, recovery_email,
         organizations:org_id ( name )
       `).order('created_at'),
     ]);
@@ -257,38 +262,88 @@ function UsersTab() {
 
   useEffect(() => { fetchAll(); }, []);
 
-  const createAdmin = async (e) => {
+  const toggleRole = (role) => {
+    setRoles(prev =>
+      prev.includes(role) ? prev.filter(r => r !== role) : [...prev, role]
+    );
+  };
+
+  const createUser = async (e) => {
     e.preventDefault();
-    if (!email || !selectedOrg) return;
+    if (!email || !selectedOrg || roles.length === 0) return;
 
-    // Create auth user with temp password
-    const tempPwd = crypto.randomUUID().slice(0, 16);
-    const { data: authData, error: authErr } = await supabase.auth.admin.createUser({
-      email,
-      password: tempPwd,
-      email_confirm: true,
-      user_metadata: { name: email.split('@')[0] },
-    });
+    let userId;
+    let tempPwd = null;
+    let isNewUser = false;
 
-    if (authErr) {
-      alert('Kunde inte skapa användare: ' + authErr.message);
+    // 1. Check if auth user already exists
+    const { data: existingUsers } = await supabaseAdmin.auth.admin.listUsers();
+    const existing = existingUsers?.users?.find(u => u.email === email);
+
+    if (existing) {
+      // User exists — reuse their ID
+      userId = existing.id;
+    } else {
+      // New user — create auth account with temp password
+      isNewUser = true;
+      tempPwd = crypto.randomUUID().slice(0, 16);
+      const { data: authData, error: authErr } = await supabaseAdmin.auth.admin.createUser({
+        email,
+        password: tempPwd,
+        email_confirm: true,
+        user_metadata: { name: email.split('@')[0] },
+      });
+
+      if (authErr) {
+        alert('Kunde inte skapa användare: ' + authErr.message);
+        return;
+      }
+      userId = authData.user.id;
+
+      // Set role in profiles table for new users
+      const profileRole = roles.includes('admin') ? 'admin'
+        : roles.includes('coach') ? 'coach'
+        : roles.includes('uploader') ? 'uploader'
+        : 'viewer';
+
+      await supabaseAdmin.from('profiles').update({
+        role: profileRole,
+        name: email.split('@')[0],
+      }).eq('id', userId);
+    }
+
+    // 2. Check if already member of this org
+    const { data: existingMember } = await supabaseAdminKvittra
+      .from('organization_members')
+      .select('id')
+      .eq('user_id', userId)
+      .eq('org_id', selectedOrg)
+      .maybeSingle();
+
+    if (existingMember) {
+      alert(`${email} är redan medlem i denna organisation.`);
       return;
     }
 
-    // Add as admin member
-    const { error: memberErr } = await supabaseKvittra.from('organization_members').insert({
-      user_id: authData.user.id,
+    // 3. Add to organization_members with roles + recovery_email
+    const memberData = {
+      user_id: userId,
       org_id: selectedOrg,
-      roles: ['admin'],
-    });
+      roles,
+    };
+    if (recoveryEmail) memberData.recovery_email = recoveryEmail;
+
+    const { error: memberErr } = await supabaseAdminKvittra.from('organization_members').insert(memberData);
 
     if (memberErr) {
-      alert('Kunde inte lägga till som admin: ' + memberErr.message);
+      alert('Kunde inte lägga till i org: ' + memberErr.message);
       return;
     }
 
-    alert(`Admin skapad! Temp-lösenord: ${tempPwd}\nSkicka till användaren.`);
+    setResult({ email, tempPwd, roles: [...roles], isNew: isNewUser });
     setEmail('');
+    setRecoveryEmail('');
+    setRoles(['admin']);
     fetchAll();
   };
 
@@ -296,24 +351,70 @@ function UsersTab() {
 
   return (
     <div>
-      <form className="sa-form" onSubmit={createAdmin}>
-        <h3>Skapa första admin för org</h3>
-        <input type="email" placeholder="E-post" value={email} onChange={e => setEmail(e.target.value)} required />
+      <form className="sa-form" onSubmit={createUser}>
+        <h3>Skapa användare</h3>
+
         <select value={selectedOrg} onChange={e => setSelectedOrg(e.target.value)} required>
           <option value="">Välj organisation</option>
           {orgs.map(o => <option key={o.id} value={o.id}>{o.name}</option>)}
         </select>
-        <button type="submit" className="btn-primary">Skapa admin</button>
+
+        <div className="form-group">
+          <label>Login E-post</label>
+          <input type="email" placeholder="namn@example.com" value={email} onChange={e => setEmail(e.target.value)} required />
+          <small className="form-hint">Används för inloggning</small>
+        </div>
+
+        <div className="form-group">
+          <label>Recovery E-post (valfri)</label>
+          <input type="email" placeholder="privat@example.com" value={recoveryEmail} onChange={e => setRecoveryEmail(e.target.value)} />
+          <small className="form-hint">Mottar reset-länk här</small>
+        </div>
+
+        <div className="form-group">
+          <label>Roll</label>
+          <div className="role-checkboxes">
+            {ROLE_OPTIONS.map(role => (
+              <label key={role} className="role-checkbox">
+                <input type="checkbox" checked={roles.includes(role)} onChange={() => toggleRole(role)} />
+                {role.charAt(0).toUpperCase() + role.slice(1)}
+              </label>
+            ))}
+          </div>
+        </div>
+
+        <button type="submit" className="btn-primary" disabled={roles.length === 0}>Skapa användare</button>
       </form>
 
+      {result && (
+        <div className="sa-result-box">
+          <div className="sa-result-header">
+            <span>{result.isNew ? 'Ny användare skapad' : 'Tillagd i organisation'}</span>
+            <button className="btn-sm" onClick={() => setResult(null)}>Stäng</button>
+          </div>
+          <div className="sa-result-row"><label>Email:</label> <span>{result.email}</span></div>
+          <div className="sa-result-row"><label>Roll:</label> <span>{result.roles.join(', ')}</span></div>
+          {result.tempPwd && (
+            <div className="sa-result-row">
+              <label>Temp-lösenord:</label>
+              <code className="sa-result-pwd" onClick={() => { navigator.clipboard.writeText(result.tempPwd); }}>{result.tempPwd}</code>
+              <button className="btn-sm" onClick={() => { navigator.clipboard.writeText(result.tempPwd); }}>Kopiera</button>
+            </div>
+          )}
+          {!result.isNew && <p className="form-hint">Användaren har redan ett konto och kan logga in direkt.</p>}
+        </div>
+      )}
+
       <table className="sa-table">
-        <thead><tr><th>User ID</th><th>Organisation</th><th>Roller</th><th>Aktiv</th></tr></thead>
+        <thead><tr><th>User ID</th><th>Email</th><th>Organisation</th><th>Roller</th><th>Recovery</th><th>Aktiv</th></tr></thead>
         <tbody>
           {members.map(m => (
             <tr key={m.id}>
               <td><code>{m.user_id?.slice(0, 8)}...</code></td>
+              <td>{m.user_id?.slice(0, 8)}</td>
               <td>{m.organizations?.name || '—'}</td>
               <td>{(m.roles || []).join(', ')}</td>
+              <td>{m.recovery_email || '—'}</td>
               <td>{m.is_active ? 'Ja' : 'Nej'}</td>
             </tr>
           ))}
@@ -331,9 +432,9 @@ function StatsTab() {
   useEffect(() => {
     async function fetch() {
       const [orgsRes, membersRes, matchesRes] = await Promise.all([
-        supabaseKvittra.from('organizations').select('id', { count: 'exact', head: true }),
-        supabaseKvittra.from('organization_members').select('id', { count: 'exact', head: true }).eq('is_active', true),
-        supabaseKvittra.from('matches').select('org_id, organizations:org_id ( name )'),
+        supabaseAdminKvittra.from('organizations').select('id', { count: 'exact', head: true }),
+        supabaseAdminKvittra.from('organization_members').select('id', { count: 'exact', head: true }).eq('is_active', true),
+        supabaseAdminKvittra.from('matches').select('org_id, organizations:org_id ( name )'),
       ]);
 
       const matchesByOrg = {};
@@ -387,7 +488,7 @@ export default function SuperadminPage() {
     <div className="superadmin-page">
       <header className="sa-header">
         <h1>Kvittra Superadmin</h1>
-        <p>filipadmin.kvittra.se</p>
+        <p>filipadmin.corevo.se</p>
       </header>
 
       <nav className="sa-tabs">

@@ -156,7 +156,7 @@ export default function UploadPage() {
       setProgress(100);
       setStatus('');
       setSuccess('Videon har laddats upp!');
-      setTimeout(() => navigate('/'), 1500);
+      setTimeout(() => navigate(''), 1500);
     } catch (err) {
       if (err.name === 'AbortError' || controller.signal.aborted) {
         setError('Uppladdningen avbröts.');
@@ -364,7 +364,7 @@ export default function UploadPage() {
           </div>
 
           <div className="form-actions">
-            <button type="button" className="btn-secondary" onClick={() => navigate('/')} disabled={uploading}>Avbryt</button>
+            <button type="button" className="btn-secondary" onClick={() => navigate('')} disabled={uploading}>Avbryt</button>
             <button type="submit" className="btn-gold" disabled={uploading || !file || !opponent || !matchDate}>
               {uploading ? 'Laddar upp...' : 'Ladda upp'}
             </button>

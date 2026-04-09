@@ -125,7 +125,7 @@ export default function Layout() {
       )}
       <header className="topbar">
         <div className="topbar-inner">
-          <NavLink to="/" className="logo" onClick={closeMenu}>
+          <NavLink to="." className="logo" onClick={closeMenu}>
             <img src="/Linkoping-lejon.png" alt="LVC" style={{height: "64px", width: "auto", marginRight: "8px"}} />
             <span className="logo-text">
               LVC <span className="logo-accent">Media Hub</span>
@@ -133,23 +133,34 @@ export default function Layout() {
           </NavLink>
 
           <nav className="nav-links">
-            <NavLink to="/" end className="nav-link">
+            <NavLink to="dashboard" className="nav-link">
+              Dashboard
+            </NavLink>
+            <NavLink to="." end className="nav-link">
               Videor
             </NavLink>
-            {effectiveIsUploader && (
-              <NavLink to="/upload" className="nav-link">
-                Ladda upp
+            {(effectiveIsAdmin || isCoach) && (
+              <NavLink to="coach" className="nav-link">
+                Coach
               </NavLink>
             )}
+            {effectiveIsUploader && (
+              <NavLink to="uploader" className="nav-link">
+                Uppladdning
+              </NavLink>
+            )}
+            <NavLink to="my-stats" className="nav-link">
+              Min statistik
+            </NavLink>
+            <NavLink to="analys" className="nav-link">
+              Analys
+            </NavLink>
             {effectiveIsAdmin && (
-              <NavLink to="/admin" className="nav-link">
+              <NavLink to="admin" className="nav-link">
                 Admin
               </NavLink>
             )}
-            <NavLink to="/analys" className="nav-link">
-              Analys
-            </NavLink>
-            <NavLink to="/inbox" className="nav-link" style={{ position: 'relative' }}>
+            <NavLink to="inbox" className="nav-link" style={{ position: 'relative' }}>
               Inbox
               {unreadCount > 0 && (
                 <span style={{
@@ -161,7 +172,7 @@ export default function Layout() {
                 }}>{unreadCount}</span>
               )}
             </NavLink>
-            <NavLink to="/changelog" className="nav-link">
+            <NavLink to="changelog" className="nav-link">
               Logg
             </NavLink>
             {musicUrl && (
@@ -279,30 +290,41 @@ export default function Layout() {
       {menuOpen && (
         <div className="mobile-menu">
           <nav className="mobile-nav">
-            <NavLink to="/" end className="mobile-nav-link" onClick={closeMenu}>
+            <NavLink to="dashboard" className="mobile-nav-link" onClick={closeMenu}>
+              Dashboard
+            </NavLink>
+            <NavLink to="." end className="mobile-nav-link" onClick={closeMenu}>
               Videor
             </NavLink>
-            {effectiveIsUploader && (
-              <NavLink to="/upload" className="mobile-nav-link" onClick={closeMenu}>
-                Ladda upp
+            {(effectiveIsAdmin || isCoach) && (
+              <NavLink to="coach" className="mobile-nav-link" onClick={closeMenu}>
+                Coach
               </NavLink>
             )}
+            {effectiveIsUploader && (
+              <NavLink to="uploader" className="mobile-nav-link" onClick={closeMenu}>
+                Uppladdning
+              </NavLink>
+            )}
+            <NavLink to="my-stats" className="mobile-nav-link" onClick={closeMenu}>
+              Min statistik
+            </NavLink>
+            <NavLink to="analys" className="mobile-nav-link" onClick={closeMenu}>
+              Analys
+            </NavLink>
             {effectiveIsAdmin && (
-              <NavLink to="/admin" className="mobile-nav-link" onClick={closeMenu}>
+              <NavLink to="admin" className="mobile-nav-link" onClick={closeMenu}>
                 Admin
               </NavLink>
             )}
-            <NavLink to="/analys" className="mobile-nav-link" onClick={closeMenu}>
-              Analys
-            </NavLink>
-            <NavLink to="/inbox" className="mobile-nav-link" onClick={closeMenu} style={{ position: 'relative' }}>
+            <NavLink to="inbox" className="mobile-nav-link" onClick={closeMenu} style={{ position: 'relative' }}>
               Inbox {unreadCount > 0 && <span style={{
                 background: 'var(--lvc-blue)', color: '#fff',
                 borderRadius: 10, padding: '1px 7px',
                 fontSize: 11, fontWeight: 700, marginLeft: 4
               }}>{unreadCount}</span>}
             </NavLink>
-            <NavLink to="/changelog" className="mobile-nav-link" onClick={closeMenu}>
+            <NavLink to="changelog" className="mobile-nav-link" onClick={closeMenu}>
               Logg
             </NavLink>
             {musicUrl && (

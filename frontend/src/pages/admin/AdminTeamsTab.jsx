@@ -15,7 +15,7 @@ export default function AdminTeamsTab() {
     setError('');
     try {
       const teamsData = await adminApi.listTeams();
-      setTeams(teamsData.teams);
+      setTeams(Array.isArray(teamsData) ? teamsData : (teamsData?.teams || []));
       setNewSeasonTeamId(prev => {
         if (!prev && teamsData.teams.length > 0) return String(teamsData.teams[0].id);
         return prev;

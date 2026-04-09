@@ -1,6 +1,8 @@
 // ===========================================
-// Kvittra — App (Role-based routing)
-// Reads roles from OrgContext, renders correct panel.
+// CorevoSports — App (Multi-tenant routing)
+// Landing at /, Login at /login
+// Org panel at /app/:slug with all pages
+// Superadmin at filipadmin.corevo.se
 // ===========================================
 import { Routes, Route, Navigate } from 'react-router-dom';
 import React, { Suspense } from 'react';
@@ -10,16 +12,17 @@ import Layout from './components/layout/Layout.jsx';
 import KvittraLoginPage from './pages/KvittraLoginPage.jsx';
 
 class ErrorBoundary extends React.Component {
-  constructor(props) { super(props); this.state = { hasError: false }; }
-  static getDerivedStateFromError() { return { hasError: true }; }
+  constructor(props) { super(props); this.state = { hasError: false, error: null }; }
+  static getDerivedStateFromError(error) { return { hasError: true, error }; }
   render() {
     if (this.state.hasError) {
       return (
-        <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: '1rem', background: 'var(--brand-bg, #0a1628)', color: 'var(--brand-text, #f4f5f7)' }}>
+        <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: '1rem', background: '#0a1628', color: '#f4f5f7' }}>
           <h1 style={{ fontSize: '1.4rem' }}>Något gick fel</h1>
           <p style={{ color: '#7c8294' }}>Sidan stötte på ett oväntat fel.</p>
+          <pre style={{ color: '#ff6b6b', fontSize: '0.8rem', maxWidth: '600px', overflow: 'auto' }}>{this.state.error?.message}</pre>
           <button onClick={() => { this.setState({ hasError: false }); window.location.href = '/'; }}
-            style={{ padding: '0.6rem 1.2rem', background: 'var(--brand-primary, #1a5fb4)', color: '#fff', border: 'none', borderRadius: '6px', cursor: 'pointer' }}>
+            style={{ padding: '0.6rem 1.2rem', background: '#1a5fb4', color: '#fff', border: 'none', borderRadius: '6px', cursor: 'pointer' }}>
             Tillbaka till startsidan
           </button>
         </div>
@@ -29,7 +32,9 @@ class ErrorBoundary extends React.Component {
   }
 }
 
-// Existing pages (lazy-loaded)
+// Original pages (lazy loaded)
+const LandingPage = React.lazy(() => import('./pages/LandingPage.jsx'));
+const SuperadminPage = React.lazy(() => import('./pages/SuperadminPage.jsx'));
 const TeamsPage = React.lazy(() => import('./pages/TeamsPage.jsx'));
 const SeasonsPage = React.lazy(() => import('./pages/SeasonsPage.jsx'));
 const VideosPage = React.lazy(() => import('./pages/VideosPage.jsx'));
@@ -42,10 +47,18 @@ const PlayerStatsPage = React.lazy(() => import('./pages/PlayerStatsPage.jsx'));
 const MultiScoutPage = React.lazy(() => import('./pages/MultiScoutPage.jsx'));
 const AnalysisPage = React.lazy(() => import('./pages/AnalysisPage.jsx'));
 
-// Protected route that checks org membership and roles
+// New multi-tenant pages
+const CoachAdminPanel = React.lazy(() => import('./pages/public/CoachAdminPanel.jsx'));
+const PlayerDashboard = React.lazy(() => import('./pages/public/PlayerDashboard.jsx'));
+const UploaderPanel = React.lazy(() => import('./pages/public/UploaderPanel.jsx'));
+const PublicMatchesPage = React.lazy(() => import('./pages/public/PublicMatchesPage.jsx'));
+const PublicVideoPage = React.lazy(() => import('./pages/public/PublicVideoPage.jsx'));
+const OrgHomePage = React.lazy(() => import('./pages/OrgHomePage.jsx'));
+
+// Protected route — checks auth + org membership
 function ProtectedRoute({ children, requiredRoles }) {
   const { user, loading: authLoading } = useAuth();
-  const { membership, loading: orgLoading, error: orgError } = useOrg();
+  const { membership, loading: orgLoading, error: orgError, slug } = useOrg();
 
   if (authLoading || orgLoading) {
     return <div className="loading-container"><div className="spinner" /></div>;
@@ -55,9 +68,10 @@ function ProtectedRoute({ children, requiredRoles }) {
 
   if (!membership) {
     return (
-      <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: '1rem', background: 'var(--brand-bg, #0a1628)', color: 'var(--brand-text, #f4f5f7)' }}>
+      <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: '1rem', background: '#0a1628', color: '#f4f5f7' }}>
         <h1 style={{ fontSize: '1.4rem' }}>Ingen åtkomst</h1>
         <p style={{ color: '#7c8294' }}>{orgError || 'Du är inte medlem i denna organisation.'}</p>
+        <a href="/" style={{ color: '#1a5fb4' }}>Tillbaka till startsidan</a>
       </div>
     );
   }
@@ -65,79 +79,55 @@ function ProtectedRoute({ children, requiredRoles }) {
   if (requiredRoles) {
     const roles = Array.isArray(requiredRoles) ? requiredRoles : [requiredRoles];
     const hasRole = roles.some(r => membership.roles.includes(r));
-    if (!hasRole) return <Navigate to="/" replace />;
+    if (!hasRole) return <Navigate to={`/app/${slug}`} replace />;
   }
 
   return children;
 }
 
-// Public route — for matches with visibility='public'
-function PublicVideoRoute({ children }) {
-  return children; // No auth needed
-}
-
-// Determine the home page based on highest role
-function HomePage() {
-  const { roles } = useOrg();
-
-  // Player with no admin/coach role → player dashboard (when built)
-  // For now, redirect to teams
-  if (roles.includes('player') && !roles.includes('admin') && !roles.includes('coach')) {
-    return <TeamsPage />; // Will be PlayerDashboard later
-  }
-
-  return <TeamsPage />;
-}
-
 export default function KvittraApp() {
   const { loading: authLoading } = useAuth();
-  const { loading: orgLoading, isLandingPage, isSuperadmin } = useOrg();
+  const { loading: orgLoading, isSuperadmin } = useOrg();
 
   if (authLoading || orgLoading) {
     return <div className="loading-container" style={{ minHeight: '100vh' }}><div className="spinner" /></div>;
   }
 
-  // kvittra.se (no subdomain) → landing page / login
-  if (isLandingPage) {
-    return (
-      <ErrorBoundary>
-        <Routes>
-          <Route path="/login" element={<KvittraLoginPage />} />
-          <Route path="*" element={<KvittraLoginPage />} />
-        </Routes>
-      </ErrorBoundary>
-    );
-  }
+  const fallback = <div className="loading-container"><div className="spinner" /></div>;
 
-  // filipadmin.kvittra.se → superadmin (placeholder)
+  // filipadmin.corevo.se → superadmin
   if (isSuperadmin) {
     return (
       <ErrorBoundary>
-        <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#0a1628', color: '#f4f5f7' }}>
-          <h1>Superadmin — Under uppbyggnad</h1>
-        </div>
+        <Suspense fallback={fallback}>
+          <Routes>
+            <Route path="/login" element={<KvittraLoginPage />} />
+            <Route path="*" element={<SuperadminPage />} />
+          </Routes>
+        </Suspense>
       </ErrorBoundary>
     );
   }
-
-  const fallback = <div className="loading-container"><div className="spinner" /></div>;
 
   return (
     <ErrorBoundary>
       <Suspense fallback={fallback}>
         <Routes>
+          {/* Public */}
+          <Route path="/" element={<LandingPage />} />
           <Route path="/login" element={<KvittraLoginPage />} />
 
-          {/* Protected org routes */}
+          {/* Org panel — Layout with all pages */}
           <Route
-            path="/"
+            path="/app/:slug"
             element={
               <ProtectedRoute>
                 <Layout />
               </ProtectedRoute>
             }
           >
-            <Route index element={<HomePage />} />
+            {/* Original pages */}
+            <Route index element={<TeamsPage />} />
             <Route path="team/:teamId" element={<SeasonsPage />} />
             <Route path="team/:teamId/season/:seasonId" element={<VideosPage />} />
             <Route path="videos" element={<VideosPage />} />
@@ -158,12 +148,36 @@ export default function KvittraApp() {
             <Route
               path="admin"
               element={
-                <ProtectedRoute requiredRoles="admin">
+                <ProtectedRoute requiredRoles={['admin']}>
                   <AdminPage />
                 </ProtectedRoute>
               }
             />
+
+            {/* New multi-tenant pages */}
+            <Route path="dashboard" element={<OrgHomePage />} />
+            <Route
+              path="coach"
+              element={
+                <ProtectedRoute requiredRoles={['admin', 'coach']}>
+                  <CoachAdminPanel />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="uploader"
+              element={
+                <ProtectedRoute requiredRoles={['admin', 'coach', 'uploader']}>
+                  <UploaderPanel />
+                </ProtectedRoute>
+              }
+            />
+            <Route path="my-stats" element={<PlayerDashboard />} />
           </Route>
+
+          {/* Public match pages (no auth needed) */}
+          <Route path="/app/:slug/public" element={<PublicMatchesPage />} />
+          <Route path="/app/:slug/public/match/:matchId" element={<PublicVideoPage />} />
 
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>

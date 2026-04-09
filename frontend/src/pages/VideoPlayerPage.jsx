@@ -446,7 +446,7 @@ export default function VideoPlayerPage() {
     if (!confirm(`Är du säker på att du vill ta bort "${video.title}"?`)) return;
     try {
       await videoApi.remove(id);
-      navigate('/');
+      navigate('');
     } catch (err) {
       alert(err.message);
     }
@@ -473,7 +473,7 @@ export default function VideoPlayerPage() {
     return (
       <div className="empty-state">
         <h3>{error || 'Videon kunde inte hittas'}</h3>
-        <Link to="/" className="btn-secondary" style={{ marginTop: '1rem', display: 'inline-flex' }}>← Tillbaka</Link>
+        <Link to="." className="btn-secondary" style={{ marginTop: '1rem', display: 'inline-flex' }}>← Tillbaka</Link>
       </div>
     );
   }

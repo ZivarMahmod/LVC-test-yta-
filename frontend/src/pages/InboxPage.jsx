@@ -64,7 +64,7 @@ function PlayerInbox() {
           </div>
           {unread.map(r => (
             <ReviewCard key={r.id} review={r}
-              onGoTo={() => navigate(`/video/${r.videoId}?actionIndex=${r.actionIndex}`)}
+              onGoTo={() => navigate(`video/${r.videoId}?actionIndex=${r.actionIndex}`)}
               onAcknowledge={() => { setAcknowledging(r.id); setError(""); setSuccess(""); setPassword(""); }}
               acknowledging={acknowledging === r.id}
               password={password} setPassword={setPassword}
@@ -83,7 +83,7 @@ function PlayerInbox() {
           </div>
           {read.map(r => (
             <ReviewCard key={r.id} review={r} acknowledged
-              onGoTo={() => navigate(`/video/${r.videoId}?actionIndex=${r.actionIndex}`)}
+              onGoTo={() => navigate(`video/${r.videoId}?actionIndex=${r.actionIndex}`)}
             />
           ))}
         </div>
@@ -244,7 +244,7 @@ function MatchGroupedReviews({ reviews, navigate }) {
                       )}
                     </div>
                     <button
-                      onClick={() => navigate(`/video/${r.videoId}?actionIndex=${r.actionIndex}`)}
+                      onClick={() => navigate(`video/${r.videoId}?actionIndex=${r.actionIndex}`)}
                       title="Gå till action"
                       style={{
                         background: "none", border: "none", cursor: "pointer",

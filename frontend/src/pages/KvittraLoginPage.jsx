@@ -1,5 +1,5 @@
 // ===========================================
-// Kvittra — Login Page
+// CorevoSports — Login Page
 // email → password → OTP → org picker → redirect
 // ===========================================
 import { useState } from 'react';
@@ -29,9 +29,9 @@ export default function KvittraLoginPage() {
   const [loading, setLoading] = useState(false);
   const [otpSent, setOtpSent] = useState(false);
 
-  // Already logged in with an org → redirect
+  // Already logged in with an org → redirect to /app/slug
   if (isAuthenticated && organizations.length === 1) {
-    redirectToOrg(organizations[0].org.slug);
+    window.location.href = `/app/${organizations[0].org.slug}`;
     return null;
   }
 
@@ -103,7 +103,7 @@ export default function KvittraLoginPage() {
 
       if (orgs.length === 1) {
         // Direct redirect
-        redirectToOrg(orgs[0].org.slug);
+        window.location.href = `/app/${orgs[0].org.slug}`;
         return;
       }
 
@@ -148,7 +148,7 @@ export default function KvittraLoginPage() {
       <div className="login-card">
         <div className="login-header">
           <div className="login-logo">🏐</div>
-          <h1>Kvittra</h1>
+          <h1>CorevoSports</h1>
           <p>Sports Video Analysis</p>
         </div>
 
@@ -247,7 +247,7 @@ export default function KvittraLoginPage() {
                 <button
                   key={membership.orgId}
                   className="org-picker-item"
-                  onClick={() => redirectToOrg(membership.org.slug)}
+                  onClick={() => { window.location.href = `/app/${membership.org.slug}`; }}
                 >
                   <span className="org-picker-name">{membership.org.name}</span>
                   <span className="org-picker-roles">
@@ -260,7 +260,7 @@ export default function KvittraLoginPage() {
         )}
 
         <div className="login-footer">
-          <p>Kvittra — Sports Video Analysis</p>
+          <p>CorevoSports — Sports Video Analysis</p>
         </div>
       </div>
     </div>

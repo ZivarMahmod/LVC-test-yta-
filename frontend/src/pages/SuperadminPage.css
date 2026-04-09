@@ -73,3 +73,17 @@
 .sa-stat-label { font-size: 0.85rem; color: var(--text-muted); }
 .sa-stat-row { display: flex; justify-content: space-between; padding: var(--space-xs) 0; border-bottom: 1px solid rgba(255,255,255,0.04); }
 .sa-stat-row .sa-stat-num { font-size: 1rem; }
+
+.sa-result-box {
+  background: var(--surface-raised); border: 1px solid var(--lvc-blue, #1a5fb4);
+  border-radius: var(--radius-md); padding: var(--space-lg);
+  margin-bottom: var(--space-xl); display: flex; flex-direction: column; gap: var(--space-sm);
+}
+.sa-result-header { display: flex; justify-content: space-between; align-items: center; font-weight: 600; font-size: 1rem; margin-bottom: var(--space-xs); }
+.sa-result-row { display: flex; align-items: center; gap: var(--space-sm); font-size: 0.95rem; }
+.sa-result-row label { color: var(--text-muted); min-width: 120px; }
+.sa-result-pwd {
+  background: var(--surface-base); padding: 6px 12px; border-radius: var(--radius-sm);
+  font-family: var(--font-mono); font-size: 1.1rem; letter-spacing: 0.05em;
+  cursor: pointer; user-select: all; border: 1px solid var(--border-default);
+}

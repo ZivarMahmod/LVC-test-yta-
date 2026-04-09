@@ -156,7 +156,7 @@ function RecentActionsTable({ actions }) {
               <td>{formatTimestamp(a.timestamp_sec)}</td>
               <td>
                 {a.match_id && (
-                  <Link to={`/match/${a.match_id}`} className="pd-video-link">
+                  <Link to={`match/${a.match_id}`} className="pd-video-link">
                     Se video
                   </Link>
                 )}

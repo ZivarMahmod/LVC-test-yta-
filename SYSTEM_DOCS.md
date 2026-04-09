@@ -2,7 +2,7 @@
 
 > Senast uppdaterad: 2026-04-08
 > Server: Optiplex 192.168.50.100 (Fallover)
-> Domän: lvcmediahub.corevo.se
+> Domän: corevosports.corevo.se
 
 ---
 
@@ -29,7 +29,7 @@ Ingen data läcker mellan organisationer. Allt skyddas av Row Level Security i d
 ```
                     ┌──────────────────────────────────┐
                     │        Cloudflare DNS             │
-                    │  lvcmediahub.corevo.se → .100     │
+                    │  corevosports.corevo.se → .100    │
                     │  filipadmin.corevo.se  → .100     │
                     └──────────────┬───────────────────┘
                                    │
@@ -111,9 +111,11 @@ Frontend kan köras i tre lägen. Styrs av env-variabler:
 
 | Vad | URL | Beskrivning |
 |-----|-----|-------------|
-| Landningssida | `https://lvcmediahub.corevo.se` | Publik marknadsföring + login |
-| Login | `https://lvcmediahub.corevo.se/login` | Enda inloggningspunkt |
-| Superadmin (frontend) | `https://filipadmin.corevo.se` | Filips admin-verktyg |
+| Landningssida | `https://corevosports.corevo.se` | Publik marknadsföring + login |
+| Login | `https://corevosports.corevo.se/login` | Enda inloggningspunkt |
+| [org-slug]-panel | `https://[org].corevosports.corevo.se/app` | Kund-panel (t.ex. lvc.corevosports.corevo.se/app) |
+| [org-slug]-publik | `https://[org].corevosports.corevo.se/public` | Publik vy utan inloggning |
+| Superadmin (frontend) | `https://filipadmin.corevo.se` | Filips admin-verktyg (HTTP Basic Auth) |
 | Supabase Studio | `http://192.168.50.100:3040` | Databas-UI (bara LAN) |
 
 ---
@@ -124,7 +126,7 @@ Frontend kan köras i tre lägen. Styrs av env-variabler:
 
 | | |
 |---|---|
-| URL | https://lvcmediahub.corevo.se/login |
+| URL | https://corevosports.corevo.se/login |
 | Email | admin@corevo.se |
 | Lösenord | Filip12345 |
 | Roll | Admin i båda orgs |
@@ -256,7 +258,7 @@ if (isEnabled('player_dashboard')) { /* rendera */ }
 ## 13. Auth-flödet (steg för steg)
 
 ```
-1. Användare → lvcmediahub.corevo.se/login
+1. Användare → corevosports.corevo.se/login
 2. Skriver in e-post → "Fortsätt"
 3. Skriver in lösenord → supabase.auth.signInWithPassword()
 4. Om rätt → generate-otp Edge Function → 6-siffrig kod till mail

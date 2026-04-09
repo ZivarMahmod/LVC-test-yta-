@@ -46,7 +46,7 @@ export default function PublicMatchesPage() {
         {matches.map(match => (
           <Link
             key={match.id}
-            to={`/match/${match.id}`}
+            to={`match/${match.id}`}
             className="public-match-card"
           >
             {match.team?.thumbnail_url ? (

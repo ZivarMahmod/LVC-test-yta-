@@ -23,7 +23,7 @@ export default function TeamsPage() {
     try {
       await teamAdminApi.uploadThumbnail(thumbTeamId, file);
       const data = await teamApi.listTeams();
-      setTeams(data.teams);
+      setTeams(Array.isArray(data) ? data : (data?.teams || []));
     } catch {}
     setThumbTeamId(null);
     if (thumbInputRef.current) thumbInputRef.current.value = '';
@@ -34,7 +34,7 @@ export default function TeamsPage() {
     async function fetchTeams() {
       try {
         const data = await teamApi.listTeams();
-        setTeams(data.teams);
+        setTeams(Array.isArray(data) ? data : (data?.teams || []));
       } catch {
         setError('Kunde inte hämta lag.');
       } finally {
@@ -62,7 +62,7 @@ export default function TeamsPage() {
             <button
               key={team.id}
               className="team-card-overlay"
-              onClick={() => navigate(`/team/${team.id}`)}
+              onClick={() => navigate(`team/${team.id}`)}
             >
               {team.thumbnailPath ? (
                 <img className="team-card-img" src={'/api/team-thumbnail/' + team.thumbnailPath.replace('/teams/', '')} alt={team.name} />

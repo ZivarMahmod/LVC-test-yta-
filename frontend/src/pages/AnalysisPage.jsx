@@ -78,7 +78,7 @@ export default function AnalysisPage() {
 
   const openAnalysis = (ids) => {
     if (ids.length < 1) return;
-    navigate('/multi-scout?ids=' + ids.join(','));
+    navigate('multi-scout?ids=' + ids.join(','));
   };
 
   const getFilteredVideos = () => {

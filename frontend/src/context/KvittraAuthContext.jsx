@@ -1,7 +1,7 @@
 // ===========================================
 // Kvittra — Auth Context
 // Flow: email → password → OTP → org picker → redirect
-// Single auth portal at kvittra.se/login
+// Single auth portal at corevosports.corevo.se/login
 // ===========================================
 import { createContext, useContext, useState, useEffect, useCallback, useMemo } from 'react';
 import { supabase } from '../utils/supabaseClient.js';
@@ -123,16 +123,9 @@ export function AuthProvider({ children }) {
     };
   }, []);
 
-  // Step 5: Redirect to org subdomain
+  // Step 5: Redirect to org panel via path
   const redirectToOrg = useCallback((orgSlug) => {
-    const protocol = window.location.protocol;
-    // In dev, use query param. In prod, use subdomain.
-    if (window.location.hostname === 'localhost' || /^\d+\.\d+\.\d+\.\d+$/.test(window.location.hostname)) {
-      window.location.href = `${protocol}//${window.location.host}/?org=${orgSlug}`;
-    } else {
-      const baseDomain = window.location.hostname.split('.').slice(-2).join('.');
-      window.location.href = `${protocol}//${orgSlug}.${baseDomain}`;
-    }
+    window.location.href = `/app/${orgSlug}`;
   }, []);
 
   // Logout

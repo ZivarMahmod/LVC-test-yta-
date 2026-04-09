@@ -34,7 +34,7 @@ export default function PublicVideoPage() {
     return (
       <div className="public-video-error">
         <p>{error || 'Matchen hittades inte'}</p>
-        <Link to="/">Tillbaka till matcher</Link>
+        <Link to=".">Tillbaka till matcher</Link>
       </div>
     );
   }
@@ -48,7 +48,7 @@ export default function PublicVideoPage() {
 
   return (
     <div className="public-video">
-      <Link to="/" className="public-video-back">&larr; Alla matcher</Link>
+      <Link to="." className="public-video-back">&larr; Alla matcher</Link>
 
       <div className="public-video-header">
         <h1>{match.title}</h1>

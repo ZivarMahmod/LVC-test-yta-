@@ -17,7 +17,7 @@ const DEFAULT_BRANDING = {
   surface_color: '#111f3a',
   text_color: '#f4f5f7',
   font: "'DM Sans', system-ui, sans-serif",
-  org_name: 'Kvittra',
+  org_name: 'CorevoSports',
 };
 
 function applyBrandingToCSS(branding) {

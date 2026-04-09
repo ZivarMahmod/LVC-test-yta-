@@ -44,7 +44,7 @@ export default function SeasonsPage() {
   return (
     <div className="seasons-page">
       <nav className="seasons-breadcrumb">
-        <Link to="/">Lag</Link>
+        <Link to=".">Lag</Link>
         <span className="breadcrumb-sep">›</span>
         <span>{team?.name}</span>
       </nav>
@@ -62,7 +62,7 @@ export default function SeasonsPage() {
             <button
               key={season.id}
               className="season-card"
-              onClick={() => navigate(`/team/${teamId}/season/${season.id}`)}
+              onClick={() => navigate(`team/${teamId}/season/${season.id}`)}
             >
               <div className="season-card-name">{season.name}</div>
               <div className="season-card-meta">

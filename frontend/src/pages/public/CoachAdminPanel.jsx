@@ -67,7 +67,7 @@ function VideoLibraryTab({ orgId }) {
               </td>
               <td>{m.videos?.length || 0}</td>
               <td>
-                <Link to={`/match/${m.id}`} className="cap-link-btn">Visa</Link>
+                <Link to={`match/${m.id}`} className="cap-link-btn">Visa</Link>
               </td>
             </tr>
           ))}

@@ -1,36 +1,22 @@
 // ===========================================
-// Kvittra — Org Context
-// Reads slug from hostname, fetches org from
-// kvittra.organizations, provides org data.
+// CorevoSports — Org Context
+// Reads slug from URL path /app/:slug
+// Fetches org from kvittra.organizations
 // ===========================================
 import { createContext, useContext, useState, useEffect, useMemo } from 'react';
+import { useLocation } from 'react-router-dom';
 import { supabase } from '../utils/supabaseClient.js';
 
 const OrgContext = createContext(null);
 
-// Extract slug from hostname: "lvc.kvittra.se" → "lvc"
-function getSlugFromHostname() {
-  const hostname = window.location.hostname;
+// Extract slug from path: /app/lvc → "lvc", /app/lvc/team/123 → "lvc"
+function getSlugFromPath(pathname) {
+  const match = pathname.match(/^\/app\/([^/]+)/);
+  return match ? match[1] : null;
+}
 
-  // Dev: localhost or IP → use query param ?org=lvc or default
-  if (hostname === 'localhost' || hostname === '127.0.0.1' || /^\d+\.\d+\.\d+\.\d+$/.test(hostname)) {
-    const params = new URLSearchParams(window.location.search);
-    return params.get('org') || null;
-  }
-
-  // filipadmin.kvittra.se → superadmin, not an org
-  if (hostname.startsWith('filipadmin.')) {
-    return '__superadmin__';
-  }
-
-  // kvittra.se (no subdomain) → landing page
-  const parts = hostname.split('.');
-  if (parts.length <= 2) {
-    return null; // main domain, no slug
-  }
-
-  // lvc.kvittra.se → "lvc"
-  return parts[0];
+function isSuperadminHostname() {
+  return window.location.hostname.startsWith('filipadmin.');
 }
 
 export function OrgProvider({ children }) {
@@ -38,13 +24,14 @@ export function OrgProvider({ children }) {
   const [membership, setMembership] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const location = useLocation();
 
-  const slug = useMemo(() => getSlugFromHostname(), []);
-  const isSuperadmin = slug === '__superadmin__';
-  const isLandingPage = slug === null;
+  const slug = useMemo(() => getSlugFromPath(location.pathname), [location.pathname]);
+  const isSuperadmin = isSuperadminHostname();
+  const isLandingPage = !slug && !isSuperadmin;
 
   useEffect(() => {
-    if (!slug || isSuperadmin || isLandingPage) {
+    if (!slug || isSuperadmin) {
       setLoading(false);
       return;
     }
@@ -89,7 +76,7 @@ export function OrgProvider({ children }) {
     }
 
     fetchOrg();
-  }, [slug, isSuperadmin, isLandingPage]);
+  }, [slug, isSuperadmin]);
 
   // Refresh membership when auth state changes
   useEffect(() => {
