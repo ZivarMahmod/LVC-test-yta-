@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { adminApi } from '../../utils/api.js';
+import { adminApi } from '../../utils/apiSwitch.js';
 
 export default function AdminActivityTab() {
   const [activeData, setActiveData] = useState({ online: [], recent: [], totalOnline: 0, totalRecent: 0 });

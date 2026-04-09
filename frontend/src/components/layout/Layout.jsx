@@ -3,8 +3,8 @@
 // ===========================================
 import { useState, useRef, useEffect } from 'react';
 import { Outlet, NavLink, useNavigate } from 'react-router-dom';
-import { useAuth } from '../../context/AuthContext.jsx';
-import { authApi, reviewApi, settingsApi } from '../../utils/api.js';
+import { useAuth } from '../../context/SupabaseAuthContext.jsx';
+import { authApi, reviewApi, settingsApi } from '../../utils/apiSwitch.js';
 import { useGradeSymbols } from '../../hooks/useGradeSymbols.js';
 import { useScoreboardSettings } from '../../hooks/useScoreboardSettings.js';
 import './Layout.css';
@@ -40,7 +40,8 @@ export default function Layout() {
   async function fetchUnreadCount() {
     try {
       const data = await reviewApi.getInbox();
-      const unread = (data.reviews || []).filter(r => !r.acknowledgedAt).length;
+      const reviews = Array.isArray(data) ? data : (data?.reviews || []);
+      const unread = reviews.filter(r => !r.acknowledgedAt).length;
       setUnreadCount(unread);
     } catch {}
   }

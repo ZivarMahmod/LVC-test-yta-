@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react';
 import { GRADE_SYMBOLS } from '../utils/scoutConstants.js';
 import { getGradeSymbols, saveGradeSymbols, resetGradeSymbols } from '../utils/gradeSettings.js';
-import { useAuth } from '../context/AuthContext.jsx';
-import { userApi } from '../utils/api.js';
+import { useAuth } from '../context/SupabaseAuthContext.jsx';
+import { userApi } from '../utils/apiSwitch.js';
 
 export function useGradeSymbols() {
   const { user } = useAuth();

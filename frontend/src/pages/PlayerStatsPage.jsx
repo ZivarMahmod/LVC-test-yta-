@@ -4,7 +4,7 @@
 // ===========================================
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
-import { playerStatsApi } from '../utils/api.js';
+import { playerStatsApi } from '../utils/apiSwitch.js';
 import './PlayerStatsPage.css';
 
 const pct = (num, den) => den > 0 ? Math.round((num / den) * 100) : 0;

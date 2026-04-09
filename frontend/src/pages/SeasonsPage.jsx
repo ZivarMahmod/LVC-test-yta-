@@ -4,7 +4,7 @@
 // ===========================================
 import { useState, useEffect } from 'react';
 import { useNavigate, useParams, Link } from 'react-router-dom';
-import { teamApi } from '../utils/api.js';
+import { teamApi } from '../utils/apiSwitch.js';
 import './SeasonsPage.css';
 
 export default function SeasonsPage() {

@@ -71,6 +71,18 @@ export const authApi = {
     }
 
     return { user: authData.user };
+  },
+
+  async changePassword(currentPassword, newPassword) {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session?.user?.email) throw new Error('Ej inloggad');
+    const { error: verifyError } = await supabase.auth.signInWithPassword({
+      email: session.user.email,
+      password: currentPassword
+    });
+    if (verifyError) throw new Error('Nuvarande lösenord är felaktigt');
+    const { error: updateError } = await supabase.auth.updateUser({ password: newPassword });
+    if (updateError) throw new Error(updateError.message || 'Kunde inte byta lösenord');
   }
 };
 

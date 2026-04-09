@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { settingsApi } from '../../utils/api.js';
+import { settingsApi } from '../../utils/apiSwitch.js';
 
 export default function AdminScoutTab() {
   const [skillNames, setSkillNames] = useState({});

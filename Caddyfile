@@ -1,0 +1,9 @@
+:80 {
+	@supabase path /rest/v1/* /auth/v1/* /storage/v1/* /realtime/v1/* /functions/v1/* /pg/*
+	handle @supabase {
+		reverse_proxy kong:8000
+	}
+	handle {
+		reverse_proxy lvc-media-hub:3001
+	}
+}

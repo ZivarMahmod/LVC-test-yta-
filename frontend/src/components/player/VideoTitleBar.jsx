@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { videoApi } from '../../utils/api.js';
+import { videoApi } from '../../utils/apiSwitch.js';
 
 export default function VideoTitleBar({ video, isAdmin, isUploader, onUpdate, onDelete }) {
   const [editingTitle, setEditingTitle] = useState(false);

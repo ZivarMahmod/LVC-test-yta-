@@ -2,7 +2,7 @@
 // Kvittra — Superadmin Page (filipadmin.kvittra.se)
 // ===========================================
 import { useState, useEffect } from 'react';
-import { supabase } from '../utils/supabaseClient.js';
+import { supabase, supabaseKvittra } from '../utils/supabaseClient.js';
 import './SuperadminPage.css';
 
 const TABS = ['Organisationer', 'Branding', 'Features', 'Användare', 'Statistik'];
@@ -24,7 +24,7 @@ function OrgsTab() {
   const [loading, setLoading] = useState(true);
 
   const fetchOrgs = async () => {
-    const { data } = await supabase.schema('kvittra').from('organizations').select('*').order('created_at');
+    const { data } = await supabaseKvittra.from('organizations').select('*').order('created_at');
     setOrgs(data || []);
     setLoading(false);
   };
@@ -34,7 +34,7 @@ function OrgsTab() {
   const createOrg = async (e) => {
     e.preventDefault();
     const tpl = TEMPLATES[template] || TEMPLATES.dark_blue;
-    const { error } = await supabase.schema('kvittra').from('organizations').insert({
+    const { error } = await supabaseKvittra.from('organizations').insert({
       name, slug: slug.toLowerCase().replace(/[^a-z0-9-]/g, ''),
       branding_config: tpl, features_config: {},
     });
@@ -44,7 +44,7 @@ function OrgsTab() {
   };
 
   const toggleActive = async (org) => {
-    await supabase.schema('kvittra').from('organizations').update({ is_active: !org.is_active }).eq('id', org.id);
+    await supabaseKvittra.from('organizations').update({ is_active: !org.is_active }).eq('id', org.id);
     fetchOrgs();
   };
 
@@ -87,7 +87,7 @@ function BrandingTab() {
   const [branding, setBranding] = useState({});
 
   useEffect(() => {
-    supabase.schema('kvittra').from('organizations').select('id, name, slug, branding_config').order('name').then(({ data }) => setOrgs(data || []));
+    supabaseKvittra.from('organizations').select('id, name, slug, branding_config').order('name').then(({ data }) => setOrgs(data || []));
   }, []);
 
   useEffect(() => {
@@ -98,7 +98,7 @@ function BrandingTab() {
   const updateField = (key, value) => setBranding(prev => ({ ...prev, [key]: value }));
 
   const save = async () => {
-    const { error } = await supabase.schema('kvittra').from('organizations').update({ branding_config: branding }).eq('id', selectedOrg);
+    const { error } = await supabaseKvittra.from('organizations').update({ branding_config: branding }).eq('id', selectedOrg);
     if (error) alert(error.message);
     else alert('Sparat!');
   };
@@ -178,12 +178,12 @@ function FeaturesTab() {
   const [newKey, setNewKey] = useState('');
 
   const fetchFeatures = async () => {
-    const { data } = await supabase.schema('kvittra').from('features_config').select('*').order('feature_key');
+    const { data } = await supabaseKvittra.from('features_config').select('*').order('feature_key');
     setFeatures(data || []);
   };
 
   useEffect(() => {
-    supabase.schema('kvittra').from('organizations').select('id, name').order('name').then(({ data }) => setOrgs(data || []));
+    supabaseKvittra.from('organizations').select('id, name').order('name').then(({ data }) => setOrgs(data || []));
     fetchFeatures();
   }, []);
 
@@ -193,7 +193,7 @@ function FeaturesTab() {
   });
 
   const toggleFeature = async (feature) => {
-    await supabase.schema('kvittra').from('features_config').update({ is_enabled: !feature.is_enabled }).eq('id', feature.id);
+    await supabaseKvittra.from('features_config').update({ is_enabled: !feature.is_enabled }).eq('id', feature.id);
     fetchFeatures();
   };
 
@@ -201,7 +201,7 @@ function FeaturesTab() {
     e.preventDefault();
     if (!newKey) return;
     const orgId = selectedOrg === '__global__' ? null : selectedOrg;
-    await supabase.schema('kvittra').from('features_config').insert({ org_id: orgId, feature_key: newKey, is_enabled: false });
+    await supabaseKvittra.from('features_config').insert({ org_id: orgId, feature_key: newKey, is_enabled: false });
     setNewKey('');
     fetchFeatures();
   };
@@ -244,8 +244,8 @@ function UsersTab() {
 
   const fetchAll = async () => {
     const [orgsRes, membersRes] = await Promise.all([
-      supabase.schema('kvittra').from('organizations').select('id, name').order('name'),
-      supabase.schema('kvittra').from('organization_members').select(`
+      supabaseKvittra.from('organizations').select('id, name').order('name'),
+      supabaseKvittra.from('organization_members').select(`
         id, user_id, roles, is_active, org_id,
         organizations:org_id ( name )
       `).order('created_at'),
@@ -276,7 +276,7 @@ function UsersTab() {
     }
 
     // Add as admin member
-    const { error: memberErr } = await supabase.schema('kvittra').from('organization_members').insert({
+    const { error: memberErr } = await supabaseKvittra.from('organization_members').insert({
       user_id: authData.user.id,
       org_id: selectedOrg,
       roles: ['admin'],
@@ -331,9 +331,9 @@ function StatsTab() {
   useEffect(() => {
     async function fetch() {
       const [orgsRes, membersRes, matchesRes] = await Promise.all([
-        supabase.schema('kvittra').from('organizations').select('id', { count: 'exact', head: true }),
-        supabase.schema('kvittra').from('organization_members').select('id', { count: 'exact', head: true }).eq('is_active', true),
-        supabase.schema('kvittra').from('matches').select('org_id, organizations:org_id ( name )'),
+        supabaseKvittra.from('organizations').select('id', { count: 'exact', head: true }),
+        supabaseKvittra.from('organization_members').select('id', { count: 'exact', head: true }).eq('is_active', true),
+        supabaseKvittra.from('matches').select('org_id, organizations:org_id ( name )'),
       ]);
 
       const matchesByOrg = {};

@@ -1,39 +1,238 @@
 # ===========================================
-# LVC Media Hub — Docker Compose
+# LVC Media Hub — Full Supabase Stack + App + Caddy
 # ===========================================
 services:
+  postgres:
+    image: supabase/postgres:15.8.1.060
+    container_name: lvc-postgres
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:5433:5432"
+    environment:
+      POSTGRES_HOST: /var/run/postgresql
+      PGPORT: "5432"
+      POSTGRES_PORT: "5432"
+      PGPASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      PGDATABASE: ${POSTGRES_DB:-postgres}
+      POSTGRES_DB: ${POSTGRES_DB:-postgres}
+      JWT_SECRET: ${SUPABASE_JWT_SECRET}
+      JWT_EXP: 3600
+    volumes:
+      - lvc-pgdata:/var/lib/postgresql/data
+    command:
+      - postgres
+      - -c
+      - listen_addresses=*
+      - -c
+      - wal_level=logical
+      - -c
+      - max_replication_slots=5
+      - -c
+      - max_wal_senders=10
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U supabase_admin -h localhost"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+
+  kong:
+    image: kong:2.8.1
+    container_name: lvc-supabase-kong
+    restart: unless-stopped
+    expose:
+      - "8000"
+      - "8443"
+    entrypoint: bash /var/lib/kong/kong-entrypoint.sh
+    environment:
+      KONG_DATABASE: "off"
+      KONG_DECLARATIVE_CONFIG: /usr/local/kong/kong.yml
+      KONG_DNS_ORDER: LAST,A,CNAME
+      KONG_PLUGINS: request-transformer,cors,key-auth,acl,basic-auth
+      KONG_NGINX_PROXY_PROXY_BUFFER_SIZE: 160k
+      KONG_NGINX_PROXY_PROXY_BUFFERS: 64 160k
+      SUPABASE_ANON_KEY: ${SUPABASE_ANON_KEY}
+      SUPABASE_SERVICE_KEY: ${SUPABASE_SERVICE_ROLE_KEY}
+    volumes:
+      - ./volumes/api/kong.yml:/var/lib/kong/kong.yml:ro
+      - ./volumes/api/kong-entrypoint.sh:/var/lib/kong/kong-entrypoint.sh:ro
+    depends_on:
+      supabase-auth:
+        condition: service_started
+      supabase-rest:
+        condition: service_started
+
+  supabase-auth:
+    image: supabase/gotrue:v2.164.0
+    container_name: lvc-supabase-auth
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:9999/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    environment:
+      GOTRUE_API_HOST: 0.0.0.0
+      GOTRUE_API_PORT: 9999
+      API_EXTERNAL_URL: https://lvcmediahub.corevo.se
+      GOTRUE_DB_DRIVER: postgres
+      GOTRUE_DB_DATABASE_URL: postgresql://supabase_auth_admin:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-postgres}?search_path=auth
+      GOTRUE_SITE_URL: https://lvcmediahub.corevo.se
+      GOTRUE_URI_ALLOW_LIST: ""
+      GOTRUE_DISABLE_SIGNUP: "false"
+      GOTRUE_JWT_ADMIN_ROLES: service_role
+      GOTRUE_JWT_AUD: authenticated
+      GOTRUE_JWT_DEFAULT_GROUP_NAME: authenticated
+      GOTRUE_JWT_EXP: 3600
+      GOTRUE_JWT_SECRET: ${SUPABASE_JWT_SECRET}
+      GOTRUE_EXTERNAL_EMAIL_ENABLED: "true"
+      GOTRUE_MAILER_AUTOCONFIRM: "true"
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  supabase-rest:
+    image: postgrest/postgrest:v12.2.3
+    container_name: lvc-supabase-rest
+    restart: unless-stopped
+    environment:
+      PGRST_DB_URI: postgresql://authenticator:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-postgres}
+      PGRST_DB_SCHEMAS: public,storage,kvittra
+      PGRST_DB_ANON_ROLE: anon
+      PGRST_JWT_SECRET: ${SUPABASE_JWT_SECRET}
+      PGRST_DB_USE_LEGACY_GUCS: "false"
+      PGRST_APP_SETTINGS_JWT_SECRET: ${SUPABASE_JWT_SECRET}
+      PGRST_APP_SETTINGS_JWT_EXP: 3600
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  supabase-realtime:
+    image: supabase/realtime:v2.30.34
+    container_name: lvc-supabase-realtime
+    restart: unless-stopped
+    environment:
+      PORT: 4000
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_USER: supabase_admin
+      DB_PASSWORD: ${POSTGRES_PASSWORD}
+      DB_NAME: ${POSTGRES_DB:-postgres}
+      DB_AFTER_CONNECT_QUERY: "SET search_path TO _realtime"
+      DB_ENC_KEY: subabaserealtime
+      API_JWT_SECRET: ${SUPABASE_JWT_SECRET}
+      SECRET_KEY_BASE: ${SECRET_KEY_BASE}
+      METRICS_JWT_SECRET: ${SUPABASE_JWT_SECRET}
+      ERL_AFLAGS: -proto_dist inet_tcp
+      DNS_NODES: "''"
+      RLIMIT_NOFILE: "10000"
+      APP_NAME: realtime
+      SEED_SELF_HOST: "true"
+      RUN_JANITOR: "true"
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  supabase-storage:
+    image: supabase/storage-api:v1.11.13
+    container_name: lvc-supabase-storage
+    restart: unless-stopped
+    environment:
+      ANON_KEY: ${SUPABASE_ANON_KEY}
+      SERVICE_KEY: ${SUPABASE_SERVICE_ROLE_KEY}
+      POSTGREST_URL: http://supabase-rest:3000
+      PGRST_JWT_SECRET: ${SUPABASE_JWT_SECRET}
+      DATABASE_URL: postgresql://supabase_storage_admin:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-postgres}
+      FILE_SIZE_LIMIT: 52428800
+      STORAGE_BACKEND: file
+      FILE_STORAGE_BACKEND_PATH: /var/lib/storage
+      TENANT_ID: stub
+      REGION: eu-north-1
+      GLOBAL_S3_BUCKET: stub
+      ENABLE_IMAGE_TRANSFORMATION: "false"
+      AUTH_JWT_SECRET: ${SUPABASE_JWT_SECRET}
+    volumes:
+      - lvc-storage-data:/var/lib/storage
+    depends_on:
+      postgres:
+        condition: service_healthy
+      supabase-rest:
+        condition: service_started
+
+  supabase-meta:
+    image: supabase/postgres-meta:v0.84.2
+    container_name: lvc-supabase-meta
+    restart: unless-stopped
+    environment:
+      PG_META_PORT: 8080
+      PG_META_DB_HOST: postgres
+      PG_META_DB_PORT: 5432
+      PG_META_DB_NAME: ${POSTGRES_DB:-postgres}
+      PG_META_DB_USER: supabase_admin
+      PG_META_DB_PASSWORD: ${POSTGRES_PASSWORD}
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  supabase-studio:
+    image: supabase/studio:20240422-5cf8f30
+    container_name: lvc-supabase-studio
+    restart: unless-stopped
+    ports:
+      - "192.168.50.100:3040:3000"
+    environment:
+      STUDIO_PG_META_URL: http://supabase-meta:8080
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      DEFAULT_ORGANIZATION_NAME: "LVC Media Hub"
+      DEFAULT_PROJECT_NAME: "lvcmediahub"
+      SUPABASE_URL: http://kong:8000
+      SUPABASE_PUBLIC_URL: https://lvcmediahub.corevo.se
+      SUPABASE_REST_URL: http://supabase-rest:3000
+      GOTRUE_URL: http://supabase-auth:9999
+      NEXT_PUBLIC_ENABLE_LOGS: "false"
+      NEXT_ANALYTICS_BACKEND_PROVIDER: ""
+      SUPABASE_ANON_KEY: ${SUPABASE_ANON_KEY}
+      SUPABASE_SERVICE_ROLE_KEY: ${SUPABASE_SERVICE_ROLE_KEY}
+    depends_on:
+      supabase-meta:
+        condition: service_started
+      kong:
+        condition: service_started
+
+  caddy:
+    image: caddy:2-alpine
+    container_name: lvc-caddy
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    environment:
+      SITE_ADDRESS: ${SITE_ADDRESS:-:80}
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - lvc-caddy-data:/data
+      - lvc-caddy-config:/config
+    depends_on:
+      - lvc-media-hub
+      - kong
+
   lvc-media-hub:
     build: .
     container_name: lvc-media-hub
     restart: unless-stopped
-    ports:
-      - "3001:3001"
-    env_file:
-      - ./backend/.env
-    environment:
-      - DATABASE_URL=file:/app/data/lvc-media-hub.db
-    volumes:
-      - lvc-data:/app/data
-      - lvc-logs:/app/backend/logs
-      - /etc/letsencrypt:/etc/letsencrypt:ro
-      - /mnt/nas-matcher:/storage
+    expose:
+      - "3001"
     healthcheck:
-      test: ["CMD", "wget", "-qO-", "http://localhost:3001/api/health"]
+      test: ["CMD", "wget", "-qO-", "http://localhost:3001/"]
       interval: 30s
       timeout: 5s
       retries: 3
       start_period: 10s
 
-  acme:
-    image: neilpang/acme.sh
-    container_name: acme
-    restart: unless-stopped
-    volumes:
-      - /root/certs:/acme.sh
-    env_file:
-      - ./acme.env
-    command: daemon
-
 volumes:
-  lvc-data:
-  lvc-logs:
+  lvc-pgdata:
+  lvc-storage-data:
+  lvc-caddy-data:
+  lvc-caddy-config:

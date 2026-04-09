@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { adminApi } from '../../utils/api.js';
+import { adminApi } from '../../utils/apiSwitch.js';
 
 export default function AdminTeamsTab() {
   const [teams, setTeams] = useState([]);

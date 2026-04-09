@@ -4,7 +4,7 @@
 // ===========================================
 import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { videoApi, teamApi } from '../utils/api.js';
+import { videoApi, teamApi } from '../utils/apiSwitch.js';
 import { formatDate } from '../utils/format.js';
 import './VideosPage.css';
 

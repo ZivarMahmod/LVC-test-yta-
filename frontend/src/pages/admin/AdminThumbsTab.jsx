@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { adminApi } from '../../utils/api.js';
+import { adminApi } from '../../utils/apiSwitch.js';
 
 export default function AdminThumbsTab() {
   const [thumbLibrary, setThumbLibrary] = useState([]);

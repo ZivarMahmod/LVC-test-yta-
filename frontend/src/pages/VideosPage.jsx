@@ -3,8 +3,8 @@
 // ===========================================
 import React, { useState, useEffect, useCallback } from 'react';
 import { Link, useParams, useNavigate, useSearchParams } from 'react-router-dom';
-import { videoApi, teamApi } from '../utils/api.js';
-import { useAuth } from '../context/AuthContext.jsx';
+import { videoApi, teamApi } from '../utils/apiSwitch.js';
+import { useAuth } from '../context/SupabaseAuthContext.jsx';
 import { formatDate } from '../utils/format.js';
 import './VideosPage.css';
 

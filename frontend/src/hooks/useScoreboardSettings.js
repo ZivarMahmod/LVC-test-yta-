@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { getScoreboardSettings, saveScoreboardSettings, resetScoreboardSettings } from '../utils/scoreboardSettings.js';
-import { useAuth } from '../context/AuthContext.jsx';
-import { userApi } from '../utils/api.js';
+import { useAuth } from '../context/SupabaseAuthContext.jsx';
+import { userApi } from '../utils/apiSwitch.js';
 
 export function useScoreboardSettings() {
   const { user } = useAuth();

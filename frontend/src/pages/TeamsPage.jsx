@@ -4,8 +4,8 @@
 // ===========================================
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { teamApi, teamAdminApi } from '../utils/api.js';
-import { useAuth } from '../context/AuthContext.jsx';
+import { teamApi, teamAdminApi } from '../utils/apiSwitch.js';
+import { useAuth } from '../context/SupabaseAuthContext.jsx';
 import React from 'react';
 import './TeamsPage.css';
 

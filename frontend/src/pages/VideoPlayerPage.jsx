@@ -3,8 +3,8 @@
 // ===========================================
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { useParams, Link, useNavigate, useSearchParams, useOutletContext } from 'react-router-dom';
-import { videoApi, scoutApi, settingsApi, documentApi, reviewApi } from '../utils/api.js';
-import { useAuth } from '../context/AuthContext.jsx';
+import { videoApi, scoutApi, settingsApi, documentApi, reviewApi } from '../utils/apiSwitch.js';
+import { useAuth } from '../context/SupabaseAuthContext.jsx';
 import { DEFAULT_SKILL_NAMES } from '../utils/scoutConstants.js';
 import { useGradeSymbols } from '../hooks/useGradeSymbols.js';
 import MatchReport from '../components/player/MatchReport.jsx';

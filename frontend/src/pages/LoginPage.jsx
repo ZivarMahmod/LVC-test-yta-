@@ -3,7 +3,7 @@
 // ===========================================
 import { useState } from 'react';
 import { useNavigate, Navigate } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext.jsx';
+import { useAuth } from '../context/SupabaseAuthContext.jsx';
 import './LoginPage.css';
 
 export default function LoginPage() {

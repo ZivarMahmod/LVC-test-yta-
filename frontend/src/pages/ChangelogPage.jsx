@@ -2,8 +2,8 @@
 // LVC Media Hub — Ändringslogg
 // ===========================================
 import { useState, useEffect } from 'react';
-import { changelogApi } from '../utils/api.js';
-import { useAuth } from '../context/AuthContext.jsx';
+import { changelogApi } from '../utils/apiSwitch.js';
+import { useAuth } from '../context/SupabaseAuthContext.jsx';
 
 export default function ChangelogPage() {
   const { isAdmin } = useAuth();

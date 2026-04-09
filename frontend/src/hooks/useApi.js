@@ -3,7 +3,7 @@
 // Cachning och automatisk revalidering av API-data
 // ===========================================
 import useSWR from 'swr';
-import { teamApi, videoApi, scoutApi, changelogApi, adminApi } from '../utils/api.js';
+import { teamApi, videoApi, scoutApi, changelogApi, adminApi } from '../utils/apiSwitch.js';
 
 // -------- Publika hooks --------
 

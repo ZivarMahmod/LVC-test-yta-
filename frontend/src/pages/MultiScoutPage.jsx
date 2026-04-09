@@ -3,7 +3,7 @@
 // ===========================================
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useSearchParams, Link } from 'react-router-dom';
-import { multiScoutApi, videoApi, settingsApi } from '../utils/api.js';
+import { multiScoutApi, videoApi, settingsApi } from '../utils/apiSwitch.js';
 import { SKILL_COLORS, DEFAULT_SKILL_NAMES } from '../utils/scoutConstants.js';
 import { useGradeSymbols } from '../hooks/useGradeSymbols.js';
 import CourtHeatmap from '../components/player/CourtHeatmap.jsx';

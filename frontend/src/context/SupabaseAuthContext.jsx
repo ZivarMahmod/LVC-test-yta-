@@ -56,6 +56,9 @@ export function AuthProvider({ children }) {
         setUser(null);
         setLoading(false);
       }
+    }).catch(() => {
+      setUser(null);
+      setLoading(false);
     });
 
     // Subscribe to auth changes

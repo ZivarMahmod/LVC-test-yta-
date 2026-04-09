@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { adminApi, videoApi } from '../../utils/api.js';
+import { adminApi, videoApi } from '../../utils/apiSwitch.js';
 
 export default function AdminDeletedTab() {
   const [deletedVideos, setDeletedVideos] = useState([]);

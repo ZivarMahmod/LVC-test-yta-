@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
-import { adminApi, inviteApi } from '../../utils/api.js';
-import { useAuth } from '../../context/AuthContext.jsx';
+import { adminApi, inviteApi } from '../../utils/apiSwitch.js';
+import { useAuth } from '../../context/SupabaseAuthContext.jsx';
 
 const ROLE_LABELS = {
   coach: 'Coach', admin: 'Admin', uploader: 'Uppladdare', viewer: 'Tittare' };

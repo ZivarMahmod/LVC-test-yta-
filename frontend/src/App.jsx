@@ -1,12 +1,14 @@
 // ===========================================
 // LVC Media Hub — App (Routing)
+// Supabase-only: SupabaseAuthContext, LandingPage, SuperadminPage
 // ===========================================
 import { Routes, Route, Navigate } from 'react-router-dom';
 import React, { Suspense } from 'react';
-import { useAuth } from './context/AuthContext.jsx';
+import { useAuth } from './context/SupabaseAuthContext.jsx';
 import Layout from './components/layout/Layout.jsx';
 import LoginPage from './pages/LoginPage.jsx';
-import RegisterPage from './pages/RegisterPage.jsx';
+
+const isSuperadmin = window.location.hostname === 'filipadmin.corevo.se';
 
 class ErrorBoundary extends React.Component {
   constructor(props) { super(props); this.state = { hasError: false }; }
@@ -27,7 +29,9 @@ class ErrorBoundary extends React.Component {
     return this.props.children;
   }
 }
-// Lazy-laddade sidor — laddas först när användaren navigerar dit
+// Lazy-laddade sidor
+const LandingPage = React.lazy(() => import('./pages/LandingPage.jsx'));
+const SuperadminPage = React.lazy(() => import('./pages/SuperadminPage.jsx'));
 const TeamsPage = React.lazy(() => import('./pages/TeamsPage.jsx'));
 const SeasonsPage = React.lazy(() => import('./pages/SeasonsPage.jsx'));
 const VideosPage = React.lazy(() => import('./pages/VideosPage.jsx'));
@@ -64,7 +68,7 @@ function ProtectedRoute({ children, requiredRole }) {
 }
 
 export default function App() {
-  const { loading } = useAuth();
+  const { user, loading } = useAuth();
 
   if (loading) {
     return (
@@ -76,19 +80,46 @@ export default function App() {
 
   const fallback = <div className="loading-container"><div className="spinner" /></div>;
 
+  // filipadmin.corevo.se → superadmin-panel (kräver inloggning)
+  if (isSuperadmin) {
+    return (
+      <ErrorBoundary>
+        <Suspense fallback={fallback}>
+          <Routes>
+            <Route path="/login" element={<LoginPage />} />
+            <Route path="*" element={
+              <ProtectedRoute requiredRole="admin">
+                <SuperadminPage />
+              </ProtectedRoute>
+            } />
+          </Routes>
+        </Suspense>
+      </ErrorBoundary>
+    );
+  }
+
+  // Ej inloggad → landningssida på /
+  if (!user) {
+    return (
+      <ErrorBoundary>
+      <Suspense fallback={fallback}>
+        <Routes>
+          <Route path="/login" element={<LoginPage />} />
+          <Route path="*" element={<LandingPage />} />
+        </Routes>
+      </Suspense>
+      </ErrorBoundary>
+    );
+  }
+
   return (
     <ErrorBoundary>
     <Suspense fallback={fallback}>
       <Routes>
-        <Route path="/login" element={<LoginPage />} />
-        <Route path="/register/:token" element={<RegisterPage />} />
+        <Route path="/login" element={<Navigate to="/" replace />} />
         <Route
           path="/"
-          element={
-            <ProtectedRoute>
-              <Layout />
-            </ProtectedRoute>
-          }
+          element={<Layout />}
         >
           <Route index element={<TeamsPage />} />
           <Route path="team/:teamId" element={<SeasonsPage />} />

@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import { documentApi } from '../../utils/api.js';
+import { documentApi } from '../../utils/apiSwitch.js';
 
 export default function DocumentsTab({ videoId, isUploader, isCoach, isAdmin, onViewDoc, documents, setDocuments }) {
   const [docUploading, setDocUploading] = useState(false);

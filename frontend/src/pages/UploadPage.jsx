@@ -3,7 +3,7 @@
 // ===========================================
 import { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { videoApi, teamApi, documentApi, adminApi } from '../utils/api.js';
+import { videoApi, teamApi, documentApi, adminApi } from '../utils/apiSwitch.js';
 import { formatFileSize } from '../utils/format.js';
 import './UploadPage.css';
 

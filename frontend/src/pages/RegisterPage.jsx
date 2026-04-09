@@ -3,8 +3,8 @@
 // ===========================================
 import { useState, useEffect } from 'react';
 import { useParams, Navigate, Link } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext.jsx';
-import { authApi } from '../utils/api.js';
+import { useAuth } from '../context/SupabaseAuthContext.jsx';
+import { authApi } from '../utils/apiSwitch.js';
 import './LoginPage.css';
 
 export default function RegisterPage() {

@@ -1,59 +1,25 @@
 # ===========================================
 # LVC Media Hub — Dockerfile
-# Multi-stage build: bygg frontend → kör backend
+# Bygg frontend → serva statiskt (Supabase-only)
 # ===========================================
 
 # --- Steg 1: Bygg frontend ---
-FROM node:20-alpine AS frontend-build
+FROM node:20-alpine AS build
 WORKDIR /app/frontend
 COPY frontend/package.json frontend/package-lock.json* ./
 RUN npm install
 COPY frontend/ ./
+COPY frontend/.env .env
 RUN npm run build
 
-# --- Steg 2: Produktionsimage ---
-FROM node:20-alpine AS production
+# --- Steg 2: Serva statiska filer ---
+FROM node:20-alpine
+RUN npm install -g serve@14
 WORKDIR /app
-
-# Installera build-verktyg för bcrypt (kompilerar nativ kod)
-RUN apk add --no-cache python3 make g++ openssl openssl-dev
-
-# Kopiera backend
-COPY backend/package.json backend/package-lock.json* ./backend/
-WORKDIR /app/backend
-RUN npm install --omit=dev
-
-# Ta bort build-verktyg efter installation (mindre image)
-RUN apk del python3 make g++
-
-# Kopiera backend-källkod
-COPY backend/src/ ./src/
-COPY backend/prisma/ ./prisma/
-COPY backend/scripts/ ./scripts/
-
-# Generera Prisma-klient
-RUN npx prisma generate
-
-# Kopiera färdigbyggd frontend från steg 1
-COPY --from=frontend-build /app/frontend/dist /app/frontend/dist
-
-# Skapa mappar för loggar och databas
-RUN mkdir -p /app/backend/logs /app/data
-
-# Prisma-databasen pekar på /app/data så den kan monteras som volym
-ENV DATABASE_URL="file:/app/data/lvc-media-hub.db"
-
-# Kopiera entrypoint
-COPY CHANGELOG.md /app/CHANGELOG.md
-COPY entrypoint.sh /app/entrypoint.sh
-RUN chmod +x /app/entrypoint.sh
-
-# Exponera port
+COPY --from=build /app/frontend/dist ./dist
 EXPOSE 3001
 
-# Healthcheck
-HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
-  CMD wget -qO- http://localhost:3001/api/health || exit 1
+HEALTHCHECK --interval=30s --timeout=5s --start-period=5s --retries=3 \
+  CMD wget -qO- http://localhost:3001/ || exit 1
 
-# Starta via entrypoint (migrering + seed + server)
-ENTRYPOINT ["/app/entrypoint.sh"]
+CMD ["serve", "dist", "-l", "3001", "-s"]
