@@ -1,5 +1,5 @@
 // ===========================================
-// Kvittra — Landing Page
+// Corevosports — Landing Page
 // Professional volleyball video analysis platform
 // ===========================================
 import { Link } from 'react-router-dom';
@@ -78,7 +78,7 @@ export default function LandingPage() {
         <div className="lp-nav-inner">
           <div className="lp-nav-brand">
             <VolleyballIcon size={28} />
-            <span>Kvittra</span>
+            <span>Corevosports</span>
           </div>
           <div className="lp-nav-links">
             <a href="#funktioner">Funktioner</a>
@@ -107,14 +107,14 @@ export default function LandingPage() {
           </FadeIn>
           <FadeIn delay={200}>
             <p className="lp-hero-sub">
-              Kvittra ger ditt lag ett proffslager av videoanalys — DVW-scouting,
+              Corevosports ger ditt lag ett proffslager av videoanalys — DVW-scouting,
               spelarstatistik och heatmaps i en plattform byggd for svenskt
               lagarbete.
             </p>
           </FadeIn>
           <FadeIn delay={300}>
             <div className="lp-hero-actions">
-              <a href="mailto:support@kvittra.se" className="lp-btn lp-btn-primary">Boka demo</a>
+              <a href="mailto:support@corevosports.se" className="lp-btn lp-btn-primary">Boka demo</a>
               <Link to="/login" className="lp-btn lp-btn-ghost">Logga in</Link>
             </div>
           </FadeIn>
@@ -323,7 +323,7 @@ export default function LandingPage() {
                 <li>Upp till 50 matcher</li>
                 <li>3 anvandarkonton</li>
               </ul>
-              <a href="mailto:support@kvittra.se" className="lp-btn lp-btn-outline">Kontakta oss</a>
+              <a href="mailto:support@corevosports.se" className="lp-btn lp-btn-outline">Kontakta oss</a>
             </div>
           </FadeIn>
 
@@ -339,7 +339,7 @@ export default function LandingPage() {
                 <li>Coach-feedback pa aktioner</li>
                 <li>Obegransat antal anvandare</li>
               </ul>
-              <a href="mailto:support@kvittra.se" className="lp-btn lp-btn-primary">Boka demo</a>
+              <a href="mailto:support@corevosports.se" className="lp-btn lp-btn-primary">Boka demo</a>
             </div>
           </FadeIn>
 
@@ -354,7 +354,7 @@ export default function LandingPage() {
                 <li>API-atkomst & integrationer</li>
                 <li>Dedikerad support</li>
               </ul>
-              <a href="mailto:support@kvittra.se" className="lp-btn lp-btn-outline">Kontakta oss</a>
+              <a href="mailto:support@corevosports.se" className="lp-btn lp-btn-outline">Kontakta oss</a>
             </div>
           </FadeIn>
         </div>
@@ -364,9 +364,9 @@ export default function LandingPage() {
       <section className="lp-cta">
         <FadeIn>
           <h2>Redo att ta nasta steg?</h2>
-          <p>Boka en demo sa visar vi hur Kvittra kan hjalpa ditt lag.</p>
+          <p>Boka en demo sa visar vi hur Corevosports kan hjalpa ditt lag.</p>
           <div className="lp-cta-actions">
-            <a href="mailto:support@kvittra.se" className="lp-btn lp-btn-primary lp-btn-lg">Boka demo</a>
+            <a href="mailto:support@corevosports.se" className="lp-btn lp-btn-primary lp-btn-lg">Boka demo</a>
             <Link to="/login" className="lp-btn lp-btn-ghost">Logga in</Link>
           </div>
         </FadeIn>
@@ -377,17 +377,17 @@ export default function LandingPage() {
         <div className="lp-footer-inner">
           <div className="lp-footer-brand">
             <VolleyballIcon size={24} />
-            <span>Kvittra</span>
+            <span>Corevosports</span>
           </div>
           <div className="lp-footer-links">
             <a href="#funktioner">Funktioner</a>
             <a href="#hur">Hur det funkar</a>
             <a href="#priser">Priser</a>
-            <a href="mailto:support@kvittra.se">Kontakt</a>
+            <a href="mailto:support@corevosports.se">Kontakt</a>
           </div>
           <div className="lp-footer-bottom">
             <span>Corevo Solutions</span>
-            <span>support@kvittra.se</span>
+            <span>support@corevosports.se</span>
           </div>
         </div>
       </footer>
